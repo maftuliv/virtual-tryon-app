@@ -1,5 +1,5 @@
 // API Configuration
-const API_URL = 'http://localhost:5000';
+const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:5000' : '';
 
 // State Management
 const state = {
