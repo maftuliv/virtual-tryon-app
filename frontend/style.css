@@ -415,3 +415,13 @@ body {
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
+
+/* Waiting time text under button */
+.waiting-time-text {
+    text-align: center;
+    margin-top: 10px;
+    font-size: 0.9em;
+    color: var(--text-secondary);
+    font-style: italic;
+    opacity: 0.8;
+}
