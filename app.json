@@ -1,0 +1,23 @@
+{
+  "name": "Virtual Try-On IDM-VTON",
+  "description": "AI-powered virtual try-on application using IDM-VTON model",
+  "repository": "https://github.com/your-username/virtual-tryon-app",
+  "keywords": ["python", "flask", "ai", "virtual-try-on", "fashion"],
+  "env": {
+    "HF_API_TOKEN": {
+      "description": "Hugging Face API token for IDM-VTON model access",
+      "required": false
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "eco"
+    }
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ]
+}

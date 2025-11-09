@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Виртуальная Примерочная - IDM-VTON</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🛍️ Виртуальная Примерочная</h1>
+            <p class="subtitle">Примерьте одежду виртуально с помощью AI технологии IDM-VTON</p>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Upload Section -->
+            <section class="upload-section">
+                <div class="upload-card">
+                    <h2>Шаг 1: Загрузите ваши фото</h2>
+                    <p class="instruction">Загрузите 1-4 фотографии в полный рост</p>
+
+                    <div class="upload-zone" id="personUploadZone">
+                        <div class="upload-icon">📸</div>
+                        <p>Нажмите или перетащите фото</p>
+                        <input type="file" id="personImages" accept="image/*" multiple class="file-input">
+                    </div>
+
+                    <div class="preview-container" id="personPreview"></div>
+                </div>
+
+                <div class="upload-card">
+                    <h2>Шаг 2: Загрузите одежду</h2>
+                    <p class="instruction">Загрузите фото желаемой одежды</p>
+
+                    <div class="upload-zone" id="garmentUploadZone">
+                        <div class="upload-icon">👕</div>
+                        <p>Нажмите или перетащите фото одежды</p>
+                        <input type="file" id="garmentImage" accept="image/*" class="file-input">
+                    </div>
+
+                    <div class="preview-container" id="garmentPreview"></div>
+                </div>
+            </section>
+
+            <!-- Action Button -->
+            <div class="action-section">
+                <button id="tryonBtn" class="btn-primary" disabled>
+                    <span class="btn-icon">✨</span>
+                    <span class="btn-text">Примерить одежду</span>
+                </button>
+
+                <div id="progressBar" class="progress-bar" style="display: none;">
+                    <div class="progress-fill"></div>
+                    <p class="progress-text">Обработка изображений...</p>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <section class="results-section" id="resultsSection" style="display: none;">
+                <h2>Результаты примерки</h2>
+                <div class="results-grid" id="resultsGrid"></div>
+
+                <div class="action-buttons">
+                    <button id="downloadAllBtn" class="btn-secondary">
+                        <span>💾 Скачать все результаты</span>
+                    </button>
+                    <button id="resetBtn" class="btn-secondary">
+                        <span>🔄 Начать заново</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Error Message -->
+            <div id="errorMessage" class="error-message" style="display: none;">
+                <span class="error-icon">⚠️</span>
+                <span id="errorText"></span>
+                <button class="error-close" onclick="hideError()">×</button>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Powered by IDM-VTON (ECCV 2024) | AI Virtual Try-On Technology</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

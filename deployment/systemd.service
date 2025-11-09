@@ -1,0 +1,27 @@
+# Systemd service for Virtual Try-On App
+# Place this file in: /etc/systemd/system/tryon.service
+
+[Unit]
+Description=Virtual Try-On Application (IDM-VTON)
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/virtual-tryon-app
+Environment="PATH=/var/www/virtual-tryon-app/venv/bin"
+Environment="PYTHONUNBUFFERED=1"
+ExecStart=/var/www/virtual-tryon-app/venv/bin/gunicorn backend.app:app \
+    --bind 127.0.0.1:5000 \
+    --workers 2 \
+    --timeout 120 \
+    --access-logfile /var/log/tryon/access.log \
+    --error-logfile /var/log/tryon/error.log \
+    --log-level info
+
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
