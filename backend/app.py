@@ -2,13 +2,18 @@ import os
 import time
 import base64
 import requests
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, send_from_directory
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 from PIL import Image
 import io
 
-app = Flask(__name__)
+# Configuration for static files
+FRONTEND_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend')
+
+app = Flask(__name__,
+            static_folder=FRONTEND_FOLDER,
+            static_url_path='')
 CORS(app)
 
 # Configuration
@@ -96,13 +101,21 @@ def process_with_idm_vton(person_image_path, garment_image_path):
         print(f"Error in process_with_idm_vton: {e}")
         raise
 
+# Serve frontend
 @app.route('/')
-def index():
-    return jsonify({
-        "status": "running",
-        "message": "Virtual Try-On API Server",
-        "version": "1.0.0"
-    })
+def serve_frontend():
+    return send_from_directory(FRONTEND_FOLDER, 'index.html')
+
+@app.route('/<path:path>')
+def serve_static(path):
+    # Avoid conflicts with API routes
+    if path.startswith('api/'):
+        return jsonify({"error": "Not found"}), 404
+    try:
+        return send_from_directory(FRONTEND_FOLDER, path)
+    except:
+        # If file not found, serve index.html (SPA fallback)
+        return send_from_directory(FRONTEND_FOLDER, 'index.html')
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
