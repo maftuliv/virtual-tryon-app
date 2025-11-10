@@ -135,8 +135,16 @@ def process_with_fashn(person_image_path, garment_image_path):
                 if not output:
                     raise ValueError("No output image in completed response")
 
-                # Output is a URL or base64 image
-                if isinstance(output, str):
+                print(f"[FASHN] Output type: {type(output)}, value: {output}")
+
+                # FASHN API returns a list of images (even if num_samples=1)
+                if isinstance(output, list):
+                    if len(output) == 0:
+                        raise ValueError("FASHN returned empty output list")
+                    # Get the first image from the list
+                    result_image_data = output[0]
+                    print(f"[FASHN] Using first image from list, type: {type(result_image_data)}")
+                elif isinstance(output, str):
                     result_image_data = output
                 elif isinstance(output, dict) and "url" in output:
                     result_image_data = output["url"]
@@ -145,23 +153,41 @@ def process_with_fashn(person_image_path, garment_image_path):
                 else:
                     raise ValueError(f"Unexpected output format: {type(output)}")
 
+                # If result_image_data is a dict, extract the URL or image
+                if isinstance(result_image_data, dict):
+                    if "url" in result_image_data:
+                        result_image_data = result_image_data["url"]
+                    elif "image" in result_image_data:
+                        result_image_data = result_image_data["image"]
+                    else:
+                        raise ValueError(f"Dict output missing 'url' or 'image' key: {result_image_data}")
+
+                print(f"[FASHN] Final image data type: {type(result_image_data)}")
+                if isinstance(result_image_data, str):
+                    print(f"[FASHN] Image data starts with: {result_image_data[:100]}...")
+
                 # Save result
                 timestamp = int(time.time())
                 result_filename = f'result_{timestamp}_{prediction_id[:8]}.png'
                 result_path = os.path.join(app.config['RESULTS_FOLDER'], result_filename)
 
                 # Download or save the image
-                if result_image_data.startswith('http'):
+                if isinstance(result_image_data, str) and result_image_data.startswith('http'):
                     # Download from URL
+                    print(f"[FASHN] Downloading from URL: {result_image_data[:50]}...")
                     img_response = requests.get(result_image_data, timeout=30)
                     if img_response.status_code == 200:
                         with open(result_path, 'wb') as img_file:
                             img_file.write(img_response.content)
+                        print(f"[FASHN] Downloaded {len(img_response.content)} bytes")
                     else:
                         raise ValueError(f"Failed to download result image: {img_response.status_code}")
-                else:
+                elif isinstance(result_image_data, str):
                     # Save base64 image
+                    print(f"[FASHN] Saving base64 image...")
                     save_base64_image(result_image_data, result_path)
+                else:
+                    raise ValueError(f"Cannot process result_image_data of type: {type(result_image_data)}")
 
                 print(f"[FASHN] ✅ Result saved to: {result_path}")
                 return result_path
