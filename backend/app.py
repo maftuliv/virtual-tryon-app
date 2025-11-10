@@ -29,76 +29,151 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['RESULTS_FOLDER'] = RESULTS_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
-# Hugging Face API configuration
-HF_API_URL = "https://api-inference.huggingface.co/models/yisol/IDM-VTON"
-HF_API_TOKEN = os.environ.get('HF_API_TOKEN', '')  # Set your token in environment
+# FASHN API configuration
+FASHN_API_KEY = os.environ.get('FASHN_API_KEY', '')  # Set your token in environment
+FASHN_BASE_URL = "https://api.fashn.ai/v1"
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def process_with_idm_vton(person_image_path, garment_image_path):
+def image_to_base64(image_path):
+    """Convert image file to base64 string"""
+    with open(image_path, 'rb') as img_file:
+        img_data = base64.b64encode(img_file.read()).decode('utf-8')
+    return img_data
+
+def save_base64_image(base64_string, output_path):
+    """Save base64 image to file"""
+    # Remove data URL prefix if present
+    if ',' in base64_string:
+        base64_string = base64_string.split(',', 1)[1]
+
+    img_data = base64.b64decode(base64_string)
+    with open(output_path, 'wb') as img_file:
+        img_file.write(img_data)
+    return output_path
+
+def process_with_fashn(person_image_path, garment_image_path):
     """
-    Process virtual try-on using IDM-VTON via Hugging Face API
+    Process virtual try-on using FASHN API
+    Generates high-quality realistic results in 5-17 seconds
     """
     try:
-        # Read images
-        with open(person_image_path, 'rb') as person_file:
-            person_image = person_file.read()
+        if not FASHN_API_KEY:
+            raise ValueError("FASHN_API_KEY not set. Please configure your API key in environment variables.")
 
-        with open(garment_image_path, 'rb') as garment_file:
-            garment_image = garment_file.read()
+        # Convert images to base64
+        model_image_b64 = image_to_base64(person_image_path)
+        garment_image_b64 = image_to_base64(garment_image_path)
 
-        # Prepare request for Hugging Face API
-        headers = {
-            "Authorization": f"Bearer {HF_API_TOKEN}"
+        # Prepare request payload
+        input_data = {
+            "model_name": "tryon-v1.6",
+            "inputs": {
+                "model_image": f"data:image/jpeg;base64,{model_image_b64}",
+                "garment_image": f"data:image/jpeg;base64,{garment_image_b64}",
+                "category": "auto"  # Auto-detect garment category
+            }
         }
 
-        # Method 1: Try using the Gradio client approach
-        try:
-            from gradio_client import Client, handle_file
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {FASHN_API_KEY}"
+        }
 
-            client = Client("yisol/IDM-VTON")
-            result = client.predict(
-                dict={"background": handle_file(person_image_path), "layers": [], "composite": None},
-                garm_img=handle_file(garment_image_path),
-                garment_des="A clothing item",
-                is_checked=True,
-                is_checked_crop=False,
-                denoise_steps=30,
-                seed=42,
-                api_name="/tryon"
-            )
+        print(f"Sending request to FASHN API...")
 
-            # Result is a tuple with the output image path
-            if result and len(result) > 0:
-                output_path = result[0]
-                return output_path
+        # POST to /run endpoint
+        run_response = requests.post(f"{FASHN_BASE_URL}/run", json=input_data, headers=headers, timeout=60)
 
-        except Exception as e:
-            print(f"Gradio client method failed: {e}")
+        if run_response.status_code != 200:
+            error_msg = f"FASHN API error: {run_response.status_code} - {run_response.text}"
+            print(error_msg)
+            raise ValueError(error_msg)
 
-            # Method 2: Fallback to local processing simulation
-            # For demo purposes, we'll create a composite image
-            person_img = Image.open(person_image_path).convert('RGB')
-            garment_img = Image.open(garment_image_path).convert('RGB')
+        run_data = run_response.json()
+        prediction_id = run_data.get("id")
 
-            # Resize images to standard size
-            person_img = person_img.resize((768, 1024))
-            garment_img = garment_img.resize((768, 1024))
+        if not prediction_id:
+            raise ValueError("Failed to get prediction ID from FASHN API")
 
-            # Create a simple composite (in production, this would be the model output)
-            result_img = Image.blend(person_img, garment_img, alpha=0.3)
+        print(f"Prediction started, ID: {prediction_id}")
 
-            # Save result
-            timestamp = int(time.time())
-            result_filename = f'result_{timestamp}.png'
-            result_path = os.path.join(app.config['RESULTS_FOLDER'], result_filename)
-            result_img.save(result_path)
+        # Poll /status/<ID> until completion
+        max_attempts = 40  # 40 attempts * 3 seconds = 2 minutes max
+        attempt = 0
 
-            return result_path
+        while attempt < max_attempts:
+            time.sleep(3)  # Wait 3 seconds between checks
+
+            status_response = requests.get(f"{FASHN_BASE_URL}/status/{prediction_id}", headers=headers, timeout=30)
+
+            if status_response.status_code != 200:
+                print(f"Status check error: {status_response.status_code}")
+                attempt += 1
+                continue
+
+            status_data = status_response.json()
+            status = status_data.get("status")
+
+            print(f"Status: {status}")
+
+            if status == "completed":
+                # Get the output image
+                output = status_data.get("output")
+
+                if not output:
+                    raise ValueError("No output image in completed response")
+
+                # Output is a URL or base64 image
+                if isinstance(output, str):
+                    result_image_data = output
+                elif isinstance(output, dict) and "url" in output:
+                    result_image_data = output["url"]
+                elif isinstance(output, dict) and "image" in output:
+                    result_image_data = output["image"]
+                else:
+                    raise ValueError(f"Unexpected output format: {type(output)}")
+
+                # Save result
+                timestamp = int(time.time())
+                result_filename = f'result_{timestamp}_{prediction_id[:8]}.png'
+                result_path = os.path.join(app.config['RESULTS_FOLDER'], result_filename)
+
+                # Download or save the image
+                if result_image_data.startswith('http'):
+                    # Download from URL
+                    img_response = requests.get(result_image_data, timeout=30)
+                    if img_response.status_code == 200:
+                        with open(result_path, 'wb') as img_file:
+                            img_file.write(img_response.content)
+                    else:
+                        raise ValueError(f"Failed to download result image: {img_response.status_code}")
+                else:
+                    # Save base64 image
+                    save_base64_image(result_image_data, result_path)
+
+                print(f"Result saved to: {result_path}")
+                return result_path
+
+            elif status in ["starting", "in_queue", "processing"]:
+                # Still processing, continue polling
+                attempt += 1
+                continue
+            elif status == "failed":
+                error = status_data.get("error", "Unknown error")
+                raise ValueError(f"FASHN processing failed: {error}")
+            else:
+                # Unknown status
+                print(f"Unknown status: {status}")
+                attempt += 1
+                continue
+
+        # Timeout
+        raise TimeoutError(f"FASHN processing timed out after {max_attempts * 3} seconds")
 
     except Exception as e:
-        print(f"Error in process_with_idm_vton: {e}")
+        print(f"Error in process_with_fashn: {e}")
         raise
 
 # Serve frontend
@@ -201,7 +276,7 @@ def virtual_tryon():
                 continue
 
             try:
-                result_path = process_with_idm_vton(person_image, garment_image)
+                result_path = process_with_fashn(person_image, garment_image)
 
                 # Read result image and encode to base64
                 with open(result_path, 'rb') as img_file:
