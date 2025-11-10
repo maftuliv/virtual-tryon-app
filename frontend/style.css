@@ -425,3 +425,87 @@ body {
     font-style: italic;
     opacity: 0.8;
 }
+
+/* Error result cards */
+.error-card {
+    background: #fee2e2;
+    border: 2px solid var(--error-color);
+}
+
+.error-result {
+    padding: 40px;
+    text-align: center;
+    color: #991b1b;
+}
+
+.error-result .error-icon {
+    font-size: 3em;
+    display: block;
+    margin-bottom: 15px;
+}
+
+.error-result p {
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.error-result small {
+    font-size: 0.85em;
+    opacity: 0.8;
+}
+
+/* No results message */
+.no-results {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    background: var(--background);
+    border-radius: 15px;
+    border: 2px dashed var(--border-color);
+}
+
+.no-results .error-icon {
+    font-size: 4em;
+    display: block;
+    margin-bottom: 20px;
+}
+
+.no-results h3 {
+    color: var(--text-primary);
+    margin-bottom: 10px;
+    font-size: 1.5em;
+}
+
+.no-results p {
+    color: var(--text-secondary);
+    font-size: 1.1em;
+}
+
+/* Result card loaded state */
+.result-card {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInUp 0.5s ease forwards;
+}
+
+.result-card.loaded img {
+    animation: imageLoad 0.3s ease;
+}
+
+@keyframes fadeInUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes imageLoad {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}

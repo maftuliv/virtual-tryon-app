@@ -226,6 +226,9 @@ async function handleTryOn() {
         resultsSection.style.display = 'none';
         hideError();
 
+        // Update progress text
+        updateProgressText('Загрузка изображений...');
+
         // Step 1: Upload files
         const formData = new FormData();
 
@@ -241,15 +244,23 @@ async function handleTryOn() {
         });
 
         if (!uploadResponse.ok) {
-            throw new Error('Ошибка загрузки файлов');
+            const errorData = await uploadResponse.json().catch(() => ({}));
+            throw new Error(errorData.error || 'Ошибка загрузки файлов');
         }
 
         const uploadData = await uploadResponse.json();
+
+        if (!uploadData.success) {
+            throw new Error(uploadData.error || 'Загрузка не удалась');
+        }
+
         state.uploadedPersonPaths = uploadData.person_images;
         state.uploadedGarmentPath = uploadData.garment_image;
         state.sessionId = uploadData.session_id;
 
         // Step 2: Perform virtual try-on
+        updateProgressText('Обработка с помощью FASHN AI... (5-17 секунд)');
+
         const tryonResponse = await fetch(`${API_URL}/api/tryon`, {
             method: 'POST',
             headers: {
@@ -262,10 +273,20 @@ async function handleTryOn() {
         });
 
         if (!tryonResponse.ok) {
-            throw new Error('Ошибка обработки изображений');
+            const errorData = await tryonResponse.json().catch(() => ({}));
+            throw new Error(errorData.error || 'Ошибка обработки изображений');
         }
 
         const tryonData = await tryonResponse.json();
+
+        if (!tryonData.success) {
+            throw new Error(tryonData.error || 'Обработка не удалась');
+        }
+
+        // Check if we have results
+        if (!tryonData.results || tryonData.results.length === 0) {
+            throw new Error('Не удалось получить результаты. Проверьте настройки FASHN API.');
+        }
 
         // Display results
         displayResults(tryonData.results);
@@ -276,9 +297,30 @@ async function handleTryOn() {
 
     } catch (error) {
         console.error('Error:', error);
-        showError(`Произошла ошибка: ${error.message}`);
+
+        // More detailed error message
+        let errorMsg = error.message;
+        if (error.message.includes('FASHN_API_KEY')) {
+            errorMsg = 'Ошибка: API ключ FASHN не настроен. Проверьте FASHN_SETUP.md';
+        } else if (error.message.includes('401')) {
+            errorMsg = 'Ошибка: Неверный API ключ FASHN. Проверьте настройки.';
+        } else if (error.message.includes('402')) {
+            errorMsg = 'Ошибка: Недостаточно кредитов FASHN. Пополните баланс.';
+        } else if (error.message.includes('timeout')) {
+            errorMsg = 'Ошибка: Превышено время ожидания. Попробуйте снова.';
+        }
+
+        showError(errorMsg);
         progressBar.style.display = 'none';
         tryonBtn.disabled = false;
+    }
+}
+
+// Update progress text
+function updateProgressText(text) {
+    const progressText = document.querySelector('.progress-text');
+    if (progressText) {
+        progressText.textContent = text;
     }
 }
 
@@ -286,9 +328,28 @@ async function handleTryOn() {
 function displayResults(results) {
     resultsGrid.innerHTML = '';
 
+    let successCount = 0;
+
     results.forEach((result, index) => {
         if (result.error) {
             console.error(`Error for image ${index}:`, result.error);
+            // Show error card
+            const errorCard = document.createElement('div');
+            errorCard.className = 'result-card error-card';
+            errorCard.innerHTML = `
+                <div class="error-result">
+                    <span class="error-icon">⚠️</span>
+                    <p>Ошибка обработки изображения ${index + 1}</p>
+                    <small>${result.error}</small>
+                </div>
+            `;
+            resultsGrid.appendChild(errorCard);
+            return;
+        }
+
+        // Check if result_image exists
+        if (!result.result_image) {
+            console.error(`No result image for index ${index}:`, result);
             return;
         }
 
@@ -298,6 +359,21 @@ function displayResults(results) {
         const img = document.createElement('img');
         img.src = result.result_image;
         img.alt = `Result ${index + 1}`;
+
+        // Add loading state
+        img.onload = () => {
+            card.classList.add('loaded');
+        };
+
+        img.onerror = () => {
+            console.error(`Failed to load image ${index}`);
+            card.innerHTML = `
+                <div class="error-result">
+                    <span class="error-icon">⚠️</span>
+                    <p>Не удалось загрузить результат ${index + 1}</p>
+                </div>
+            `;
+        };
 
         const info = document.createElement('div');
         info.className = 'result-info';
@@ -317,7 +393,19 @@ function displayResults(results) {
         card.appendChild(info);
 
         resultsGrid.appendChild(card);
+        successCount++;
     });
+
+    // Show message if no successful results
+    if (successCount === 0) {
+        resultsGrid.innerHTML = `
+            <div class="no-results">
+                <span class="error-icon">😔</span>
+                <h3>Не удалось получить результаты</h3>
+                <p>Попробуйте загрузить другие изображения или проверьте настройки API</p>
+            </div>
+        `;
+    }
 }
 
 // Download Single Result
