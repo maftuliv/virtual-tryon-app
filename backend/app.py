@@ -70,9 +70,11 @@ def process_with_fashn(person_image_path, garment_image_path):
         input_data = {
             "model_name": "tryon-v1.6",
             "inputs": {
-                "model_image": f"data:image/jpeg;base64,{model_image_b64}",
-                "garment_image": f"data:image/jpeg;base64,{garment_image_b64}",
-                "category": "auto"  # Auto-detect garment category
+                "model_image": f"data:image/jpg;base64,{model_image_b64}",
+                "garment_image": f"data:image/jpg;base64,{garment_image_b64}",
+                "category": "auto",  # Auto-detect garment category
+                "num_samples": 1,    # Generate 1 result per image
+                "mode": "quality"    # Use quality mode for best results
             }
         }
 
@@ -81,23 +83,31 @@ def process_with_fashn(person_image_path, garment_image_path):
             "Authorization": f"Bearer {FASHN_API_KEY}"
         }
 
-        print(f"Sending request to FASHN API...")
+        print(f"[FASHN] Sending request to FASHN API...")
+        print(f"[FASHN] API Key (first 10 chars): {FASHN_API_KEY[:10]}...")
+        print(f"[FASHN] Model image size: {len(model_image_b64)} chars")
+        print(f"[FASHN] Garment image size: {len(garment_image_b64)} chars")
 
         # POST to /run endpoint
         run_response = requests.post(f"{FASHN_BASE_URL}/run", json=input_data, headers=headers, timeout=60)
 
+        print(f"[FASHN] Response status code: {run_response.status_code}")
+
         if run_response.status_code != 200:
             error_msg = f"FASHN API error: {run_response.status_code} - {run_response.text}"
-            print(error_msg)
+            print(f"[FASHN ERROR] {error_msg}")
             raise ValueError(error_msg)
 
         run_data = run_response.json()
+        print(f"[FASHN] Response data: {run_data}")
+
         prediction_id = run_data.get("id")
 
         if not prediction_id:
-            raise ValueError("Failed to get prediction ID from FASHN API")
+            error_detail = run_data.get("error", "No error message")
+            raise ValueError(f"Failed to get prediction ID from FASHN API. Response: {error_detail}")
 
-        print(f"Prediction started, ID: {prediction_id}")
+        print(f"[FASHN] Prediction started, ID: {prediction_id}")
 
         # Poll /status/<ID> until completion
         max_attempts = 40  # 40 attempts * 3 seconds = 2 minutes max
@@ -116,7 +126,7 @@ def process_with_fashn(person_image_path, garment_image_path):
             status_data = status_response.json()
             status = status_data.get("status")
 
-            print(f"Status: {status}")
+            print(f"[FASHN] Attempt {attempt + 1}/{max_attempts} - Status: {status}")
 
             if status == "completed":
                 # Get the output image
@@ -153,7 +163,7 @@ def process_with_fashn(person_image_path, garment_image_path):
                     # Save base64 image
                     save_base64_image(result_image_data, result_path)
 
-                print(f"Result saved to: {result_path}")
+                print(f"[FASHN] ✅ Result saved to: {result_path}")
                 return result_path
 
             elif status in ["starting", "in_queue", "processing"]:
@@ -173,7 +183,9 @@ def process_with_fashn(person_image_path, garment_image_path):
         raise TimeoutError(f"FASHN processing timed out after {max_attempts * 3} seconds")
 
     except Exception as e:
-        print(f"Error in process_with_fashn: {e}")
+        print(f"[FASHN ERROR] ❌ Error in process_with_fashn: {e}")
+        import traceback
+        traceback.print_exc()
         raise
 
 # Serve frontend
