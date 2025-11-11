@@ -143,6 +143,8 @@ function processPersonImages(files) {
 
 function displayPersonPreviews() {
     console.log('displayPersonPreviews called, images count:', state.personImages.length);
+    console.log('personPreview element:', personPreview);
+    console.log('personPreview ID:', personPreview ? personPreview.id : 'null');
     personPreview.innerHTML = '';
 
     if (state.personImages.length === 0) {
@@ -156,7 +158,9 @@ function displayPersonPreviews() {
         reader.onload = (e) => {
             console.log(`File ${index} loaded successfully`);
             const previewItem = createPreviewItem(e.target.result, index, 'person');
+            console.log('Appending to personPreview:', personPreview.id);
             personPreview.appendChild(previewItem);
+            console.log('Preview appended, parent ID:', previewItem.parentElement.id);
         };
         reader.onerror = (e) => {
             console.error(`Error reading file ${index}:`, e);
