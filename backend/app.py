@@ -785,8 +785,17 @@ def submit_feedback():
             raise
         
         # Optional: Send to Telegram if configured
-        telegram_bot_token = os.environ.get('TELEGRAM_BOT_TOKEN', '').strip()
-        telegram_chat_id = os.environ.get('TELEGRAM_CHAT_ID', '').strip()
+        # Try multiple variations of variable names
+        telegram_bot_token = (
+            os.environ.get('TELEGRAM_BOT_TOKEN', '').strip() or
+            os.environ.get('TELEGRAM_BOT_TOKEN'.lower(), '').strip() or
+            os.environ.get('telegram_bot_token', '').strip()
+        )
+        telegram_chat_id = (
+            os.environ.get('TELEGRAM_CHAT_ID', '').strip() or
+            os.environ.get('TELEGRAM_CHAT_ID'.lower(), '').strip() or
+            os.environ.get('telegram_chat_id', '').strip()
+        )
         
         print(f"[FEEDBACK] Telegram config check:")
         print(f"  TELEGRAM_BOT_TOKEN: {'✅ SET' if telegram_bot_token else '❌ MISSING'} (length: {len(telegram_bot_token)})")
@@ -839,7 +848,25 @@ def submit_feedback():
                         else:
                             print(f"[FEEDBACK] ⚠️  No messages found. Please send a message to your bot first!")
                             print(f"[FEEDBACK] 💡 Tip: Write any message to your bot in Telegram, then try again")
+                            print(f"[FEEDBACK] 💡 Also check bot settings: Group Privacy should be OFF for private messages")
                             print(f"[FEEDBACK] Full response: {updates_data}")
+                            
+                            # Try to get bot info to verify token is valid
+                            try:
+                                bot_info_url = f"https://api.telegram.org/bot{telegram_bot_token}/getMe"
+                                bot_info_response = requests.get(bot_info_url, timeout=5)
+                                if bot_info_response.status_code == 200:
+                                    bot_info = bot_info_response.json()
+                                    if bot_info.get('ok'):
+                                        bot_data = bot_info.get('result', {})
+                                        print(f"[FEEDBACK] ✅ Bot token is valid! Bot: @{bot_data.get('username', 'N/A')}")
+                                        print(f"[FEEDBACK] Bot name: {bot_data.get('first_name', 'N/A')}")
+                                    else:
+                                        print(f"[FEEDBACK] ❌ Bot token validation failed: {bot_info.get('description', 'Unknown')}")
+                                else:
+                                    print(f"[FEEDBACK] ❌ Failed to validate bot token: HTTP {bot_info_response.status_code}")
+                            except Exception as e:
+                                print(f"[FEEDBACK] ⚠️  Could not validate bot token: {e}")
                     else:
                         error_desc = updates_data.get('description', 'Unknown error')
                         error_code = updates_data.get('error_code', 'N/A')
