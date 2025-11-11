@@ -336,56 +336,103 @@ def process_with_nanobanana(person_image_path, garment_image_path, category='aut
         print(f"[NANOBANANA] Task created: {task_id}")
         print(f"[NANOBANANA] Polling for completion...")
 
-        # Poll for task completion (max 60 seconds)
-        max_attempts = 30
+        # Poll for task completion (max 120 seconds - increased for reliability)
+        max_attempts = 60  # Increased from 30 to 60
         poll_interval = 2  # seconds
 
         for attempt in range(max_attempts):
-            time.sleep(poll_interval)
+            # Sleep before check (except first attempt)
+            if attempt > 0:
+                time.sleep(poll_interval)
 
             status_url = f"{NANOBANANA_BASE_URL}/record-info?taskId={task_id}"
             print(f"[NANOBANANA] GET status check {attempt + 1}/{max_attempts}: {status_url}")
-            status_response = requests.get(status_url, headers=headers, timeout=10)
+            
+            try:
+                status_response = requests.get(status_url, headers=headers, timeout=10)
+            except requests.exceptions.RequestException as e:
+                print(f"[NANOBANANA WARNING] Request failed: {e}")
+                continue  # Continue polling on network errors
 
             if status_response.status_code == 200:
-                status_data = status_response.json()
-                print(f"[NANOBANANA] Status check {attempt + 1}/{max_attempts}: {status_data}")
+                try:
+                    status_data = status_response.json()
+                    print(f"[NANOBANANA] Status check {attempt + 1}/{max_attempts}: {status_data}")
+                except ValueError as e:
+                    print(f"[NANOBANANA WARNING] Failed to parse JSON: {e}, response: {status_response.text[:200]}")
+                    continue
 
-                success_flag = status_data.get('successFlag', 0)
+                # Handle successFlag - can be int or string
+                success_flag_raw = status_data.get('successFlag', 0)
+                # Convert to int if it's a string
+                if isinstance(success_flag_raw, str):
+                    try:
+                        success_flag = int(success_flag_raw)
+                    except (ValueError, TypeError):
+                        success_flag = 0
+                else:
+                    success_flag = int(success_flag_raw) if success_flag_raw else 0
+
+                print(f"[NANOBANANA] Parsed success_flag: {success_flag} (type: {type(success_flag)}, raw: {success_flag_raw})")
 
                 if success_flag == 1:
                     # Task completed successfully
-                    result_image_url = status_data.get('response', {}).get('resultImageUrl')
+                    print(f"[NANOBANANA] ✅ Task completed! Extracting result URL...")
+                    
+                    # Try multiple possible paths for resultImageUrl
+                    result_image_url = None
+                    response_obj = status_data.get('response', {})
+                    
+                    if isinstance(response_obj, dict):
+                        result_image_url = response_obj.get('resultImageUrl') or response_obj.get('result_image_url')
+                    
+                    # Also check top-level
                     if not result_image_url:
-                        raise ValueError("No result image URL in completed task")
+                        result_image_url = status_data.get('resultImageUrl') or status_data.get('result_image_url')
+                    
+                    print(f"[NANOBANANA] Result URL found: {result_image_url}")
+                    
+                    if not result_image_url:
+                        print(f"[NANOBANANA ERROR] Full status_data structure: {status_data}")
+                        raise ValueError("No result image URL in completed task. Check logs for full response structure.")
 
-                    print(f"[NANOBANANA] ✅ Generation complete! Downloading result...")
+                    print(f"[NANOBANANA] ✅ Generation complete! Downloading result from: {result_image_url}")
 
                     # Download result image
                     timestamp = int(time.time())
                     result_filename = f'result_nanobanana_{timestamp}.png'
                     result_path = os.path.join(app.config['RESULTS_FOLDER'], result_filename)
 
-                    img_response = requests.get(result_image_url, timeout=30)
-                    if img_response.status_code == 200:
-                        with open(result_path, 'wb') as img_file:
-                            img_file.write(img_response.content)
-                        print(f"[NANOBANANA] ✅ Result saved: {result_path} ({len(img_response.content)} bytes)")
-                        return result_path
-                    else:
-                        raise ValueError(f"Failed to download result: {img_response.status_code}")
+                    try:
+                        img_response = requests.get(result_image_url, timeout=30)
+                        if img_response.status_code == 200:
+                            with open(result_path, 'wb') as img_file:
+                                img_file.write(img_response.content)
+                            print(f"[NANOBANANA] ✅ Result saved: {result_path} ({len(img_response.content)} bytes)")
+                            return result_path
+                        else:
+                            raise ValueError(f"Failed to download result: HTTP {img_response.status_code}")
+                    except requests.exceptions.RequestException as e:
+                        raise ValueError(f"Failed to download result image: {e}")
 
                 elif success_flag == 2:
-                    raise ValueError("Task creation failed")
+                    error_msg = status_data.get('msg', 'Task creation failed')
+                    raise ValueError(f"Task creation failed: {error_msg}")
                 elif success_flag == 3:
-                    raise ValueError("Generation failed")
+                    error_msg = status_data.get('msg', 'Generation failed')
+                    raise ValueError(f"Generation failed: {error_msg}")
                 # success_flag == 0 means still processing, continue polling
+                else:
+                    print(f"[NANOBANANA] Task still processing (successFlag={success_flag}), continuing...")
 
+            elif status_response.status_code == 404:
+                # 404 might mean task not found yet, continue polling
+                print(f"[NANOBANANA WARNING] Status check returned 404 (task may not be ready yet), continuing...")
             else:
-                print(f"[NANOBANANA WARNING] Status check failed: {status_response.status_code}")
+                print(f"[NANOBANANA WARNING] Status check failed: {status_response.status_code} - {status_response.text[:200]}")
 
         # Timeout
-        raise ValueError(f"Task timed out after {max_attempts * poll_interval} seconds")
+        raise ValueError(f"Task timed out after {max_attempts * poll_interval} seconds ({max_attempts} attempts)")
 
     except Exception as e:
         print(f"[NANOBANANA ERROR] ❌ Error in process_with_nanobanana: {e}")
