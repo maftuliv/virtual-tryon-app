@@ -369,8 +369,14 @@ def process_with_nanobanana(person_image_path, garment_image_path, category='aut
                     print(f"[NANOBANANA WARNING] Failed to parse JSON: {e}, response: {status_response.text[:200]}")
                     continue
 
-                # Handle successFlag - can be int or string
-                success_flag_raw = status_data.get('successFlag', 0)
+                # Extract data object (API wraps response in 'data' field)
+                data_obj = status_data.get('data', {})
+                if not isinstance(data_obj, dict):
+                    print(f"[NANOBANANA WARNING] Invalid data structure, continuing...")
+                    continue
+
+                # Handle successFlag - can be int or string, located in data.successFlag
+                success_flag_raw = data_obj.get('successFlag', 0)
                 # Convert to int if it's a string
                 if isinstance(success_flag_raw, str):
                     try:
@@ -386,14 +392,14 @@ def process_with_nanobanana(person_image_path, garment_image_path, category='aut
                     # Task completed successfully
                     print(f"[NANOBANANA] ✅ Task completed! Extracting result URL...")
                     
-                    # Try multiple possible paths for resultImageUrl
+                    # resultImageUrl is in data.response.resultImageUrl
                     result_image_url = None
-                    response_obj = status_data.get('response', {})
+                    response_obj = data_obj.get('response', {})
                     
                     if isinstance(response_obj, dict):
                         result_image_url = response_obj.get('resultImageUrl') or response_obj.get('result_image_url')
                     
-                    # Also check top-level
+                    # Fallback: check top-level (shouldn't happen but just in case)
                     if not result_image_url:
                         result_image_url = status_data.get('resultImageUrl') or status_data.get('result_image_url')
                     
@@ -423,10 +429,10 @@ def process_with_nanobanana(person_image_path, garment_image_path, category='aut
                         raise ValueError(f"Failed to download result image: {e}")
 
                 elif success_flag == 2:
-                    error_msg = status_data.get('msg', 'Task creation failed')
+                    error_msg = data_obj.get('errorMessage') or status_data.get('msg', 'Task creation failed')
                     raise ValueError(f"Task creation failed: {error_msg}")
                 elif success_flag == 3:
-                    error_msg = status_data.get('msg', 'Generation failed')
+                    error_msg = data_obj.get('errorMessage') or status_data.get('msg', 'Generation failed')
                     raise ValueError(f"Generation failed: {error_msg}")
                 # success_flag == 0 means still processing, continue polling
                 else:
