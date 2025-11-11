@@ -300,7 +300,7 @@ async function handleTryOn() {
         state.sessionId = uploadData.session_id;
 
         // Step 2: Perform virtual try-on
-        updateProgressText('Обработка с помощью FASHN AI... (5-17 секунд)');
+        updateProgressText('создается магия твоего стиля ✨');
 
         const tryonResponse = await fetch(`${API_URL}/api/tryon`, {
             method: 'POST',

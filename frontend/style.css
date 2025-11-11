@@ -99,6 +99,24 @@ body {
     font-size: 0.95em;
 }
 
+/* Photo Requirements */
+.photo-requirements {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-left: 4px solid var(--primary-color);
+    padding: 15px 20px;
+    margin: 15px 0 20px 0;
+    border-radius: 8px;
+    font-size: 0.9em;
+    line-height: 1.8;
+    color: var(--text-primary);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.photo-requirements strong {
+    color: var(--primary-color);
+    font-size: 1.05em;
+}
+
 /* Upload Zone */
 .upload-zone {
     position: relative;
