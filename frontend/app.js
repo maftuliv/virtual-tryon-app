@@ -8,7 +8,8 @@ const state = {
     uploadedPersonPaths: [],
     uploadedGarmentPath: null,
     sessionId: null,
-    garmentCategory: 'auto'  // Default to auto
+    garmentCategory: 'auto',  // Default to auto
+    selectedModel: 'fashn'     // Default model: 'fashn' or 'imagen'
 };
 
 // DOM Elements
@@ -91,6 +92,9 @@ function setupEventListeners() {
             console.log('[CATEGORY] Selected category:', state.garmentCategory);
         });
     });
+
+    // AI Model Switcher
+    setupModelSwitcher();
 }
 
 // Server Health Check
@@ -446,7 +450,8 @@ async function handleTryOn() {
             body: JSON.stringify({
                 person_images: state.uploadedPersonPaths,
                 garment_image: state.uploadedGarmentPath,
-                garment_category: state.garmentCategory  // Send selected category
+                garment_category: state.garmentCategory,  // Send selected category
+                ai_model: state.selectedModel              // Send selected AI model
             })
         });
 
@@ -508,6 +513,11 @@ async function handleTryOn() {
             errorMsg = '💳 Недостаточно кредитов FASHN\n\nПополните баланс';
         } else if (error.message.includes('timeout')) {
             errorMsg = '⏱️ Превышено время ожидания\n\nПопробуйте снова';
+        } else if (error.message.includes('IMAGEN_NOT_READY') || error.message.includes('NotImplementedError')) {
+            errorMsg = '🚧 Google Imagen в разработке\n\n' +
+                       'Эта модель пока недоступна.\n' +
+                       'Пожалуйста, используйте FASHN AI.\n\n' +
+                       'Следите за обновлениями!';
         }
 
         showError(errorMsg);
@@ -550,6 +560,9 @@ function displayResults(results) {
             } else if (result.error.includes('FORMAT_ERROR')) {
                 errorTitle = 'Неверный формат изображения';
                 errorMsg = 'Используйте JPG или PNG файлы';
+            } else if (result.error.includes('IMAGEN_NOT_READY') || result.error.includes('NotImplementedError')) {
+                errorTitle = 'Google Imagen в разработке';
+                errorMsg = 'Эта модель пока недоступна. Используйте FASHN AI.';
             }
 
             // Show error card
@@ -865,3 +878,211 @@ window.onclick = function(event) {
         closeExamplesModal();
     }
 };
+
+// ==================== AI Model Switcher ====================
+
+function setupModelSwitcher() {
+    const modelSwitch = document.getElementById('modelSwitch');
+    const modelLabels = document.querySelectorAll('.model-label');
+
+    if (!modelSwitch) {
+        console.warn('[MODEL SWITCH] Switch element not found');
+        return;
+    }
+
+    // Click on labels to toggle switch
+    modelLabels.forEach(label => {
+        label.addEventListener('click', () => {
+            const model = label.getAttribute('data-model');
+            
+            if (model === 'fashn') {
+                modelSwitch.checked = false;
+                switchToModel('fashn');
+            } else if (model === 'imagen') {
+                modelSwitch.checked = true;
+                switchToModel('imagen');
+            }
+        });
+    });
+
+    // Direct switch toggle
+    modelSwitch.addEventListener('change', (e) => {
+        const isImagen = e.target.checked;
+        switchToModel(isImagen ? 'imagen' : 'fashn');
+    });
+
+    // Initialize with default model
+    switchToModel(state.selectedModel);
+}
+
+function switchToModel(modelName) {
+    console.log(`[MODEL SWITCH] Switching to ${modelName}`);
+    
+    state.selectedModel = modelName;
+
+    // Update active states with animation
+    const modelLabels = document.querySelectorAll('.model-label');
+    
+    modelLabels.forEach(label => {
+        const labelModel = label.getAttribute('data-model');
+        
+        if (labelModel === modelName) {
+            // Activate selected model
+            label.classList.add('active');
+            
+            // Add slide-in animation
+            label.style.animation = 'none';
+            setTimeout(() => {
+                if (labelModel === 'fashn') {
+                    label.style.animation = 'slideInLeft 0.5s ease forwards';
+                } else {
+                    label.style.animation = 'slideInRight 0.5s ease forwards';
+                }
+            }, 10);
+        } else {
+            // Deactivate other model
+            label.classList.remove('active');
+            
+            // Add slide-out animation
+            label.style.animation = 'none';
+            setTimeout(() => {
+                if (labelModel === 'fashn') {
+                    label.style.animation = 'slideOutLeft 0.3s ease forwards';
+                } else {
+                    label.style.animation = 'slideOutRight 0.3s ease forwards';
+                }
+            }, 10);
+        }
+    });
+
+    // Show notification about model change
+    showModelChangeNotification(modelName);
+
+    // Update button state if needed
+    updateTryOnButton();
+}
+
+function showModelChangeNotification(modelName) {
+    // Remove existing notification if any
+    const existingNotification = document.querySelector('.model-change-notification');
+    if (existingNotification) {
+        existingNotification.remove();
+    }
+
+    // Create notification
+    const notification = document.createElement('div');
+    notification.className = 'model-change-notification';
+    
+    const modelInfo = {
+        fashn: {
+            icon: '⚡',
+            name: 'FASHN AI',
+            desc: 'Высокое качество, проверенная модель'
+        },
+        imagen: {
+            icon: '🤖',
+            name: 'Google Imagen',
+            desc: 'Экспериментальная версия от Google'
+        }
+    };
+
+    const info = modelInfo[modelName];
+    
+    notification.innerHTML = `
+        <div class="notification-icon">${info.icon}</div>
+        <div class="notification-content">
+            <div class="notification-title">Выбрана модель: ${info.name}</div>
+            <div class="notification-desc">${info.desc}</div>
+        </div>
+    `;
+
+    // Add styles inline for notification
+    notification.style.cssText = `
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        padding: 15px 20px;
+        border-radius: 15px;
+        box-shadow: 0 8px 32px rgba(168, 85, 247, 0.3);
+        border: 2px solid rgba(168, 85, 247, 0.3);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        z-index: 10000;
+        animation: slideInUp 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        max-width: 350px;
+    `;
+
+    document.body.appendChild(notification);
+
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        notification.style.animation = 'fadeOut 0.5s ease forwards';
+        setTimeout(() => {
+            notification.remove();
+        }, 500);
+    }, 3000);
+}
+
+// Add notification animations to document
+if (!document.getElementById('notification-styles')) {
+    const style = document.createElement('style');
+    style.id = 'notification-styles';
+    style.textContent = `
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+        }
+
+        .notification-icon {
+            font-size: 2em;
+        }
+
+        .notification-content {
+            flex: 1;
+        }
+
+        .notification-title {
+            font-weight: 700;
+            background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 1em;
+            margin-bottom: 3px;
+        }
+
+        .notification-desc {
+            font-size: 0.85em;
+            color: #64748b;
+        }
+
+        @media (max-width: 768px) {
+            .model-change-notification {
+                bottom: 20px !important;
+                right: 20px !important;
+                left: 20px !important;
+                max-width: none !important;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+}

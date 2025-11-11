@@ -29,9 +29,13 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['RESULTS_FOLDER'] = RESULTS_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
-# FASHN API configuration
-FASHN_API_KEY = os.environ.get('FASHN_API_KEY', '')  # Set your token in environment
+# API configurations
+FASHN_API_KEY = os.environ.get('FASHN_API_KEY', '')  # FASHN AI token
 FASHN_BASE_URL = "https://api.fashn.ai/v1"
+
+# Google Imagen API (placeholder for future implementation)
+GOOGLE_API_KEY = os.environ.get('GOOGLE_API_KEY', '')
+IMAGEN_API_URL = "https://aiplatform.googleapis.com/v1"  # Placeholder URL
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -144,6 +148,31 @@ def save_base64_image(base64_string, output_path):
     with open(output_path, 'wb') as img_file:
         img_file.write(img_data)
     return output_path
+
+def process_with_imagen(person_image_path, garment_image_path, category='auto'):
+    """
+    Process virtual try-on using Google Imagen API
+    CURRENTLY A PLACEHOLDER - Will be implemented with actual Google Imagen integration
+
+    For now, returns a demo result indicating the model is under development
+    """
+    try:
+        print(f"[IMAGEN] Google Imagen API called (currently in development)")
+
+        # TODO: Implement actual Google Imagen API integration
+        # This is a placeholder that will:
+        # 1. Show the model is selected
+        # 2. Return a message that it's under development
+
+        raise NotImplementedError(
+            "IMAGEN_NOT_READY: Google Imagen integration is under development. "
+            "Please use FASHN AI model for now. "
+            "Stay tuned for updates!"
+        )
+
+    except Exception as e:
+        print(f"[IMAGEN ERROR] ❌ Error in process_with_imagen: {e}")
+        raise
 
 def process_with_fashn(person_image_path, garment_image_path, category='auto'):
     """
@@ -474,7 +503,7 @@ def upload_files():
 def virtual_tryon():
     """
     Perform virtual try-on
-    Expects JSON: {person_images: [], garment_image: "", garment_category: "auto"}
+    Expects JSON: {person_images: [], garment_image: "", garment_category: "auto", ai_model: "fashn"}
     """
     try:
         data = request.get_json()
@@ -485,11 +514,12 @@ def virtual_tryon():
         person_images = data['person_images']
         garment_image = data['garment_image']
         garment_category = data.get('garment_category', 'auto')  # Get category, default to auto
+        ai_model = data.get('ai_model', 'fashn')  # Get AI model, default to fashn
 
         if not person_images or not garment_image:
             return jsonify({'error': 'Invalid image paths'}), 400
 
-        print(f"[TRYON] Processing with category: {garment_category}")
+        print(f"[TRYON] Processing with category: {garment_category}, AI model: {ai_model}")
 
         # Process each person image with the garment
         results = []
@@ -499,7 +529,11 @@ def virtual_tryon():
                 continue
 
             try:
-                result_path = process_with_fashn(person_image, garment_image, garment_category)
+                # Choose processing method based on AI model
+                if ai_model == 'imagen':
+                    result_path = process_with_imagen(person_image, garment_image, garment_category)
+                else:
+                    result_path = process_with_fashn(person_image, garment_image, garment_category)
 
                 # Read result image and encode to base64
                 with open(result_path, 'rb') as img_file:
