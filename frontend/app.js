@@ -1027,3 +1027,41 @@ async function handleFeedbackSubmit() {
         submitFeedbackBtn.innerHTML = '<span>📤 Отправить отзыв</span>';
     }
 }
+
+// Show feedback form for testing (without generation)
+function showTestFeedbackForm() {
+    // Hide results section if it's showing
+    const resultsSection = document.getElementById('resultsSection');
+    if (resultsSection) {
+        resultsSection.style.display = 'block';
+    }
+    
+    // Hide results grid (no actual results)
+    const resultsGrid = document.getElementById('resultsGrid');
+    if (resultsGrid) {
+        resultsGrid.innerHTML = `
+            <div class="no-results" style="text-align: center; padding: 40px;">
+                <span style="font-size: 3em;">🧪</span>
+                <h3>Тестовый режим</h3>
+                <p>Форма обратной связи показана для тестирования</p>
+                <p style="color: #64748b; font-size: 0.9em;">Генерация не выполнялась</p>
+            </div>
+        `;
+    }
+    
+    // Show feedback form
+    const feedbackSection = document.getElementById('feedbackSection');
+    if (feedbackSection) {
+        feedbackSection.style.display = 'block';
+        // Reset form
+        if (ratingSlider) ratingSlider.value = 3;
+        if (ratingValue) ratingValue.textContent = '3';
+        if (feedbackComment) feedbackComment.value = '';
+        if (feedbackSuccess) feedbackSuccess.style.display = 'none';
+    }
+    
+    // Scroll to feedback form
+    if (feedbackSection) {
+        feedbackSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}
