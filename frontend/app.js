@@ -34,12 +34,24 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function setupUploadZones() {
-    // Person images upload
-    personUploadZone.addEventListener('click', () => personImagesInput.click());
+    // Person images upload - only trigger if clicking on upload zone itself, not previews
+    personUploadZone.addEventListener('click', (e) => {
+        // Don't trigger if clicking on preview items or remove buttons
+        if (e.target.closest('.preview-item') || e.target.closest('.preview-remove')) {
+            return;
+        }
+        personImagesInput.click();
+    });
     personImagesInput.addEventListener('change', handlePersonImagesSelect);
 
-    // Garment image upload
-    garmentUploadZone.addEventListener('click', () => garmentImageInput.click());
+    // Garment image upload - only trigger if clicking on upload zone itself, not previews
+    garmentUploadZone.addEventListener('click', (e) => {
+        // Don't trigger if clicking on preview items or remove buttons
+        if (e.target.closest('.preview-item') || e.target.closest('.preview-remove')) {
+            return;
+        }
+        garmentImageInput.click();
+    });
     garmentImageInput.addEventListener('change', handleGarmentImageSelect);
 
     // Drag and drop for person images
