@@ -741,8 +741,15 @@ function showInfo(message) {
             line-height: 1.6;
         `;
         const actionSection = document.querySelector('.action-section');
-        if (actionSection && generateSwitch) {
-            actionSection.insertBefore(infoBox, generateSwitch.parentElement);
+        if (actionSection) {
+            // Find the first child (ai-model-selector) to insert before it
+            const firstChild = actionSection.firstElementChild;
+            if (firstChild) {
+                actionSection.insertBefore(infoBox, firstChild);
+            } else {
+                // If no children, just append
+                actionSection.appendChild(infoBox);
+            }
         }
     }
 
