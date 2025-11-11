@@ -40,7 +40,7 @@ NANOBANANA_API_KEY = (
     os.environ.get('NANOBANANA_API_KEY'.lower(), '') or
     os.environ.get('nanobanana_api_key', '')
 ).strip()
-NANOBANANA_BASE_URL = "https://api.nanobananaapi.ai/api/v1/nanobanana/generate"
+NANOBANANA_BASE_URL = "https://api.nanobananaapi.ai/api/v1/nanobanana"  # Base URL without /generate
 
 # ==================== DIAGNOSTICS (runs on import, works with gunicorn) ====================
 print("=" * 80)
@@ -307,8 +307,10 @@ def process_with_nanobanana(person_image_path, garment_image_path, category='aut
         }
 
         # Submit generation task
+        generate_url = f"{NANOBANANA_BASE_URL}/generate"
+        print(f"[NANOBANANA] POST to: {generate_url}")
         response = requests.post(
-            NANOBANANA_BASE_URL,
+            generate_url,
             headers=headers,
             json=payload,
             timeout=30
@@ -342,6 +344,7 @@ def process_with_nanobanana(person_image_path, garment_image_path, category='aut
             time.sleep(poll_interval)
 
             status_url = f"{NANOBANANA_BASE_URL}/record-info?taskId={task_id}"
+            print(f"[NANOBANANA] GET status check {attempt + 1}/{max_attempts}: {status_url}")
             status_response = requests.get(status_url, headers=headers, timeout=10)
 
             if status_response.status_code == 200:
