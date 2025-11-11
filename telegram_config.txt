@@ -1,0 +1,12 @@
+# Telegram Configuration for Railway
+# Эти значения нужно добавить в Railway Variables
+
+TELEGRAM_BOT_TOKEN=AAF92DewLvL9k5hi_2JPaEsXKTGXVv2A_1o
+TELEGRAM_CHAT_ID=8496108730
+
+# Инструкция:
+# 1. Зайдите в Railway Dashboard → Variables
+# 2. Нажмите "New Variable"
+# 3. Добавьте обе переменные с указанными значениями
+# 4. Сделайте Redeploy
+
