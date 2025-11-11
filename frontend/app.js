@@ -396,14 +396,33 @@ function displayResults(results) {
     results.forEach((result, index) => {
         if (result.error) {
             console.error(`Error for image ${index}:`, result.error);
+
+            // Parse FASHN API specific errors
+            let errorMsg = result.error;
+            let errorTitle = 'Ошибка обработки изображения';
+
+            if (result.error.includes('POSE_ERROR')) {
+                errorTitle = 'Не удалось определить позу человека';
+                errorMsg = 'Требования к фото:\n• Человек в полный рост\n• Четкое изображение\n• Хорошее освещение\n• Тело хорошо видно\n• Простой фон';
+            } else if (result.error.includes('IMAGE_LOAD_ERROR')) {
+                errorTitle = 'Не удалось загрузить изображение';
+                errorMsg = 'Проверьте:\n• Формат файла (JPG или PNG)\n• Размер не более 10MB\n• Файл не поврежден';
+            } else if (result.error.includes('CONTENT_ERROR')) {
+                errorTitle = 'Обнаружен запрещенный контент';
+                errorMsg = 'Используйте подходящие изображения';
+            } else if (result.error.includes('FORMAT_ERROR')) {
+                errorTitle = 'Неверный формат изображения';
+                errorMsg = 'Используйте JPG или PNG файлы';
+            }
+
             // Show error card
             const errorCard = document.createElement('div');
             errorCard.className = 'result-card error-card';
             errorCard.innerHTML = `
                 <div class="error-result">
                     <span class="error-icon">⚠️</span>
-                    <p>Ошибка обработки изображения ${index + 1}</p>
-                    <small>${result.error}</small>
+                    <p>${errorTitle}</p>
+                    <small style="white-space: pre-line;">${errorMsg}</small>
                 </div>
             `;
             resultsGrid.appendChild(errorCard);
