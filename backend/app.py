@@ -145,7 +145,7 @@ def save_base64_image(base64_string, output_path):
         img_file.write(img_data)
     return output_path
 
-def process_with_fashn(person_image_path, garment_image_path):
+def process_with_fashn(person_image_path, garment_image_path, category='auto'):
     """
     Process virtual try-on using FASHN API
     Generates high-quality realistic results in 5-17 seconds
@@ -175,7 +175,7 @@ def process_with_fashn(person_image_path, garment_image_path):
             "inputs": {
                 "model_image": f"data:image/jpg;base64,{model_image_b64}",
                 "garment_image": f"data:image/jpg;base64,{garment_image_b64}",
-                "category": "auto",              # Auto-detect garment category
+                "category": category,            # User-selected or auto category
                 "garment_photo_type": "auto",    # Auto-detect flat-lay vs model
                 "segmentation_free": True,       # Better for bulky garments
                 "num_samples": 1,                # Generate 1 result per image
@@ -184,6 +184,8 @@ def process_with_fashn(person_image_path, garment_image_path):
                 "seed": 42                       # Reproducible results
             }
         }
+
+        print(f"[FASHN] Using category: {category}")
 
         headers = {
             "Content-Type": "application/json",
@@ -472,7 +474,7 @@ def upload_files():
 def virtual_tryon():
     """
     Perform virtual try-on
-    Expects JSON: {person_images: [], garment_image: ""}
+    Expects JSON: {person_images: [], garment_image: "", garment_category: "auto"}
     """
     try:
         data = request.get_json()
@@ -482,9 +484,12 @@ def virtual_tryon():
 
         person_images = data['person_images']
         garment_image = data['garment_image']
+        garment_category = data.get('garment_category', 'auto')  # Get category, default to auto
 
         if not person_images or not garment_image:
             return jsonify({'error': 'Invalid image paths'}), 400
+
+        print(f"[TRYON] Processing with category: {garment_category}")
 
         # Process each person image with the garment
         results = []
@@ -494,7 +499,7 @@ def virtual_tryon():
                 continue
 
             try:
-                result_path = process_with_fashn(person_image, garment_image)
+                result_path = process_with_fashn(person_image, garment_image, garment_category)
 
                 # Read result image and encode to base64
                 with open(result_path, 'rb') as img_file:

@@ -36,6 +36,7 @@
                         <div class="requirement-item">✨ Хорошее освещение</div>
                         <div class="requirement-item">🎨 Простой однотонный фон</div>
                         <div class="requirement-item">📏 Разрешение: 512px - 2000px</div>
+                        <button class="examples-link" onclick="showExamplesModal('person')">🖼️ Посмотреть примеры</button>
                     </div>
 
                     <input type="file" id="personImages" accept="image/*" multiple class="file-input">
@@ -50,6 +51,43 @@
                 <div class="upload-card upload-card-garment">
                     <div class="glass-reflection"></div>
                     <h2 class="step-title step-title-garment">Шаг 2: Загрузите одежду</h2>
+
+                    <!-- Category Selector -->
+                    <div class="category-selector">
+                        <label class="category-label">Тип одежды:</label>
+                        <div class="category-options">
+                            <label class="category-option">
+                                <input type="radio" name="garmentCategory" value="auto" checked>
+                                <span class="category-btn">
+                                    <span class="category-icon">🤖</span>
+                                    <span class="category-text">Авто</span>
+                                </span>
+                            </label>
+                            <label class="category-option">
+                                <input type="radio" name="garmentCategory" value="tops">
+                                <span class="category-btn">
+                                    <span class="category-icon">👕</span>
+                                    <span class="category-text">Верх</span>
+                                </span>
+                            </label>
+                            <label class="category-option">
+                                <input type="radio" name="garmentCategory" value="bottoms">
+                                <span class="category-btn">
+                                    <span class="category-icon">👖</span>
+                                    <span class="category-text">Низ</span>
+                                </span>
+                            </label>
+                            <label class="category-option">
+                                <input type="radio" name="garmentCategory" value="one-pieces">
+                                <span class="category-btn">
+                                    <span class="category-icon">👗</span>
+                                    <span class="category-text">Платья</span>
+                                </span>
+                            </label>
+                        </div>
+                        <p class="category-hint">💡 Выберите тип одежды для лучшего результата, или оставьте "Авто"</p>
+                    </div>
+
                     <div class="photo-requirements">
                         <div class="requirement-title">Для лучшего результата:</div>
                         <div class="requirement-item">⭐ Flat-lay или манекен (лучше всего)</div>
@@ -57,6 +95,7 @@
                         <div class="requirement-item">✨ Четкое изображение одежды</div>
                         <div class="requirement-item">🎨 Контрастный фон</div>
                         <div class="requirement-item">📏 Разрешение: 512px - 2000px</div>
+                        <button class="examples-link" onclick="showExamplesModal('garment')">🖼️ Посмотреть примеры</button>
                     </div>
 
                     <input type="file" id="garmentImage" accept="image/*" class="file-input">
@@ -110,6 +149,17 @@
         <footer class="footer">
             <p>Tap to look version: A0.01 2025</p>
         </footer>
+    </div>
+
+    <!-- Examples Modal -->
+    <div id="examplesModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeExamplesModal()">&times;</span>
+            <h2 id="modalTitle" class="modal-title">Примеры фотографий</h2>
+            <div id="modalBody" class="modal-body">
+                <!-- Content will be inserted by JavaScript -->
+            </div>
+        </div>
     </div>
 
     <script src="app.js"></script>

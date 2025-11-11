@@ -7,7 +7,8 @@ const state = {
     garmentImage: null,
     uploadedPersonPaths: [],
     uploadedGarmentPath: null,
-    sessionId: null
+    sessionId: null,
+    garmentCategory: 'auto'  // Default to auto
 };
 
 // DOM Elements
@@ -82,6 +83,14 @@ function setupEventListeners() {
     tryonBtn.addEventListener('click', handleTryOn);
     resetBtn.addEventListener('click', resetApplication);
     downloadAllBtn.addEventListener('click', downloadAllResults);
+
+    // Category selector
+    document.querySelectorAll('input[name="garmentCategory"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            state.garmentCategory = e.target.value;
+            console.log('[CATEGORY] Selected category:', state.garmentCategory);
+        });
+    });
 }
 
 // Server Health Check
@@ -213,10 +222,17 @@ function displayGarmentPreview() {
 function createPreviewItem(src, index, type) {
     const div = document.createElement('div');
     div.className = 'preview-item';
+    div.dataset.index = index;
+    div.dataset.type = type;
 
     const img = document.createElement('img');
     img.src = src;
     img.alt = type === 'person' ? 'Person Image' : 'Garment Image';
+
+    // Validate image on load
+    img.onload = async () => {
+        await validatePreviewImage(div, src, type, index);
+    };
 
     const removeBtn = document.createElement('button');
     removeBtn.className = 'preview-remove';
@@ -234,6 +250,53 @@ function createPreviewItem(src, index, type) {
     div.appendChild(removeBtn);
 
     return div;
+}
+
+// Validate preview image and add status badge
+async function validatePreviewImage(previewDiv, imageSrc, type, index) {
+    try {
+        // Create a temporary image to get dimensions and analyze
+        const tempImg = new Image();
+        tempImg.src = imageSrc;
+
+        await new Promise((resolve) => {
+            tempImg.onload = resolve;
+        });
+
+        const width = tempImg.width;
+        const height = tempImg.height;
+
+        // Check for common issues
+        const warnings = [];
+
+        if (width < 512 || height < 512) {
+            warnings.push('Низкое разрешение');
+        }
+
+        if (height > 2000 || width > 2000) {
+            warnings.push('Будет уменьшено');
+        }
+
+        // Create status badge
+        const badge = document.createElement('div');
+        badge.className = 'preview-status-badge';
+
+        if (warnings.length === 0) {
+            badge.classList.add('status-ok');
+            badge.innerHTML = '<span class="status-icon">✅</span><span>OK</span>';
+            previewDiv.classList.add('validated-ok');
+        } else {
+            badge.classList.add('status-warning');
+            badge.innerHTML = '<span class="status-icon">⚠️</span><span>' + warnings[0] + '</span>';
+            previewDiv.classList.add('has-warnings');
+            badge.title = warnings.join(', ');
+        }
+
+        previewDiv.appendChild(badge);
+
+    } catch (error) {
+        console.error('[VALIDATION] Error validating preview:', error);
+    }
 }
 
 // Remove Images
@@ -314,7 +377,8 @@ async function handleTryOn() {
             },
             body: JSON.stringify({
                 person_images: state.uploadedPersonPaths,
-                garment_image: state.uploadedGarmentPath
+                garment_image: state.uploadedGarmentPath,
+                garment_category: state.garmentCategory  // Send selected category
             })
         });
 
@@ -645,3 +709,91 @@ document.addEventListener('keydown', (e) => {
         hideError();
     }
 });
+
+// Examples Modal
+function showExamplesModal(type) {
+    const modal = document.getElementById('examplesModal');
+    const title = document.getElementById('modalTitle');
+    const body = document.getElementById('modalBody');
+
+    if (type === 'person') {
+        title.textContent = 'Примеры фото человека';
+        body.innerHTML = `
+            <div class="example-card good">
+                <div class="example-header good">
+                    <span>✅</span>
+                    <span>Хорошее фото</span>
+                </div>
+                <div class="example-image">🧍</div>
+                <div class="example-description">
+                    • Человек в полный рост<br>
+                    • Четкое изображение<br>
+                    • Хорошее освещение<br>
+                    • Простой однотонный фон<br>
+                    • Видно все тело целиком
+                </div>
+            </div>
+            <div class="example-card bad">
+                <div class="example-header bad">
+                    <span>❌</span>
+                    <span>Плохое фото</span>
+                </div>
+                <div class="example-image">🙍</div>
+                <div class="example-description">
+                    • Обрезанное тело<br>
+                    • Размытое изображение<br>
+                    • Плохое освещение<br>
+                    • Сложный фон<br>
+                    • Человек сидит или лежит
+                </div>
+            </div>
+        `;
+    } else {
+        title.textContent = 'Примеры фото одежды';
+        body.innerHTML = `
+            <div class="example-card good">
+                <div class="example-header good">
+                    <span>✅</span>
+                    <span>Хорошее фото</span>
+                </div>
+                <div class="example-image">👕</div>
+                <div class="example-description">
+                    • Flat-lay (одежда разложена)<br>
+                    • Или на манекене<br>
+                    • Четкое изображение<br>
+                    • Контрастный фон<br>
+                    • Видна вся одежда целиком
+                </div>
+            </div>
+            <div class="example-card bad">
+                <div class="example-header bad">
+                    <span>❌</span>
+                    <span>Плохое фото</span>
+                </div>
+                <div class="example-image">👔</div>
+                <div class="example-description">
+                    • Сложный фон<br>
+                    • Одежда помята<br>
+                    • Размытое фото<br>
+                    • Часть одежды обрезана<br>
+                    • Плохое освещение
+                </div>
+            </div>
+        `;
+    }
+
+    modal.style.display = 'block';
+}
+
+function closeExamplesModal() {
+    const modal = document.getElementById('examplesModal');
+    modal.style.display = 'none';
+}
+
+// Close modal on outside click
+window.onclick = function(event) {
+    const modal = document.getElementById('examplesModal');
+    if (event.target === modal) {
+        closeExamplesModal();
+    }
+};
