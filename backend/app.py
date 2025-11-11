@@ -743,6 +743,21 @@ def submit_feedback():
         telegram_bot_token = os.environ.get('TELEGRAM_BOT_TOKEN', '').strip()
         telegram_chat_id = os.environ.get('TELEGRAM_CHAT_ID', '').strip()
         
+        # If only token is set, try to get chat_id from last message
+        if telegram_bot_token and not telegram_chat_id:
+            try:
+                updates_url = f"https://api.telegram.org/bot{telegram_bot_token}/getUpdates"
+                updates_response = requests.get(updates_url, timeout=5)
+                if updates_response.status_code == 200:
+                    updates_data = updates_response.json()
+                    if updates_data.get('ok') and updates_data.get('result'):
+                        last_message = updates_data['result'][-1].get('message', {})
+                        telegram_chat_id = str(last_message.get('chat', {}).get('id', ''))
+                        if telegram_chat_id:
+                            print(f"[FEEDBACK] Auto-detected Chat ID: {telegram_chat_id}")
+            except Exception as e:
+                print(f"[FEEDBACK] Could not auto-detect Chat ID: {e}")
+        
         if telegram_bot_token and telegram_chat_id:
             try:
                 # Format message for Telegram
