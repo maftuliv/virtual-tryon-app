@@ -738,10 +738,15 @@ def submit_feedback():
             json.dump(feedback_data, f, ensure_ascii=False, indent=2)
         
         print(f"[FEEDBACK] Saved feedback: rating={rating}, comment_length={len(comment)}")
+        print(f"[FEEDBACK] File saved to: {feedback_file}")
         
         # Optional: Send to Telegram if configured
         telegram_bot_token = os.environ.get('TELEGRAM_BOT_TOKEN', '').strip()
         telegram_chat_id = os.environ.get('TELEGRAM_CHAT_ID', '').strip()
+        
+        print(f"[FEEDBACK] Telegram config check:")
+        print(f"  TELEGRAM_BOT_TOKEN: {'✅ SET' if telegram_bot_token else '❌ MISSING'} (length: {len(telegram_bot_token)})")
+        print(f"  TELEGRAM_CHAT_ID: {'✅ SET' if telegram_chat_id else '❌ MISSING'} (value: {telegram_chat_id})")
         
         # If only token is set, try to get chat_id from last message
         if telegram_bot_token and not telegram_chat_id:
@@ -779,11 +784,19 @@ def submit_feedback():
                 
                 telegram_response = requests.post(telegram_url, json=telegram_data, timeout=5)
                 if telegram_response.status_code == 200:
-                    print(f"[FEEDBACK] Sent to Telegram successfully")
+                    print(f"[FEEDBACK] ✅ Sent to Telegram successfully")
                 else:
-                    print(f"[FEEDBACK] Telegram error: {telegram_response.status_code}")
+                    print(f"[FEEDBACK] ❌ Telegram error: {telegram_response.status_code}")
+                    print(f"[FEEDBACK] Response: {telegram_response.text[:200]}")
             except Exception as e:
-                print(f"[FEEDBACK] Telegram error (non-critical): {e}")
+                print(f"[FEEDBACK] ❌ Telegram error (non-critical): {e}")
+                import traceback
+                traceback.print_exc()
+        else:
+            if not telegram_bot_token:
+                print(f"[FEEDBACK] ⚠️ TELEGRAM_BOT_TOKEN not set - skipping Telegram notification")
+            if not telegram_chat_id:
+                print(f"[FEEDBACK] ⚠️ TELEGRAM_CHAT_ID not set - skipping Telegram notification")
         
         return jsonify({
             'success': True,

@@ -991,8 +991,13 @@ async function handleFeedbackSubmit() {
         });
 
         if (!response.ok) {
-            throw new Error('Ошибка отправки отзыва');
+            const errorData = await response.json().catch(() => ({}));
+            console.error('Feedback error:', errorData);
+            throw new Error(errorData.error || 'Ошибка отправки отзыва');
         }
+
+        const result = await response.json();
+        console.log('Feedback submitted successfully:', result);
 
         // Show success message
         if (feedbackSuccess) {
