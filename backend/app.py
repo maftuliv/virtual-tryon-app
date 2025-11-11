@@ -300,7 +300,7 @@ def process_with_nanobanana(person_image_path, garment_image_path, category='aut
 
         payload = {
             "prompt": prompt,
-            "type": "IMAGETOIMAGE",  # Image editing mode
+            "type": "IMAGETOIAMGE",  # Image editing mode (API has typo: IAMGE not IMAGE)
             "numImages": 1,
             "imageUrls": [person_image_url, garment_image_url],  # Input images
             "callBackUrl": ""  # We'll poll instead of using callback
