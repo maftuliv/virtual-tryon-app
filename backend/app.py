@@ -50,11 +50,11 @@ print("=" * 80)
 print("🔍 RAILWAY ENVIRONMENT DIAGNOSTICS")
 print("=" * 80)
 
-# Show ALL environment variables containing "NANO", "BANANA", or "API"
-print("\n[ENV VARS] All variables containing 'NANO', 'BANANA', or 'API':")
+# Show ALL environment variables containing "NANO", "BANANA", "API", or "TELEGRAM"
+print("\n[ENV VARS] All variables containing 'NANO', 'BANANA', 'API', or 'TELEGRAM':")
 found_vars = False
 for key, value in sorted(os.environ.items()):
-    if any(keyword in key.upper() for keyword in ['NANO', 'BANANA', 'API']):
+    if any(keyword in key.upper() for keyword in ['NANO', 'BANANA', 'API', 'TELEGRAM']):
         found_vars = True
         # Show preview of value (hide sensitive info)
         if len(value) > 20:
@@ -70,14 +70,38 @@ if not found_vars:
 print("\n[API KEYS] Loaded values in Python:")
 print(f"  NANOBANANA_API_KEY: {'✅ SET' if NANOBANANA_API_KEY else '❌ MISSING'} (length: {len(NANOBANANA_API_KEY)})")
 
-# Check Telegram variables
-TELEGRAM_BOT_TOKEN_CHECK = os.environ.get('TELEGRAM_BOT_TOKEN', '').strip()
-TELEGRAM_CHAT_ID_CHECK = os.environ.get('TELEGRAM_CHAT_ID', '').strip()
+# Check Telegram variables - try multiple variations
+TELEGRAM_BOT_TOKEN_CHECK = (
+    os.environ.get('TELEGRAM_BOT_TOKEN', '').strip() or
+    os.environ.get('TELEGRAM_BOT_TOKEN'.lower(), '').strip() or
+    os.environ.get('telegram_bot_token', '').strip()
+)
+TELEGRAM_CHAT_ID_CHECK = (
+    os.environ.get('TELEGRAM_CHAT_ID', '').strip() or
+    os.environ.get('TELEGRAM_CHAT_ID'.lower(), '').strip() or
+    os.environ.get('telegram_chat_id', '').strip()
+)
+
 print(f"\n[TELEGRAM] Configuration check:")
 print(f"  TELEGRAM_BOT_TOKEN: {'✅ SET' if TELEGRAM_BOT_TOKEN_CHECK else '❌ MISSING'} (length: {len(TELEGRAM_BOT_TOKEN_CHECK)})")
+if TELEGRAM_BOT_TOKEN_CHECK:
+    print(f"  TELEGRAM_BOT_TOKEN preview: {TELEGRAM_BOT_TOKEN_CHECK[:15]}...{TELEGRAM_BOT_TOKEN_CHECK[-5:]}")
 print(f"  TELEGRAM_CHAT_ID: {'✅ SET' if TELEGRAM_CHAT_ID_CHECK else '❌ MISSING'} (value: {TELEGRAM_CHAT_ID_CHECK})")
-if not TELEGRAM_BOT_TOKEN_CHECK or not TELEGRAM_CHAT_ID_CHECK:
-    print(f"  ⚠️  Telegram notifications will be disabled until variables are set")
+
+# Check all possible variations
+print(f"\n[TELEGRAM] Checking all variations:")
+for var_name in ['TELEGRAM_BOT_TOKEN', 'TELEGRAM_BOT_TOKEN'.lower(), 'telegram_bot_token']:
+    value = os.environ.get(var_name, '')
+    if value:
+        print(f"  Found: {var_name} = {value[:15]}... (length: {len(value)})")
+
+if not TELEGRAM_BOT_TOKEN_CHECK:
+    print(f"  ⚠️  TELEGRAM_BOT_TOKEN not found in environment variables")
+    print(f"  💡 Make sure variable is added in Railway Variables and redeploy is done")
+if not TELEGRAM_CHAT_ID_CHECK:
+    print(f"  ℹ️  TELEGRAM_CHAT_ID not set (will be auto-detected from bot messages)")
+if not TELEGRAM_BOT_TOKEN_CHECK:
+    print(f"  ⚠️  Telegram notifications will be disabled until TELEGRAM_BOT_TOKEN is set")
 
 if NANOBANANA_API_KEY:
     print(f"  NANOBANANA_API_KEY preview: {NANOBANANA_API_KEY[:8]}...{NANOBANANA_API_KEY[-4:]}")
