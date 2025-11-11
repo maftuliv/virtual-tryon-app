@@ -133,6 +133,37 @@
                 <h2>Результаты примерки</h2>
                 <div class="results-grid" id="resultsGrid"></div>
 
+                <!-- Feedback Form -->
+                <div class="feedback-section" id="feedbackSection">
+                    <h3>Поделитесь вашим мнением</h3>
+                    <div class="feedback-form">
+                        <div class="feedback-rating">
+                            <label for="ratingSlider">Оценка качества:</label>
+                            <div class="rating-container">
+                                <span class="rating-label rating-bad">😞 Плохо</span>
+                                <input type="range" id="ratingSlider" min="1" max="5" value="3" step="1" class="rating-slider">
+                                <span class="rating-label rating-good">😊 Отлично</span>
+                            </div>
+                            <div class="rating-value">
+                                <span id="ratingValue">3</span>/5
+                            </div>
+                        </div>
+                        
+                        <div class="feedback-comment">
+                            <label for="feedbackComment">Ваш комментарий (необязательно):</label>
+                            <textarea id="feedbackComment" class="feedback-textarea" placeholder="Расскажите, что можно улучшить или что вам понравилось..."></textarea>
+                        </div>
+                        
+                        <button id="submitFeedbackBtn" class="btn-feedback">
+                            <span>📤 Отправить отзыв</span>
+                        </button>
+                        
+                        <div id="feedbackSuccess" class="feedback-success" style="display: none;">
+                            <span>✅ Спасибо за ваш отзыв!</span>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="action-buttons">
                     <button id="downloadAllBtn" class="btn-secondary">
                         <span>💾 Скачать все результаты</span>

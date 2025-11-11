@@ -47,6 +47,8 @@ uploads/*
 !uploads/.gitkeep
 results/*
 !results/.gitkeep
+feedback/*
+!feedback/.gitkeep
 
 # Logs
 *.log

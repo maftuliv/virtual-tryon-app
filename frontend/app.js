@@ -26,6 +26,11 @@ const resetBtn = document.getElementById('resetBtn');
 const downloadAllBtn = document.getElementById('downloadAllBtn');
 const errorMessage = document.getElementById('errorMessage');
 const errorText = document.getElementById('errorText');
+const ratingSlider = document.getElementById('ratingSlider');
+const ratingValue = document.getElementById('ratingValue');
+const feedbackComment = document.getElementById('feedbackComment');
+const submitFeedbackBtn = document.getElementById('submitFeedbackBtn');
+const feedbackSuccess = document.getElementById('feedbackSuccess');
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', () => {
@@ -102,6 +107,17 @@ function setupEventListeners() {
             console.log('[CATEGORY] Selected category:', state.garmentCategory);
         });
     });
+
+    // Feedback form handlers
+    if (ratingSlider && ratingValue) {
+        ratingSlider.addEventListener('input', (e) => {
+            ratingValue.textContent = e.target.value;
+        });
+    }
+
+    if (submitFeedbackBtn) {
+        submitFeedbackBtn.addEventListener('click', handleFeedbackSubmit);
+    }
 }
 
 // Server Health Check
@@ -614,6 +630,17 @@ function displayResults(results) {
             </div>
         `;
     }
+
+    // Show feedback form after results are displayed
+    const feedbackSection = document.getElementById('feedbackSection');
+    if (feedbackSection && successCount > 0) {
+        feedbackSection.style.display = 'block';
+        // Reset form
+        if (ratingSlider) ratingSlider.value = 3;
+        if (ratingValue) ratingValue.textContent = '3';
+        if (feedbackComment) feedbackComment.value = '';
+        if (feedbackSuccess) feedbackSuccess.style.display = 'none';
+    }
 }
 
 // Download Single Result
@@ -655,6 +682,12 @@ function resetApplication() {
     // Hide results
     resultsSection.style.display = 'none';
     resultsGrid.innerHTML = '';
+
+    // Hide feedback form
+    const feedbackSection = document.getElementById('feedbackSection');
+    if (feedbackSection) {
+        feedbackSection.style.display = 'none';
+    }
 
     // Reset generate switch
     if (generateSwitch) {
@@ -930,4 +963,56 @@ if (!document.getElementById('notification-styles')) {
         }
     `;
     document.head.appendChild(style);
+}
+
+// Handle Feedback Submission
+async function handleFeedbackSubmit() {
+    if (!ratingSlider || !submitFeedbackBtn) return;
+
+    const rating = parseInt(ratingSlider.value);
+    const comment = feedbackComment ? feedbackComment.value.trim() : '';
+
+    // Disable button during submission
+    submitFeedbackBtn.disabled = true;
+    submitFeedbackBtn.innerHTML = '<span>⏳ Отправка...</span>';
+
+    try {
+        const response = await fetch(`${API_URL}/api/feedback`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                rating: rating,
+                comment: comment,
+                timestamp: new Date().toISOString(),
+                session_id: state.sessionId || null
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Ошибка отправки отзыва');
+        }
+
+        // Show success message
+        if (feedbackSuccess) {
+            feedbackSuccess.style.display = 'block';
+        }
+
+        // Reset form after 2 seconds
+        setTimeout(() => {
+            if (ratingSlider) ratingSlider.value = 3;
+            if (ratingValue) ratingValue.textContent = '3';
+            if (feedbackComment) feedbackComment.value = '';
+            if (feedbackSuccess) feedbackSuccess.style.display = 'none';
+        }, 2000);
+
+    } catch (error) {
+        console.error('Error submitting feedback:', error);
+        showError('Не удалось отправить отзыв. Попробуйте позже.');
+    } finally {
+        // Re-enable button
+        submitFeedbackBtn.disabled = false;
+        submitFeedbackBtn.innerHTML = '<span>📤 Отправить отзыв</span>';
+    }
 }

@@ -1,7 +1,9 @@
 import os
 import time
 import base64
+import json
 import requests
+from datetime import datetime
 from flask import Flask, request, jsonify, send_file, send_from_directory
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
@@ -19,11 +21,13 @@ CORS(app)
 # Configuration
 UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'uploads')
 RESULTS_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'results')
+FEEDBACK_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'feedback')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 
 # Create folders if they don't exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(RESULTS_FOLDER, exist_ok=True)
+os.makedirs(FEEDBACK_FOLDER, exist_ok=True)
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['RESULTS_FOLDER'] = RESULTS_FOLDER
@@ -695,6 +699,84 @@ def get_result(filename):
             return jsonify({'error': 'File not found'}), 404
     except Exception as e:
         print(f"[RESULT ERROR] {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/feedback', methods=['POST'])
+def submit_feedback():
+    """
+    Save user feedback (rating and comment)
+    Saves to JSON file and optionally sends to Telegram if configured
+    """
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        rating = data.get('rating')
+        comment = data.get('comment', '')
+        timestamp = data.get('timestamp', datetime.now().isoformat())
+        session_id = data.get('session_id')
+        
+        if not rating or not isinstance(rating, int) or rating < 1 or rating > 5:
+            return jsonify({'error': 'Invalid rating. Must be 1-5'}), 400
+        
+        # Prepare feedback data
+        feedback_data = {
+            'rating': rating,
+            'comment': comment,
+            'timestamp': timestamp,
+            'session_id': session_id,
+            'ip_address': request.remote_addr
+        }
+        
+        # Save to JSON file
+        feedback_file = os.path.join(FEEDBACK_FOLDER, f'feedback_{int(time.time())}.json')
+        with open(feedback_file, 'w', encoding='utf-8') as f:
+            json.dump(feedback_data, f, ensure_ascii=False, indent=2)
+        
+        print(f"[FEEDBACK] Saved feedback: rating={rating}, comment_length={len(comment)}")
+        
+        # Optional: Send to Telegram if configured
+        telegram_bot_token = os.environ.get('TELEGRAM_BOT_TOKEN', '').strip()
+        telegram_chat_id = os.environ.get('TELEGRAM_CHAT_ID', '').strip()
+        
+        if telegram_bot_token and telegram_chat_id:
+            try:
+                # Format message for Telegram
+                stars = '⭐' * rating + '☆' * (5 - rating)
+                message = f"📊 *Новый отзыв*\n\n"
+                message += f"⭐ Оценка: {stars} ({rating}/5)\n"
+                if comment:
+                    message += f"💬 Комментарий: {comment}\n"
+                message += f"🕐 Время: {timestamp}\n"
+                if session_id:
+                    message += f"🆔 Session: {session_id[:8]}...\n"
+                
+                telegram_url = f"https://api.telegram.org/bot{telegram_bot_token}/sendMessage"
+                telegram_data = {
+                    'chat_id': telegram_chat_id,
+                    'text': message,
+                    'parse_mode': 'Markdown'
+                }
+                
+                telegram_response = requests.post(telegram_url, json=telegram_data, timeout=5)
+                if telegram_response.status_code == 200:
+                    print(f"[FEEDBACK] Sent to Telegram successfully")
+                else:
+                    print(f"[FEEDBACK] Telegram error: {telegram_response.status_code}")
+            except Exception as e:
+                print(f"[FEEDBACK] Telegram error (non-critical): {e}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Feedback saved successfully'
+        }), 200
+        
+    except Exception as e:
+        print(f"[FEEDBACK ERROR] {e}")
         import traceback
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
