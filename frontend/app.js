@@ -100,8 +100,12 @@ async function checkServerHealth() {
 
 // Handle Person Images
 function handlePersonImagesSelect(e) {
+    console.log('handlePersonImagesSelect triggered');
     const files = Array.from(e.target.files);
+    console.log('Files selected:', files.length);
     processPersonImages(files);
+    // Clear input value to allow selecting the same file again
+    e.target.value = '';
 }
 
 function handlePersonImagesDrop(files) {
@@ -110,7 +114,12 @@ function handlePersonImagesDrop(files) {
 }
 
 function processPersonImages(files) {
-    if (files.length === 0) return;
+    console.log('processPersonImages called with', files.length, 'files');
+
+    if (files.length === 0) {
+        console.log('No files to process');
+        return;
+    }
 
     if (files.length > 4) {
         showError('Можно загрузить максимум 4 фотографии');
@@ -126,19 +135,31 @@ function processPersonImages(files) {
         return true;
     });
 
+    console.log('Valid files:', validFiles.length);
     state.personImages = validFiles;
     displayPersonPreviews();
     updateTryOnButton();
 }
 
 function displayPersonPreviews() {
+    console.log('displayPersonPreviews called, images count:', state.personImages.length);
     personPreview.innerHTML = '';
 
+    if (state.personImages.length === 0) {
+        console.log('No images to display');
+        return;
+    }
+
     state.personImages.forEach((file, index) => {
+        console.log(`Reading file ${index}:`, file.name);
         const reader = new FileReader();
         reader.onload = (e) => {
+            console.log(`File ${index} loaded successfully`);
             const previewItem = createPreviewItem(e.target.result, index, 'person');
             personPreview.appendChild(previewItem);
+        };
+        reader.onerror = (e) => {
+            console.error(`Error reading file ${index}:`, e);
         };
         reader.readAsDataURL(file);
     });
@@ -146,8 +167,12 @@ function displayPersonPreviews() {
 
 // Handle Garment Image
 function handleGarmentImageSelect(e) {
+    console.log('handleGarmentImageSelect triggered');
     const file = e.target.files[0];
+    console.log('File selected:', file ? file.name : 'none');
     processGarmentImage(file);
+    // Clear input value to allow selecting the same file again
+    e.target.value = '';
 }
 
 function handleGarmentImageDrop(files) {
