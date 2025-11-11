@@ -9,7 +9,7 @@ const state = {
     uploadedGarmentPath: null,
     sessionId: null,
     garmentCategory: 'auto',  // Default to auto
-    selectedModel: 'fashn'     // Default model: 'fashn' or 'imagen'
+    selectedModel: 'fashn'     // Default model: 'fashn' or 'nanobanana'
 };
 
 // DOM Elements
@@ -513,9 +513,9 @@ async function handleTryOn() {
             errorMsg = '💳 Недостаточно кредитов FASHN\n\nПополните баланс';
         } else if (error.message.includes('timeout')) {
             errorMsg = '⏱️ Превышено время ожидания\n\nПопробуйте снова';
-        } else if (error.message.includes('IMAGEN_NOT_READY') || error.message.includes('NotImplementedError')) {
-            errorMsg = '🚧 Google Imagen в разработке\n\n' +
-                       'Эта модель пока недоступна.\n' +
+        } else if (error.message.includes('NANOBANANA_NOT_READY') || error.message.includes('NotImplementedError')) {
+            errorMsg = '🚧 Nano Banana в разработке\n\n' +
+                       'Google Gemini 2.5 интеграция в процессе.\n' +
                        'Пожалуйста, используйте FASHN AI.\n\n' +
                        'Следите за обновлениями!';
         }
@@ -560,9 +560,9 @@ function displayResults(results) {
             } else if (result.error.includes('FORMAT_ERROR')) {
                 errorTitle = 'Неверный формат изображения';
                 errorMsg = 'Используйте JPG или PNG файлы';
-            } else if (result.error.includes('IMAGEN_NOT_READY') || result.error.includes('NotImplementedError')) {
-                errorTitle = 'Google Imagen в разработке';
-                errorMsg = 'Эта модель пока недоступна. Используйте FASHN AI.';
+            } else if (result.error.includes('NANOBANANA_NOT_READY') || result.error.includes('NotImplementedError')) {
+                errorTitle = 'Nano Banana в разработке';
+                errorMsg = 'Google Gemini 2.5 интеграция в процессе. Используйте FASHN AI.';
             }
 
             // Show error card
@@ -898,17 +898,17 @@ function setupModelSwitcher() {
             if (model === 'fashn') {
                 modelSwitch.checked = false;
                 switchToModel('fashn');
-            } else if (model === 'imagen') {
+            } else if (model === 'nanobanana') {
                 modelSwitch.checked = true;
-                switchToModel('imagen');
+                switchToModel('nanobanana');
             }
         });
     });
 
     // Direct switch toggle
     modelSwitch.addEventListener('change', (e) => {
-        const isImagen = e.target.checked;
-        switchToModel(isImagen ? 'imagen' : 'fashn');
+        const isNanoBanana = e.target.checked;
+        switchToModel(isNanoBanana ? 'nanobanana' : 'fashn');
     });
 
     // Initialize with default model
@@ -979,10 +979,10 @@ function showModelChangeNotification(modelName) {
             name: 'FASHN AI',
             desc: 'Высокое качество, проверенная модель'
         },
-        imagen: {
-            icon: '🤖',
-            name: 'Google Imagen',
-            desc: 'Экспериментальная версия от Google'
+        nanobanana: {
+            icon: '🍌',
+            name: 'Nano Banana',
+            desc: 'Google Gemini 2.5 Flash - Быстрая и креативная'
         }
     };
 

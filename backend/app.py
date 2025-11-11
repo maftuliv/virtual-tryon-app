@@ -33,9 +33,9 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 FASHN_API_KEY = os.environ.get('FASHN_API_KEY', '')  # FASHN AI token
 FASHN_BASE_URL = "https://api.fashn.ai/v1"
 
-# Google Imagen API (placeholder for future implementation)
-GOOGLE_API_KEY = os.environ.get('GOOGLE_API_KEY', '')
-IMAGEN_API_URL = "https://aiplatform.googleapis.com/v1"  # Placeholder URL
+# Nano Banana API (Google Gemini 2.5 Flash)
+REPLICATE_API_KEY = os.environ.get('REPLICATE_API_KEY', '')  # Replicate API for Nano Banana
+NANOBANANA_MODEL = "google/nano-banana"  # Replicate model name
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -149,29 +149,36 @@ def save_base64_image(base64_string, output_path):
         img_file.write(img_data)
     return output_path
 
-def process_with_imagen(person_image_path, garment_image_path, category='auto'):
+def process_with_nanobanana(person_image_path, garment_image_path, category='auto'):
     """
-    Process virtual try-on using Google Imagen API
-    CURRENTLY A PLACEHOLDER - Will be implemented with actual Google Imagen integration
+    Process virtual try-on using Nano Banana (Google Gemini 2.5 Flash)
+    Via Replicate API: https://replicate.com/google/nano-banana
 
-    For now, returns a demo result indicating the model is under development
+    Nano Banana is Google's image editing model powered by Gemini 2.5 Flash
+    Pricing: $0.03 per image (cheaper than FASHN!)
+    Speed: Very fast generation
     """
     try:
-        print(f"[IMAGEN] Google Imagen API called (currently in development)")
+        print(f"[NANOBANANA] Nano Banana (Gemini 2.5) API called")
 
-        # TODO: Implement actual Google Imagen API integration
-        # This is a placeholder that will:
-        # 1. Show the model is selected
-        # 2. Return a message that it's under development
+        if not REPLICATE_API_KEY:
+            raise ValueError("REPLICATE_API_KEY not set. Please add to environment variables.")
+
+        # TODO: Implement actual Nano Banana API integration via Replicate
+        # Steps needed:
+        # 1. Install replicate: pip install replicate
+        # 2. Use replicate.run() with google/nano-banana model
+        # 3. Create prompt for virtual try-on task
+        # 4. Handle image input/output
 
         raise NotImplementedError(
-            "IMAGEN_NOT_READY: Google Imagen integration is under development. "
-            "Please use FASHN AI model for now. "
-            "Stay tuned for updates!"
+            "NANOBANANA_NOT_READY: Nano Banana (Google Gemini 2.5 Flash) integration in progress. "
+            "This model is 🍌 AMAZING but needs API setup! "
+            "Coming very soon - it's faster and cheaper than alternatives!"
         )
 
     except Exception as e:
-        print(f"[IMAGEN ERROR] ❌ Error in process_with_imagen: {e}")
+        print(f"[NANOBANANA ERROR] ❌ Error in process_with_nanobanana: {e}")
         raise
 
 def process_with_fashn(person_image_path, garment_image_path, category='auto'):
@@ -530,8 +537,8 @@ def virtual_tryon():
 
             try:
                 # Choose processing method based on AI model
-                if ai_model == 'imagen':
-                    result_path = process_with_imagen(person_image, garment_image, garment_category)
+                if ai_model == 'nanobanana':
+                    result_path = process_with_nanobanana(person_image, garment_image, garment_category)
                 else:
                     result_path = process_with_fashn(person_image, garment_image, garment_category)
 
