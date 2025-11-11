@@ -31,6 +31,7 @@ const ratingValue = document.getElementById('ratingValue');
 const feedbackComment = document.getElementById('feedbackComment');
 const submitFeedbackBtn = document.getElementById('submitFeedbackBtn');
 const feedbackSuccess = document.getElementById('feedbackSuccess');
+const testFeedbackBtn = document.getElementById('testFeedbackBtn');
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', () => {
@@ -117,6 +118,11 @@ function setupEventListeners() {
 
     if (submitFeedbackBtn) {
         submitFeedbackBtn.addEventListener('click', handleFeedbackSubmit);
+    }
+
+    // Test feedback button - shows feedback form without generation
+    if (testFeedbackBtn) {
+        testFeedbackBtn.addEventListener('click', showTestFeedbackForm);
     }
 }
 
