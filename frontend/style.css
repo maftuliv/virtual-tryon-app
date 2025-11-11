@@ -177,12 +177,17 @@ body {
     display: inline-block;
 }
 
+.logo-eyes-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
 .logo-smile {
     position: absolute;
     left: 50%;
-    bottom: -20px;
+    bottom: -25px;
     transform: translateX(-50%) rotate(90deg);
-    font-size: 0.5em;
+    font-size: 0.7em;
     background: linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #f472b6 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -288,19 +293,19 @@ body {
     color: #8b5cf6;
 }
 
-/* Garment upload zone - teal/green */
+/* Garment upload zone - purple (matching person zone) */
 .upload-zone-garment {
-    border-color: #99f6e4;
+    border-color: #c4b5fd;
 }
 
 .upload-zone-garment:hover {
-    border-color: #5eead4;
-    background: rgba(153, 246, 228, 0.1);
+    border-color: #a78bfa;
+    background: rgba(196, 181, 253, 0.1);
     transform: translateY(-3px);
 }
 
 .upload-zone-garment .upload-icon {
-    color: #14b8a6;
+    color: #8b5cf6;
 }
 
 .upload-zone:active {
