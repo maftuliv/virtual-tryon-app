@@ -30,11 +30,16 @@ app.config['RESULTS_FOLDER'] = RESULTS_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
 # API configurations
-FASHN_API_KEY = os.environ.get('FASHN_API_KEY', '')  # FASHN AI token
+FASHN_API_KEY = os.environ.get('FASHN_API_KEY', '').strip()  # FASHN AI token
 FASHN_BASE_URL = "https://api.fashn.ai/v1"
 
 # Nano Banana API (Google Gemini 2.5 Flash) - Official API
-NANOBANANA_API_KEY = os.environ.get('NANOBANANA_API_KEY', '')  # NanoBananaAPI.ai token
+# Try multiple environment variable names as Railway might use different naming
+NANOBANANA_API_KEY = (
+    os.environ.get('NANOBANANA_API_KEY', '') or
+    os.environ.get('NANOBANANA_API_KEY'.lower(), '') or
+    os.environ.get('nanobanana_api_key', '')
+).strip()
 NANOBANANA_BASE_URL = "https://api.nanobananaapi.ai/api/v1/nanobanana"
 
 def allowed_file(filename):
@@ -812,6 +817,14 @@ if __name__ == '__main__':
     print(f"Results folder: {RESULTS_FOLDER}")
     print("=" * 60)
 
+    # Diagnostic: Show ALL environment variables containing "NANO" or "API"
+    print("[DIAGNOSTICS] All Environment Variables containing 'NANO' or 'API':")
+    for key, value in os.environ.items():
+        if 'NANO' in key.upper() or 'API' in key.upper():
+            preview = f"{value[:8]}...{value[-4:]}" if len(value) > 12 else value
+            print(f"  {key}: {preview} (length: {len(value)})")
+    print("=" * 60)
+
     # Diagnostic: Show API key status
     print("[DIAGNOSTICS] API Keys Status:")
     print(f"  FASHN_API_KEY: {'✅ SET' if FASHN_API_KEY else '❌ MISSING'} (length: {len(FASHN_API_KEY) if FASHN_API_KEY else 0})")
@@ -821,6 +834,7 @@ if __name__ == '__main__':
         print(f"  NANOBANANA_API_KEY preview: {NANOBANANA_API_KEY[:8]}...{NANOBANANA_API_KEY[-4:]}")
     else:
         print("  ⚠️ WARNING: NANOBANANA_API_KEY not set! Nano Banana will not work.")
+        print(f"  ℹ️ Checked variables: NANOBANANA_API_KEY, nanobanana_api_key")
 
     print("=" * 60)
 
