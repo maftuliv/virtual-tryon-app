@@ -439,7 +439,7 @@ async function handleTryOn() {
         state.uploadedGarmentPath = uploadData.garment_image;
         state.sessionId = uploadData.session_id;
 
-        // Step 2: Start virtual try-on task (async)
+        // Step 2: Perform virtual try-on
         updateProgressText('создается магия твоего стиля ✨');
 
         const tryonResponse = await fetch(`${API_URL}/api/tryon`, {
@@ -464,20 +464,21 @@ async function handleTryOn() {
 
         const tryonData = await tryonResponse.json();
 
-        if (!tryonData.success || !tryonData.task_id) {
-            throw new Error(tryonData.error || 'Не удалось создать задачу обработки');
+        if (!tryonData.success) {
+            throw new Error(tryonData.error || 'Обработка не удалась');
         }
 
-        const taskId = tryonData.task_id;
-        console.log(`[TRYON] Task created: ${taskId}`);
+        // Check if we have results
+        if (!tryonData.results || tryonData.results.length === 0) {
+            throw new Error('Не удалось получить результаты. Проверьте настройки API.');
+        }
 
-        // Step 3: Poll for task status
-        // Small delay to ensure task is created on backend
-        updateProgressText('задача создается...');
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        updateProgressText('обработка изображений...');
-        await pollTaskStatus(taskId);
+        // Display results
+        displayResults(tryonData.results);
+
+        // Hide progress, show results
+        progressBar.style.display = 'none';
+        resultsSection.style.display = 'block';
 
     } catch (error) {
         console.error('Error:', error);
@@ -531,127 +532,6 @@ async function handleTryOn() {
         showError(errorMsg);
         progressBar.style.display = 'none';
         tryonBtn.disabled = false;
-    }
-}
-
-// Update progress text
-// Poll task status
-async function pollTaskStatus(taskId, maxAttempts = 120, pollInterval = 2000) {
-    let attempts = 0;
-    let taskWasFound = false; // Track if task was found at least once
-    let lastKnownStatus = null; // Track last known status
-    
-    console.log(`[POLL] Starting polling for task: ${taskId}`);
-    
-    while (attempts < maxAttempts) {
-        try {
-            const statusUrl = `${API_URL}/api/tryon/status/${taskId}`;
-            console.log(`[POLL] Attempt ${attempts + 1}/${maxAttempts}: Fetching ${statusUrl}`);
-            
-            const statusResponse = await fetch(statusUrl);
-            
-            if (!statusResponse.ok) {
-                // If 404, handle based on whether task was found before
-                if (statusResponse.status === 404) {
-                    if (taskWasFound) {
-                        // Task was found before but now missing - backend likely restarted
-                        console.error(`[POLL] Task was found before but now missing (404). Backend may have restarted.`);
-                        throw new Error('Сервер был перезапущен во время обработки. Пожалуйста, попробуйте еще раз.');
-                    } else {
-                        // Task never found - might be creating or doesn't exist
-                        console.warn(`[POLL] Task not found (404), might be creating... continuing...`);
-                        if (attempts < 10) {
-                            // First 10 attempts, wait and continue
-                            await new Promise(resolve => setTimeout(resolve, pollInterval));
-                            attempts++;
-                            continue;
-                        } else {
-                            // After 10 attempts, throw error
-                            const errorData = await statusResponse.json().catch(() => ({}));
-                            throw new Error(errorData.error || `Задача не найдена после ${attempts + 1} попыток. Возможно, сервер был перезапущен.`);
-                        }
-                    }
-                }
-                // For other errors, try to get error message
-                const errorText = await statusResponse.text();
-                throw new Error(`Status check failed: ${statusResponse.status} - ${errorText.substring(0, 100)}`);
-            }
-            
-            // Task found!
-            taskWasFound = true;
-            const statusData = await statusResponse.json();
-            lastKnownStatus = statusData.status;
-            console.log(`[POLL] Status check ${attempts + 1}: ${statusData.status}`, statusData);
-            
-            if (statusData.status === 'completed') {
-                // Task completed successfully
-                console.log(`[POLL] Task completed! Results:`, statusData.results);
-                
-                if (!statusData.results || statusData.results.length === 0) {
-                    throw new Error('Задача завершена, но результаты отсутствуют');
-                }
-                
-                // Display results
-                displayResults(statusData.results);
-                
-                // Hide progress, show results
-                progressBar.style.display = 'none';
-                resultsSection.style.display = 'block';
-                tryonBtn.disabled = false;
-                console.log(`[POLL] Results displayed successfully`);
-                return;
-                
-            } else if (statusData.status === 'failed') {
-                // Task failed
-                const errorMsg = statusData.error || 'Ошибка обработки изображений';
-                console.error(`[POLL] Task failed:`, errorMsg);
-                throw new Error(errorMsg);
-                
-            } else if (statusData.status === 'processing' || statusData.status === 'queued') {
-                // Still processing, continue polling
-                const progressText = statusData.status === 'queued' ? 'задача в очереди...' : 'обработка изображений...';
-                updateProgressText(progressText);
-                await new Promise(resolve => setTimeout(resolve, pollInterval));
-                attempts++;
-                continue;
-            } else {
-                // Unknown status
-                console.warn(`[POLL] Unknown status: ${statusData.status}`);
-                await new Promise(resolve => setTimeout(resolve, pollInterval));
-                attempts++;
-                continue;
-            }
-            
-        } catch (error) {
-            console.error(`[POLL] Error checking status (attempt ${attempts + 1}):`, error);
-            
-            // If task was found before and now we get 404, it's a critical error
-            if (taskWasFound && error.message.includes('404')) {
-                throw new Error('Сервер был перезапущен во время обработки. Пожалуйста, попробуйте еще раз.');
-            }
-            
-            // If it's a network error, continue polling (but only if task wasn't found yet)
-            if (!taskWasFound && (
-                error.message.includes('fetch') || 
-                error.message.includes('network') || 
-                error.message.includes('Failed to fetch')
-            )) {
-                console.log(`[POLL] Network error, continuing polling...`);
-                await new Promise(resolve => setTimeout(resolve, pollInterval));
-                attempts++;
-                continue;
-            }
-            
-            // Otherwise, throw the error
-            throw error;
-        }
-    }
-    
-    // Timeout
-    if (taskWasFound && lastKnownStatus === 'processing') {
-        throw new Error('Превышено время ожидания обработки. Задача все еще обрабатывается. Попробуйте еще раз через несколько минут.');
-    } else {
-        throw new Error('Превышено время ожидания обработки. Попробуйте еще раз.');
     }
 }
 
