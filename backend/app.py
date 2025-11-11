@@ -708,16 +708,23 @@ def virtual_tryon():
         print(f"[TRYON] Processing with category: {garment_category}, AI model: {ai_model}")
 
         # Early validation for Nano Banana API key
-        if ai_model == 'nanobanana' and not NANOBANANA_API_KEY:
-            return jsonify({
-                'error': 'NANOBANANA_API_KEY_MISSING',
-                'message': '🍌 Nano Banana API ключ не настроен\n\n'
-                          'Пожалуйста, добавьте NANOBANANA_API_KEY в Railway Variables:\n'
-                          '1. Зайдите на https://nanobananaapi.ai/api-key\n'
-                          '2. Создайте API ключ\n'
-                          '3. Добавьте его в Railway Dashboard → Variables\n\n'
-                          'Или используйте FASHN AI (переключите слайдер).'
-            }), 400
+        if ai_model == 'nanobanana':
+            print(f"[TRYON] Nano Banana selected, checking API key...")
+            print(f"[TRYON] NANOBANANA_API_KEY status: {'SET' if NANOBANANA_API_KEY else 'MISSING'} (length: {len(NANOBANANA_API_KEY) if NANOBANANA_API_KEY else 0})")
+
+            if not NANOBANANA_API_KEY or NANOBANANA_API_KEY.strip() == '':
+                print(f"[TRYON ERROR] NANOBANANA_API_KEY is empty or missing!")
+                return jsonify({
+                    'error': 'NANOBANANA_API_KEY_MISSING',
+                    'message': '🍌 Nano Banana API ключ не настроен\n\n'
+                              'Пожалуйста, добавьте NANOBANANA_API_KEY в Railway Variables:\n'
+                              '1. Зайдите на https://nanobananaapi.ai/api-key\n'
+                              '2. Создайте API ключ\n'
+                              '3. Добавьте его в Railway Dashboard → Variables\n\n'
+                              'Или используйте FASHN AI (переключите слайдер).'
+                }), 400
+
+            print(f"[TRYON] NANOBANANA_API_KEY validated successfully (preview: {NANOBANANA_API_KEY[:8]}...)")
 
         # Process each person image with the garment
         results = []
@@ -803,6 +810,18 @@ if __name__ == '__main__':
     print("=" * 60)
     print(f"Upload folder: {UPLOAD_FOLDER}")
     print(f"Results folder: {RESULTS_FOLDER}")
+    print("=" * 60)
+
+    # Diagnostic: Show API key status
+    print("[DIAGNOSTICS] API Keys Status:")
+    print(f"  FASHN_API_KEY: {'✅ SET' if FASHN_API_KEY else '❌ MISSING'} (length: {len(FASHN_API_KEY) if FASHN_API_KEY else 0})")
+    print(f"  NANOBANANA_API_KEY: {'✅ SET' if NANOBANANA_API_KEY else '❌ MISSING'} (length: {len(NANOBANANA_API_KEY) if NANOBANANA_API_KEY else 0})")
+
+    if NANOBANANA_API_KEY:
+        print(f"  NANOBANANA_API_KEY preview: {NANOBANANA_API_KEY[:8]}...{NANOBANANA_API_KEY[-4:]}")
+    else:
+        print("  ⚠️ WARNING: NANOBANANA_API_KEY not set! Nano Banana will not work.")
+
     print("=" * 60)
 
     app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
