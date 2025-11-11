@@ -180,6 +180,10 @@ body {
 .logo-eyes-wrapper {
     position: relative;
     display: inline-block;
+    background: linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #f472b6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .logo-smile {
