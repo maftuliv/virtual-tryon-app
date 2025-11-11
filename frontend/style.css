@@ -1083,15 +1083,11 @@ e0b 75%, #f3e9ff 100%);
 
 /* ==================== AI Model Selector ==================== */
 
-.ai-model-selector {
+.generate-container {
     margin-top: 30px;
     display: flex;
-    justify-content: center;
-}
-
-.model-switch-container {
-    display: flex;
     align-items: center;
+    justify-content: center;
     gap: 20px;
     background: rgba(255, 255, 255, 0.4);
     backdrop-filter: blur(15px);
@@ -1103,9 +1099,20 @@ e0b 75%, #f3e9ff 100%);
     transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
-.model-switch-container:hover {
+.generate-container:hover {
     box-shadow: 0 12px 48px rgba(168, 85, 247, 0.25);
     transform: translateY(-2px);
+}
+
+.generate-text {
+    font-size: 1.1em;
+    font-weight: 700;
+    background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    transition: all 0.3s ease;
+    letter-spacing: 0.2px;
 }
 
 .model-label {

@@ -389,23 +389,6 @@ function updateGenerateSwitch() {
     if (generateSwitch) {
         // Disable switch if images not ready
         generateSwitch.disabled = !canGenerate;
-        
-        // Update labels
-        const labelOff = document.getElementById('generateLabelOff');
-        const labelOn = document.getElementById('generateLabelOn');
-        
-        if (labelOff && labelOn) {
-            if (hasErrors) {
-                labelOff.querySelector('.model-desc').textContent = 'Исправьте ошибки';
-                labelOn.querySelector('.model-desc').textContent = 'Исправьте ошибки';
-            } else if (!hasPersonImages || !hasGarmentImage) {
-                labelOff.querySelector('.model-desc').textContent = 'Загрузите фото';
-                labelOn.querySelector('.model-desc').textContent = 'Загрузите фото';
-            } else {
-                labelOff.querySelector('.model-desc').textContent = 'Готово';
-                labelOn.querySelector('.model-desc').textContent = 'Nano Banana 🍌';
-            }
-        }
     }
 }
 
