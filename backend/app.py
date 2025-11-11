@@ -4,6 +4,7 @@ import base64
 import requests
 import threading
 import uuid
+import json
 from flask import Flask, request, jsonify, send_file, send_from_directory
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
@@ -31,10 +32,55 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['RESULTS_FOLDER'] = RESULTS_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
-# Task storage for async processing (in-memory, cleared on restart)
+# Task storage for async processing
 # Structure: {task_id: {'status': 'processing'|'completed'|'failed', 'results': [], 'error': None, 'created_at': timestamp}}
 tasks = {}
 tasks_lock = threading.Lock()  # Thread-safe access to tasks dict
+
+# Persistent task storage file (survives restarts)
+TASKS_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'tasks.json')
+
+def load_tasks_from_disk():
+    """Load tasks from disk on startup"""
+    global tasks
+    try:
+        if os.path.exists(TASKS_FILE):
+            with open(TASKS_FILE, 'r', encoding='utf-8') as f:
+                tasks_data = json.load(f)
+                # Only load completed tasks (they have results)
+                for task_id, task_data in tasks_data.items():
+                    if task_data.get('status') == 'completed' and task_data.get('results'):
+                        # Check if result files still exist
+                        results_exist = True
+                        for result in task_data.get('results', []):
+                            if result.get('result_path') and not os.path.exists(result.get('result_path')):
+                                results_exist = False
+                                break
+                        if results_exist:
+                            tasks[task_id] = task_data
+                            print(f"[TASKS] Loaded completed task from disk: {task_id}")
+                print(f"[TASKS] Loaded {len(tasks)} completed tasks from disk")
+    except Exception as e:
+        print(f"[TASKS] Error loading tasks from disk: {e}")
+
+def save_tasks_to_disk():
+    """Save tasks to disk (only completed ones)"""
+    try:
+        tasks_to_save = {}
+        with tasks_lock:
+            for task_id, task_data in tasks.items():
+                if task_data.get('status') == 'completed' and task_data.get('results'):
+                    tasks_to_save[task_id] = task_data
+        
+        if tasks_to_save:
+            with open(TASKS_FILE, 'w', encoding='utf-8') as f:
+                json.dump(tasks_to_save, f, indent=2)
+            print(f"[TASKS] Saved {len(tasks_to_save)} completed tasks to disk")
+    except Exception as e:
+        print(f"[TASKS] Error saving tasks to disk: {e}")
+
+# Load tasks on startup
+load_tasks_from_disk()
 
 # API configurations
 FASHN_API_KEY = os.environ.get('FASHN_API_KEY', '').strip()  # FASHN AI token
@@ -845,6 +891,9 @@ def process_tryon_task(task_id, person_images, garment_image, garment_category, 
             tasks[task_id]['status'] = 'completed'
             tasks[task_id]['results'] = results
             tasks[task_id]['completed_at'] = time.time()
+        
+        # Save to disk for persistence
+        save_tasks_to_disk()
         
         print(f"[TASK {task_id}] ✅ Task completed successfully")
         

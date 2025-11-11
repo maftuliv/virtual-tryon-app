@@ -50,3 +50,6 @@ results/*
 
 # Logs
 *.log
+
+# Task persistence
+tasks.json
