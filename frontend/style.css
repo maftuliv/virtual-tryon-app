@@ -22,7 +22,7 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-    background: linear-gradient(135deg, #f0e6fa 0%, #f5e8fa 25%, #f8ebfa 50%, #fce9f5 75%, #f5e6f8 100%);
+    background: linear-gradient(135deg, #e8d4f8 0%, #edd9f7 25%, #f2def9 50%, #f7d9f0 75%, #ead4f5 100%);
     background-size: 400% 400%;
     animation: gradientShift 15s ease infinite;
     color: var(--text-primary);
@@ -172,6 +172,23 @@ body {
     letter-spacing: -1px;
 }
 
+.logo-title {
+    position: relative;
+    display: inline-block;
+}
+
+.logo-smile {
+    position: absolute;
+    left: 50%;
+    bottom: -20px;
+    transform: translateX(-50%) rotate(90deg);
+    font-size: 0.5em;
+    background: linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #f472b6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
 .subtitle {
     color: var(--text-primary);
     font-size: 1.2em;
@@ -228,7 +245,7 @@ body {
 }
 
 .step-title-garment {
-    color: #14b8a6;
+    color: #8b5cf6;
 }
 
 /* Photo Requirements */
@@ -296,14 +313,8 @@ body {
 }
 
 .upload-icon {
+    font-size: 3em;
     margin-bottom: 15px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.upload-icon svg {
-    opacity: 0.7;
 }
 
 .file-input {
