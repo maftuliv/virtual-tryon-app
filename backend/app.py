@@ -198,7 +198,19 @@ def process_with_fashn(person_image_path, garment_image_path):
                 continue
             elif status == "failed":
                 error = status_data.get("error", "Unknown error")
-                raise ValueError(f"FASHN processing failed: {error}")
+                error_str = str(error).lower()
+
+                # Parse FASHN API specific errors and provide user-friendly messages
+                if "imageloaderror" in error_str or "unable to load" in error_str:
+                    raise ValueError("IMAGE_LOAD_ERROR: Не удалось загрузить изображение. Проверьте формат и качество фото.")
+                elif "poseerror" in error_str or "unable to detect" in error_str or "pose" in error_str:
+                    raise ValueError("POSE_ERROR: Не удалось определить позу человека на фото. Используйте четкое фото в полный рост с хорошо видимым телом.")
+                elif "contentmoderation" in error_str or "prohibited content" in error_str:
+                    raise ValueError("CONTENT_ERROR: Обнаружен запрещенный контент на изображении.")
+                elif "invalid" in error_str or "format" in error_str:
+                    raise ValueError("FORMAT_ERROR: Неверный формат изображения. Используйте JPG или PNG.")
+                else:
+                    raise ValueError(f"FASHN_ERROR: {error}")
             else:
                 # Unknown status
                 print(f"Unknown status: {status}")
