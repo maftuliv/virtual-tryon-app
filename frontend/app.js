@@ -538,6 +538,8 @@ async function handleTryOn() {
 // Poll task status
 async function pollTaskStatus(taskId, maxAttempts = 120, pollInterval = 2000) {
     let attempts = 0;
+    let taskWasFound = false; // Track if task was found at least once
+    let lastKnownStatus = null; // Track last known status
     
     console.log(`[POLL] Starting polling for task: ${taskId}`);
     
@@ -549,18 +551,25 @@ async function pollTaskStatus(taskId, maxAttempts = 120, pollInterval = 2000) {
             const statusResponse = await fetch(statusUrl);
             
             if (!statusResponse.ok) {
-                // If 404, task might not be created yet, continue polling
+                // If 404, handle based on whether task was found before
                 if (statusResponse.status === 404) {
-                    console.warn(`[POLL] Task not found (404), might be creating... continuing...`);
-                    if (attempts < 5) {
-                        // First few attempts, wait a bit longer
-                        await new Promise(resolve => setTimeout(resolve, pollInterval));
-                        attempts++;
-                        continue;
+                    if (taskWasFound) {
+                        // Task was found before but now missing - backend likely restarted
+                        console.error(`[POLL] Task was found before but now missing (404). Backend may have restarted.`);
+                        throw new Error('Сервер был перезапущен во время обработки. Пожалуйста, попробуйте еще раз.');
                     } else {
-                        // After 5 attempts, throw error
-                        const errorData = await statusResponse.json().catch(() => ({}));
-                        throw new Error(errorData.error || `Task not found (404) after ${attempts + 1} attempts`);
+                        // Task never found - might be creating or doesn't exist
+                        console.warn(`[POLL] Task not found (404), might be creating... continuing...`);
+                        if (attempts < 10) {
+                            // First 10 attempts, wait and continue
+                            await new Promise(resolve => setTimeout(resolve, pollInterval));
+                            attempts++;
+                            continue;
+                        } else {
+                            // After 10 attempts, throw error
+                            const errorData = await statusResponse.json().catch(() => ({}));
+                            throw new Error(errorData.error || `Задача не найдена после ${attempts + 1} попыток. Возможно, сервер был перезапущен.`);
+                        }
                     }
                 }
                 // For other errors, try to get error message
@@ -568,7 +577,10 @@ async function pollTaskStatus(taskId, maxAttempts = 120, pollInterval = 2000) {
                 throw new Error(`Status check failed: ${statusResponse.status} - ${errorText.substring(0, 100)}`);
             }
             
+            // Task found!
+            taskWasFound = true;
             const statusData = await statusResponse.json();
+            lastKnownStatus = statusData.status;
             console.log(`[POLL] Status check ${attempts + 1}: ${statusData.status}`, statusData);
             
             if (statusData.status === 'completed') {
@@ -613,12 +625,18 @@ async function pollTaskStatus(taskId, maxAttempts = 120, pollInterval = 2000) {
         } catch (error) {
             console.error(`[POLL] Error checking status (attempt ${attempts + 1}):`, error);
             
-            // If it's a network error or 404 in early attempts, continue polling
-            if (error.message.includes('fetch') || 
+            // If task was found before and now we get 404, it's a critical error
+            if (taskWasFound && error.message.includes('404')) {
+                throw new Error('Сервер был перезапущен во время обработки. Пожалуйста, попробуйте еще раз.');
+            }
+            
+            // If it's a network error, continue polling (but only if task wasn't found yet)
+            if (!taskWasFound && (
+                error.message.includes('fetch') || 
                 error.message.includes('network') || 
-                error.message.includes('Failed to fetch') ||
-                (error.message.includes('404') && attempts < 10)) {
-                console.log(`[POLL] Network/404 error, continuing polling...`);
+                error.message.includes('Failed to fetch')
+            )) {
+                console.log(`[POLL] Network error, continuing polling...`);
                 await new Promise(resolve => setTimeout(resolve, pollInterval));
                 attempts++;
                 continue;
@@ -630,7 +648,11 @@ async function pollTaskStatus(taskId, maxAttempts = 120, pollInterval = 2000) {
     }
     
     // Timeout
-    throw new Error('Превышено время ожидания обработки. Попробуйте еще раз.');
+    if (taskWasFound && lastKnownStatus === 'processing') {
+        throw new Error('Превышено время ожидания обработки. Задача все еще обрабатывается. Попробуйте еще раз через несколько минут.');
+    } else {
+        throw new Error('Превышено время ожидания обработки. Попробуйте еще раз.');
+    }
 }
 
 function updateProgressText(text) {
