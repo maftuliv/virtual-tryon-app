@@ -832,12 +832,14 @@ def submit_feedback():
         
         if telegram_bot_token and telegram_chat_id:
             try:
-                # Format message for Telegram
+                # Format message for Telegram (using HTML format - simpler and more reliable)
                 stars = '⭐' * rating + '☆' * (5 - rating)
-                message = f"📊 *Новый отзыв*\n\n"
+                message = f"📊 <b>Новый отзыв</b>\n\n"
                 message += f"⭐ Оценка: {stars} ({rating}/5)\n"
                 if comment:
-                    message += f"💬 Комментарий: {comment}\n"
+                    # Escape HTML special characters in comment
+                    safe_comment = comment.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+                    message += f"💬 Комментарий: {safe_comment}\n"
                 message += f"🕐 Время: {timestamp}\n"
                 if session_id:
                     message += f"🆔 Session: {session_id[:8]}...\n"
