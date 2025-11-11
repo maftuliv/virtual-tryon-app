@@ -469,6 +469,17 @@ body {
     border-color: #f59e0b;
 }
 
+.preview-item.has-errors {
+    border-color: #ef4444;
+    animation: shake 0.5s ease;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
 .preview-item.validated-ok {
     border-color: #10b981;
 }
@@ -509,6 +520,12 @@ body {
 .preview-status-badge.status-warning {
     color: #f59e0b;
     border: 1px solid #f59e0b;
+}
+
+.preview-status-badge.status-error {
+    color: #ef4444;
+    border: 1px solid #ef4444;
+    font-weight: 700;
 }
 
 .preview-status-badge .status-icon {

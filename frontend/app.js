@@ -265,34 +265,89 @@ async function validatePreviewImage(previewDiv, imageSrc, type, index) {
 
         const width = tempImg.width;
         const height = tempImg.height;
+        const aspectRatio = width / height;
 
         // Check for common issues
         const warnings = [];
+        const errors = [];
 
+        // Resolution checks
         if (width < 512 || height < 512) {
-            warnings.push('Низкое разрешение');
+            errors.push('Разрешение слишком низкое (мин. 512px)');
         }
 
         if (height > 2000 || width > 2000) {
-            warnings.push('Будет уменьшено');
+            warnings.push('Будет автоматически уменьшено');
+        }
+
+        // Aspect ratio and orientation checks
+        if (type === 'person') {
+            // For person images, we need portrait orientation (height > width)
+            // Typical full-body photos have aspect ratio between 0.5-0.8 (width/height)
+            if (width > height) {
+                errors.push('❌ Фото должно быть вертикальным (портрет)');
+            } else if (aspectRatio > 0.85) {
+                // Too square - likely a cropped photo or just upper body
+                errors.push('❌ Похоже на обрезанное фото. Нужен человек в ПОЛНЫЙ РОСТ');
+            } else if (aspectRatio < 0.4) {
+                warnings.push('Необычные пропорции - проверьте результат');
+            }
+
+            // Additional hints for person photos
+            if (width >= 512 && height >= 512 && width < height && aspectRatio <= 0.85) {
+                // Good signs - but still show helpful hint
+                if (aspectRatio > 0.65 && aspectRatio <= 0.85) {
+                    warnings.push('Убедитесь, что виден человек ПОЛНОСТЬЮ (с ног до головы)');
+                }
+            }
+        } else if (type === 'garment') {
+            // For garment images, more flexible
+            if (width < 512 && height < 512) {
+                errors.push('Разрешение слишком низкое');
+            }
+
+            // Garments can be landscape or portrait, but not too extreme
+            if (aspectRatio > 2.0 || aspectRatio < 0.5) {
+                warnings.push('Необычные пропорции - убедитесь, что одежда видна полностью');
+            }
         }
 
         // Create status badge
         const badge = document.createElement('div');
         badge.className = 'preview-status-badge';
 
-        if (warnings.length === 0) {
-            badge.classList.add('status-ok');
-            badge.innerHTML = '<span class="status-icon">✅</span><span>OK</span>';
-            previewDiv.classList.add('validated-ok');
-        } else {
+        if (errors.length > 0) {
+            // Critical errors - show error badge
+            badge.classList.add('status-error');
+            badge.innerHTML = '<span class="status-icon">❌</span><span>' + errors[0] + '</span>';
+            previewDiv.classList.add('has-errors');
+            badge.title = errors.join('\n');
+
+            // Show detailed error message
+            setTimeout(() => {
+                showError('⚠️ Проблема с изображением:\n\n' + errors.join('\n') + '\n\nПожалуйста, загрузите другое фото.');
+            }, 300);
+        } else if (warnings.length > 0) {
+            // Warnings - might still work
             badge.classList.add('status-warning');
             badge.innerHTML = '<span class="status-icon">⚠️</span><span>' + warnings[0] + '</span>';
             previewDiv.classList.add('has-warnings');
-            badge.title = warnings.join(', ');
+            badge.title = warnings.join('\n');
+        } else {
+            // All good
+            badge.classList.add('status-ok');
+            badge.innerHTML = '<span class="status-icon">✅</span><span>OK</span>';
+            previewDiv.classList.add('validated-ok');
         }
 
         previewDiv.appendChild(badge);
+
+        console.log(`[VALIDATION] ${type} - ${width}x${height}, ratio: ${aspectRatio.toFixed(2)}, errors: ${errors.length}, warnings: ${warnings.length}`);
+
+        // Update button state after validation
+        setTimeout(() => {
+            updateTryOnButton();
+        }, 100);
 
     } catch (error) {
         console.error('[VALIDATION] Error validating preview:', error);
@@ -318,7 +373,20 @@ function updateTryOnButton() {
     const hasPersonImages = state.personImages.length > 0;
     const hasGarmentImage = state.garmentImage !== null;
 
-    tryonBtn.disabled = !(hasPersonImages && hasGarmentImage);
+    // Check if any preview has errors
+    const hasErrors = document.querySelectorAll('.preview-item.has-errors').length > 0;
+
+    // Disable button if:
+    // 1. No images uploaded
+    // 2. Any image has validation errors
+    tryonBtn.disabled = !(hasPersonImages && hasGarmentImage) || hasErrors;
+
+    // Update button text if errors present
+    if (hasErrors && hasPersonImages && hasGarmentImage) {
+        tryonBtn.querySelector('.btn-text').textContent = 'исправьте ошибки в фото';
+    } else if (hasPersonImages && hasGarmentImage) {
+        tryonBtn.querySelector('.btn-text').textContent = 'нажми чтобы посмотреть';
+    }
 }
 
 // Handle Try-On Process
