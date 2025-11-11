@@ -457,7 +457,9 @@ async function handleTryOn() {
 
         if (!tryonResponse.ok) {
             const errorData = await tryonResponse.json().catch(() => ({}));
-            throw new Error(errorData.error || 'Ошибка обработки изображений');
+            // Handle special error format with message field
+            const errorMessage = errorData.message || errorData.error || 'Ошибка обработки изображений';
+            throw new Error(errorMessage);
         }
 
         const tryonData = await tryonResponse.json();
@@ -507,10 +509,17 @@ async function handleTryOn() {
                        'Используйте JPG или PNG файлы';
         } else if (error.message.includes('FASHN_API_KEY')) {
             errorMsg = '⚙️ API ключ FASHN не настроен\n\nОбратитесь к администратору';
+        } else if (error.message.includes('NANOBANANA_API_KEY_MISSING')) {
+            // Special handling for missing Nano Banana key - show original message
+            errorMsg = error.message.replace('NANOBANANA_API_KEY_MISSING', '').trim();
+        } else if (error.message.includes('NANOBANANA_API_KEY not set')) {
+            errorMsg = '🍌 Nano Banana API ключ не настроен\n\n' +
+                       'Добавьте NANOBANANA_API_KEY в Railway Variables\n' +
+                       'или переключитесь на FASHN AI';
         } else if (error.message.includes('401')) {
-            errorMsg = '🔑 Неверный API ключ FASHN\n\nПроверьте настройки';
+            errorMsg = '🔑 Неверный API ключ\n\nПроверьте настройки';
         } else if (error.message.includes('402')) {
-            errorMsg = '💳 Недостаточно кредитов FASHN\n\nПополните баланс';
+            errorMsg = '💳 Недостаточно кредитов\n\nПополните баланс';
         } else if (error.message.includes('timeout')) {
             errorMsg = '⏱️ Превышено время ожидания\n\nПопробуйте снова';
         } else if (error.message.includes('NANOBANANA_NOT_READY') || error.message.includes('NotImplementedError')) {

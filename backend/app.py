@@ -707,6 +707,18 @@ def virtual_tryon():
 
         print(f"[TRYON] Processing with category: {garment_category}, AI model: {ai_model}")
 
+        # Early validation for Nano Banana API key
+        if ai_model == 'nanobanana' and not NANOBANANA_API_KEY:
+            return jsonify({
+                'error': 'NANOBANANA_API_KEY_MISSING',
+                'message': '🍌 Nano Banana API ключ не настроен\n\n'
+                          'Пожалуйста, добавьте NANOBANANA_API_KEY в Railway Variables:\n'
+                          '1. Зайдите на https://nanobananaapi.ai/api-key\n'
+                          '2. Создайте API ключ\n'
+                          '3. Добавьте его в Railway Dashboard → Variables\n\n'
+                          'Или используйте FASHN AI (переключите слайдер).'
+            }), 400
+
         # Process each person image with the garment
         results = []
 
