@@ -16,7 +16,14 @@ FRONTEND_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'fron
 app = Flask(__name__,
             static_folder=FRONTEND_FOLDER,
             static_url_path='')
-CORS(app)
+# CORS configuration - allow all origins (since we're serving frontend from same domain)
+CORS(app, resources={
+    r"/*": {
+        "origins": "*",
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"]
+    }
+})
 
 # Configuration
 UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'uploads')
@@ -236,7 +243,7 @@ def get_public_image_url(image_path):
     filename = os.path.basename(image_path)
 
     # Get Railway public URL from environment or use default
-    railway_url = os.environ.get('RAILWAY_PUBLIC_DOMAIN', 'taptolook.up.railway.app')
+    railway_url = os.environ.get('RAILWAY_PUBLIC_DOMAIN', 'taptolook.net')
 
     # Construct public URL for the uploaded file
     public_url = f"https://{railway_url}/uploads/{filename}"
@@ -669,7 +676,7 @@ def virtual_tryon():
 
                 # Generate public URL for result image
                 result_filename = os.path.basename(result_path)
-                railway_url = os.environ.get('RAILWAY_PUBLIC_DOMAIN', 'taptolook.up.railway.app')
+                railway_url = os.environ.get('RAILWAY_PUBLIC_DOMAIN', 'taptolook.net')
                 result_url = f"https://{railway_url}/api/result/{result_filename}"
 
                 # Read result image and encode to base64 for frontend
