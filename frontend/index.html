@@ -26,44 +26,52 @@
         <main class="main-content">
             <!-- Upload Section -->
             <section class="upload-section">
-                <div class="upload-card">
+                <div class="upload-card upload-card-person">
                     <div class="glass-reflection"></div>
-                    <h2>Шаг 1: Загрузите ваше фото</h2>
-                    <p class="instruction">Загрузите 1 фотографию в полный рост</p>
+                    <h2 class="step-title step-title-person">Шаг 1: Загрузите ваше фото</h2>
                     <div class="photo-requirements">
-                        📸 <strong>Требования к фото:</strong><br>
-                        • Человек в полный рост 🧍<br>
-                        • Четкое изображение ✨<br>
-                        • Хорошее освещение 💡<br>
-                        • Простой фон 🎨<br>
-                        • Высота до 2000px 📏
+                        📸 Человек в полный рост<br>
+                        💡 Четкое изображение<br>
+                        💡 Хорошее освещение<br>
+                        🎨 Простой фон<br>
+                        📏 Высота до 2000px
                     </div>
 
                     <input type="file" id="personImages" accept="image/*" multiple class="file-input">
-                    <div class="upload-zone" id="personUploadZone">
-                        <div class="upload-icon">📸</div>
+                    <div class="upload-zone upload-zone-person" id="personUploadZone">
+                        <div class="upload-icon">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                        </div>
                         <p>Нажмите или перетащите фото</p>
                     </div>
 
                     <div class="preview-container" id="personPreview"></div>
                 </div>
 
-                <div class="upload-card">
+                <div class="upload-card upload-card-garment">
                     <div class="glass-reflection"></div>
-                    <h2>Шаг 2: Загрузите одежду</h2>
-                    <p class="instruction">Загрузите фото желаемой одежды</p>
+                    <h2 class="step-title step-title-garment">Шаг 2: Загрузите одежду</h2>
                     <div class="photo-requirements">
-                        👕 <strong>Требования к фото:</strong><br>
-                        • Flat-lay или манекен (лучше) ⭐<br>
-                        • Можно на модели 👤<br>
-                        • Четкое изображение ✨<br>
-                        • JPG или PNG формат 📄<br>
-                        • Высота до 2000px 📏
+                        ⭐ Flat-lay или манекен (лучше)<br>
+                        👤 Можно на модели<br>
+                        ✨ Четкое изображение<br>
+                        📄 JPG или PNG формат<br>
+                        📏 Высота до 2000px
                     </div>
 
                     <input type="file" id="garmentImage" accept="image/*" class="file-input">
-                    <div class="upload-zone" id="garmentUploadZone">
-                        <div class="upload-icon">👕</div>
+                    <div class="upload-zone upload-zone-garment" id="garmentUploadZone">
+                        <div class="upload-icon">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                        </div>
                         <p>Нажмите или перетащите фото одежды</p>
                     </div>
 
@@ -74,10 +82,10 @@
             <!-- Action Button -->
             <div class="action-section">
                 <button id="tryonBtn" class="btn-primary" disabled>
-                    <span class="btn-icon">✨</span>
-                    <span class="btn-text">нажми, чтобы посмотреть</span>
+                    <span class="btn-icon">👀</span>
+                    <span class="btn-text">Посмотреть результат</span>
                 </button>
-                <p class="waiting-time-text">примерное ожидание 5-17 секунд</p>
+                <p class="waiting-time-text">Примерное ожидание 5-17 секунд</p>
 
                 <div id="progressBar" class="progress-bar" style="display: none;">
                     <div class="progress-fill"></div>
