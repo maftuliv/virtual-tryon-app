@@ -272,24 +272,18 @@ def process_with_nanobanana(person_image_path, garment_image_path, category='aut
         print(f"[NANOBANANA] Person image URL: {person_image_url}")
         print(f"[NANOBANANA] Garment image URL: {garment_image_url}")
 
-        # Create prompt for virtual try-on using Nano Banana's image editing
+        # Create optimized prompt for virtual try-on
+        # NanoBanana API works best with clear, direct instructions for outfit editing
         category_map = {
             'auto': 'garment',
             'tops': 'top',
             'bottoms': 'bottom',
             'one-pieces': 'full outfit'
         }
-        garment_type = category_map.get(category, category)
+        garment_type = category_map.get(category, 'garment')
 
-        prompt = f"""Edit this image to show the person wearing the {garment_type} from the reference image.
-        Requirements:
-        - Realistically fit the garment on the person's body
-        - Preserve the person's pose, face, and body proportions
-        - Match lighting and shadows naturally
-        - Keep the garment's color, texture, and style exactly as shown
-        - Photorealistic quality
-        - Natural fabric draping and wrinkles
-        """
+        # Optimized prompt for virtual try-on (based on NanoBanana outfit editing best practices)
+        prompt = f"Put the {garment_type} from the second image onto the person in the first image. The garment should fit naturally on the person's body, maintaining their original pose and proportions. Keep the garment's exact color, pattern, and style. Ensure realistic lighting, shadows, and fabric texture."
 
         print(f"[NANOBANANA] Sending request to NanoBananaAPI.ai...")
         print(f"[NANOBANANA] Prompt: {prompt[:100]}...")
