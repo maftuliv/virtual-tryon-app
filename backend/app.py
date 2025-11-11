@@ -784,10 +784,19 @@ def submit_feedback():
                 
                 telegram_response = requests.post(telegram_url, json=telegram_data, timeout=5)
                 if telegram_response.status_code == 200:
-                    print(f"[FEEDBACK] ✅ Sent to Telegram successfully")
+                    response_data = telegram_response.json()
+                    if response_data.get('ok'):
+                        print(f"[FEEDBACK] ✅ Sent to Telegram successfully")
+                        print(f"[FEEDBACK] Message ID: {response_data.get('result', {}).get('message_id', 'N/A')}")
+                    else:
+                        print(f"[FEEDBACK] ❌ Telegram API error: {response_data.get('description', 'Unknown')}")
                 else:
-                    print(f"[FEEDBACK] ❌ Telegram error: {telegram_response.status_code}")
-                    print(f"[FEEDBACK] Response: {telegram_response.text[:200]}")
+                    print(f"[FEEDBACK] ❌ Telegram HTTP error: {telegram_response.status_code}")
+                    try:
+                        error_data = telegram_response.json()
+                        print(f"[FEEDBACK] Error details: {error_data}")
+                    except:
+                        print(f"[FEEDBACK] Response text: {telegram_response.text[:500]}")
             except Exception as e:
                 print(f"[FEEDBACK] ❌ Telegram error (non-critical): {e}")
                 import traceback
@@ -807,6 +816,42 @@ def submit_feedback():
         print(f"[FEEDBACK ERROR] {e}")
         import traceback
         traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/feedback/list', methods=['GET'])
+def list_feedback():
+    """
+    List all saved feedback files (for debugging)
+    """
+    try:
+        feedback_files = []
+        if os.path.exists(FEEDBACK_FOLDER):
+            for filename in os.listdir(FEEDBACK_FOLDER):
+                if filename.endswith('.json'):
+                    filepath = os.path.join(FEEDBACK_FOLDER, filename)
+                    try:
+                        with open(filepath, 'r', encoding='utf-8') as f:
+                            data = json.load(f)
+                            feedback_files.append({
+                                'filename': filename,
+                                'rating': data.get('rating'),
+                                'comment': data.get('comment', '')[:50] + '...' if len(data.get('comment', '')) > 50 else data.get('comment', ''),
+                                'timestamp': data.get('timestamp'),
+                                'size': os.path.getsize(filepath)
+                            })
+                    except Exception as e:
+                        feedback_files.append({
+                            'filename': filename,
+                            'error': str(e)
+                        })
+        
+        return jsonify({
+            'success': True,
+            'count': len(feedback_files),
+            'files': feedback_files,
+            'folder': FEEDBACK_FOLDER
+        }), 200
+    except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/cleanup', methods=['POST'])
