@@ -156,29 +156,93 @@ def process_with_nanobanana(person_image_path, garment_image_path, category='aut
 
     Nano Banana is Google's image editing model powered by Gemini 2.5 Flash
     Pricing: $0.03 per image (cheaper than FASHN!)
-    Speed: Very fast generation
+    Speed: Very fast generation (5-10 seconds)
     """
     try:
-        print(f"[NANOBANANA] Nano Banana (Gemini 2.5) API called")
+        print(f"[NANOBANANA] 🍌 Starting Nano Banana processing...")
 
         if not REPLICATE_API_KEY:
             raise ValueError("REPLICATE_API_KEY not set. Please add to environment variables.")
 
-        # TODO: Implement actual Nano Banana API integration via Replicate
-        # Steps needed:
-        # 1. Install replicate: pip install replicate
-        # 2. Use replicate.run() with google/nano-banana model
-        # 3. Create prompt for virtual try-on task
-        # 4. Handle image input/output
+        # Import replicate (installed via requirements.txt)
+        try:
+            import replicate
+        except ImportError:
+            raise ValueError(
+                "NANOBANANA_SETUP_ERROR: Replicate library not installed. "
+                "Add 'replicate==0.22.0' to requirements.txt and redeploy."
+            )
 
-        raise NotImplementedError(
-            "NANOBANANA_NOT_READY: Nano Banana (Google Gemini 2.5 Flash) integration in progress. "
-            "This model is 🍌 AMAZING but needs API setup! "
-            "Coming very soon - it's faster and cheaper than alternatives!"
+        # Preprocess images
+        person_image_optimized = preprocess_image(person_image_path, max_height=2000, quality=95)
+        garment_image_optimized = preprocess_image(garment_image_path, max_height=2000, quality=95)
+
+        # Convert to base64 for API
+        person_image_b64 = image_to_base64(person_image_optimized)
+        garment_image_b64 = image_to_base64(garment_image_optimized)
+
+        # Create prompt for virtual try-on
+        prompt = f"""
+        Create a realistic virtual try-on image:
+        - Person: wearing the garment
+        - Garment type: {category}
+        - Style: photorealistic, high quality
+        - Preserve person's pose and features
+        - Fit garment naturally on the person's body
+        """
+
+        print(f"[NANOBANANA] Sending request to Replicate API...")
+
+        # Call Replicate API
+        output = replicate.run(
+            NANOBANANA_MODEL,
+            input={
+                "image": f"data:image/jpg;base64,{person_image_b64}",
+                "reference_image": f"data:image/jpg;base64,{garment_image_b64}",
+                "prompt": prompt,
+                "num_outputs": 1,
+                "guidance_scale": 7.5,
+                "num_inference_steps": 50
+            }
         )
+
+        print(f"[NANOBANANA] Response received: {type(output)}")
+
+        # Handle output (URL or base64)
+        timestamp = int(time.time())
+        result_filename = f'result_nanobanana_{timestamp}.png'
+        result_path = os.path.join(app.config['RESULTS_FOLDER'], result_filename)
+
+        if isinstance(output, list) and len(output) > 0:
+            result_data = output[0]
+        else:
+            result_data = output
+
+        # Download or save result
+        if isinstance(result_data, str) and result_data.startswith('http'):
+            # Download from URL
+            print(f"[NANOBANANA] Downloading result from URL...")
+            img_response = requests.get(result_data, timeout=30)
+            if img_response.status_code == 200:
+                with open(result_path, 'wb') as img_file:
+                    img_file.write(img_response.content)
+                print(f"[NANOBANANA] ✅ Downloaded {len(img_response.content)} bytes")
+            else:
+                raise ValueError(f"Failed to download result: {img_response.status_code}")
+        elif isinstance(result_data, str):
+            # Save base64 image
+            print(f"[NANOBANANA] Saving base64 result...")
+            save_base64_image(result_data, result_path)
+        else:
+            raise ValueError(f"Unexpected output type: {type(result_data)}")
+
+        print(f"[NANOBANANA] ✅ Result saved to: {result_path}")
+        return result_path
 
     except Exception as e:
         print(f"[NANOBANANA ERROR] ❌ Error in process_with_nanobanana: {e}")
+        import traceback
+        traceback.print_exc()
         raise
 
 def process_with_fashn(person_image_path, garment_image_path, category='auto'):
