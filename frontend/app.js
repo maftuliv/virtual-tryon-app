@@ -439,7 +439,7 @@ async function handleTryOn() {
         state.uploadedGarmentPath = uploadData.garment_image;
         state.sessionId = uploadData.session_id;
 
-        // Step 2: Perform virtual try-on
+        // Step 2: Start virtual try-on task (async)
         updateProgressText('создается магия твоего стиля ✨');
 
         const tryonResponse = await fetch(`${API_URL}/api/tryon`, {
@@ -464,21 +464,16 @@ async function handleTryOn() {
 
         const tryonData = await tryonResponse.json();
 
-        if (!tryonData.success) {
-            throw new Error(tryonData.error || 'Обработка не удалась');
+        if (!tryonData.success || !tryonData.task_id) {
+            throw new Error(tryonData.error || 'Не удалось создать задачу обработки');
         }
 
-        // Check if we have results
-        if (!tryonData.results || tryonData.results.length === 0) {
-            throw new Error('Не удалось получить результаты. Проверьте настройки FASHN API.');
-        }
+        const taskId = tryonData.task_id;
+        console.log(`[TRYON] Task created: ${taskId}`);
 
-        // Display results
-        displayResults(tryonData.results);
-
-        // Hide progress, show results
-        progressBar.style.display = 'none';
-        resultsSection.style.display = 'block';
+        // Step 3: Poll for task status
+        updateProgressText('обработка изображений...');
+        await pollTaskStatus(taskId);
 
     } catch (error) {
         console.error('Error:', error);
@@ -536,6 +531,74 @@ async function handleTryOn() {
 }
 
 // Update progress text
+// Poll task status
+async function pollTaskStatus(taskId, maxAttempts = 120, pollInterval = 2000) {
+    let attempts = 0;
+    
+    while (attempts < maxAttempts) {
+        try {
+            const statusResponse = await fetch(`${API_URL}/api/tryon/status/${taskId}`);
+            
+            if (!statusResponse.ok) {
+                throw new Error(`Status check failed: ${statusResponse.status}`);
+            }
+            
+            const statusData = await statusResponse.json();
+            console.log(`[POLL] Status check ${attempts + 1}: ${statusData.status}`);
+            
+            if (statusData.status === 'completed') {
+                // Task completed successfully
+                if (!statusData.results || statusData.results.length === 0) {
+                    throw new Error('Задача завершена, но результаты отсутствуют');
+                }
+                
+                // Display results
+                displayResults(statusData.results);
+                
+                // Hide progress, show results
+                progressBar.style.display = 'none';
+                resultsSection.style.display = 'block';
+                tryonBtn.disabled = false;
+                return;
+                
+            } else if (statusData.status === 'failed') {
+                // Task failed
+                const errorMsg = statusData.error || 'Ошибка обработки изображений';
+                throw new Error(errorMsg);
+                
+            } else if (statusData.status === 'processing' || statusData.status === 'queued') {
+                // Still processing, continue polling
+                updateProgressText('обработка изображений...');
+                await new Promise(resolve => setTimeout(resolve, pollInterval));
+                attempts++;
+                continue;
+            } else {
+                // Unknown status
+                console.warn(`[POLL] Unknown status: ${statusData.status}`);
+                await new Promise(resolve => setTimeout(resolve, pollInterval));
+                attempts++;
+                continue;
+            }
+            
+        } catch (error) {
+            console.error(`[POLL] Error checking status:`, error);
+            
+            // If it's a network error, continue polling
+            if (error.message.includes('fetch') || error.message.includes('network')) {
+                await new Promise(resolve => setTimeout(resolve, pollInterval));
+                attempts++;
+                continue;
+            }
+            
+            // Otherwise, throw the error
+            throw error;
+        }
+    }
+    
+    // Timeout
+    throw new Error('Превышено время ожидания обработки. Попробуйте еще раз.');
+}
+
 function updateProgressText(text) {
     const progressText = document.querySelector('.progress-text');
     if (progressText) {

@@ -2,6 +2,8 @@ import os
 import time
 import base64
 import requests
+import threading
+import uuid
 from flask import Flask, request, jsonify, send_file, send_from_directory
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
@@ -28,6 +30,11 @@ os.makedirs(RESULTS_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['RESULTS_FOLDER'] = RESULTS_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+
+# Task storage for async processing (in-memory, cleared on restart)
+# Structure: {task_id: {'status': 'processing'|'completed'|'failed', 'results': [], 'error': None, 'created_at': timestamp}}
+tasks = {}
+tasks_lock = threading.Lock()  # Thread-safe access to tasks dict
 
 # API configurations
 FASHN_API_KEY = os.environ.get('FASHN_API_KEY', '').strip()  # FASHN AI token
@@ -776,11 +783,80 @@ def upload_files():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+def process_tryon_task(task_id, person_images, garment_image, garment_category, ai_model):
+    """
+    Background task processor for virtual try-on
+    """
+    try:
+        print(f"[TASK {task_id}] Starting background processing...")
+        
+        with tasks_lock:
+            tasks[task_id]['status'] = 'processing'
+        
+        results = []
+        
+        for idx, person_image in enumerate(person_images):
+            if not os.path.exists(person_image):
+                print(f"[TASK {task_id}] Person image not found: {person_image}")
+                results.append({
+                    'original': os.path.basename(person_image),
+                    'error': 'Image file not found'
+                })
+                continue
+
+            try:
+                print(f"[TASK {task_id}] Processing image {idx + 1}/{len(person_images)}: {os.path.basename(person_image)}")
+                
+                # Choose processing method based on AI model
+                if ai_model == 'nanobanana':
+                    result_path = process_with_nanobanana(person_image, garment_image, garment_category)
+                else:
+                    result_path = process_with_fashn(person_image, garment_image, garment_category)
+
+                # Generate public URL for result image
+                result_filename = os.path.basename(result_path)
+                railway_url = os.environ.get('RAILWAY_PUBLIC_DOMAIN', 'taptolook.up.railway.app')
+                result_url = f"https://{railway_url}/api/result/{result_filename}"
+
+                results.append({
+                    'original': os.path.basename(person_image),
+                    'result_path': result_path,
+                    'result_image': result_url
+                })
+                print(f"[TASK {task_id}] ✅ Image {idx + 1} processed successfully")
+                
+            except Exception as e:
+                print(f"[TASK {task_id}] ❌ Error processing {person_image}: {e}")
+                import traceback
+                traceback.print_exc()
+                results.append({
+                    'original': os.path.basename(person_image),
+                    'error': str(e)
+                })
+
+        # Update task status
+        with tasks_lock:
+            tasks[task_id]['status'] = 'completed'
+            tasks[task_id]['results'] = results
+            tasks[task_id]['completed_at'] = time.time()
+        
+        print(f"[TASK {task_id}] ✅ Task completed successfully")
+        
+    except Exception as e:
+        print(f"[TASK {task_id}] ❌ Task failed: {e}")
+        import traceback
+        traceback.print_exc()
+        with tasks_lock:
+            tasks[task_id]['status'] = 'failed'
+            tasks[task_id]['error'] = str(e)
+            tasks[task_id]['failed_at'] = time.time()
+
 @app.route('/api/tryon', methods=['POST'])
 def virtual_tryon():
     """
-    Perform virtual try-on
+    Start virtual try-on task (async)
     Expects JSON: {person_images: [], garment_image: "", garment_category: "auto", ai_model: "fashn"}
+    Returns: {success: true, task_id: "uuid"}
     """
     try:
         data = request.get_json()
@@ -790,21 +866,17 @@ def virtual_tryon():
 
         person_images = data['person_images']
         garment_image = data['garment_image']
-        garment_category = data.get('garment_category', 'auto')  # Get category, default to auto
-        ai_model = data.get('ai_model', 'fashn')  # Get AI model, default to fashn
+        garment_category = data.get('garment_category', 'auto')
+        ai_model = data.get('ai_model', 'fashn')
 
         if not person_images or not garment_image:
             return jsonify({'error': 'Invalid image paths'}), 400
 
-        print(f"[TRYON] Processing with category: {garment_category}, AI model: {ai_model}")
+        print(f"[TRYON] Creating task with category: {garment_category}, AI model: {ai_model}")
 
         # Early validation for Nano Banana API key
         if ai_model == 'nanobanana':
-            print(f"[TRYON] Nano Banana selected, checking API key...")
-            print(f"[TRYON] NANOBANANA_API_KEY status: {'SET' if NANOBANANA_API_KEY else 'MISSING'} (length: {len(NANOBANANA_API_KEY) if NANOBANANA_API_KEY else 0})")
-
             if not NANOBANANA_API_KEY or NANOBANANA_API_KEY.strip() == '':
-                print(f"[TRYON ERROR] NANOBANANA_API_KEY is empty or missing!")
                 return jsonify({
                     'error': 'NANOBANANA_API_KEY_MISSING',
                     'message': '🍌 Nano Banana API ключ не настроен\n\n'
@@ -815,44 +887,73 @@ def virtual_tryon():
                               'Или используйте FASHN AI (переключите слайдер).'
                 }), 400
 
-            print(f"[TRYON] NANOBANANA_API_KEY validated successfully (preview: {NANOBANANA_API_KEY[:8]}...)")
-
-        # Process each person image with the garment
-        results = []
-
-        for person_image in person_images:
-            if not os.path.exists(person_image):
-                continue
-
-            try:
-                # Choose processing method based on AI model
-                if ai_model == 'nanobanana':
-                    result_path = process_with_nanobanana(person_image, garment_image, garment_category)
-                else:
-                    result_path = process_with_fashn(person_image, garment_image, garment_category)
-
-                # Read result image and encode to base64
-                with open(result_path, 'rb') as img_file:
-                    img_data = base64.b64encode(img_file.read()).decode('utf-8')
-
-                results.append({
-                    'original': os.path.basename(person_image),
-                    'result_path': result_path,
-                    'result_image': f'data:image/png;base64,{img_data}'
-                })
-            except Exception as e:
-                print(f"Error processing {person_image}: {e}")
-                results.append({
-                    'original': os.path.basename(person_image),
-                    'error': str(e)
-                })
-
+        # Create task
+        task_id = str(uuid.uuid4())
+        with tasks_lock:
+            tasks[task_id] = {
+                'status': 'queued',
+                'results': [],
+                'error': None,
+                'created_at': time.time(),
+                'person_images': person_images,
+                'garment_image': garment_image,
+                'garment_category': garment_category,
+                'ai_model': ai_model
+            }
+        
+        print(f"[TRYON] Task created: {task_id}")
+        
+        # Start background processing
+        thread = threading.Thread(
+            target=process_tryon_task,
+            args=(task_id, person_images, garment_image, garment_category, ai_model),
+            daemon=True
+        )
+        thread.start()
+        
         return jsonify({
             'success': True,
-            'results': results
-        }), 200
+            'task_id': task_id,
+            'status': 'queued',
+            'message': 'Task started'
+        }), 202  # 202 Accepted - async processing
 
     except Exception as e:
+        print(f"[TRYON ERROR] {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/tryon/status/<task_id>', methods=['GET'])
+def get_tryon_status(task_id):
+    """
+    Get status of virtual try-on task
+    Returns: {status: 'queued'|'processing'|'completed'|'failed', results: [], error: null}
+    """
+    try:
+        with tasks_lock:
+            task = tasks.get(task_id)
+        
+        if not task:
+            return jsonify({'error': 'Task not found'}), 404
+        
+        response = {
+            'task_id': task_id,
+            'status': task['status'],
+            'created_at': task['created_at']
+        }
+        
+        if task['status'] == 'completed':
+            response['results'] = task['results']
+            response['completed_at'] = task.get('completed_at')
+        elif task['status'] == 'failed':
+            response['error'] = task['error']
+            response['failed_at'] = task.get('failed_at')
+        
+        return jsonify(response), 200
+        
+    except Exception as e:
+        print(f"[STATUS ERROR] {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/result/<filename>', methods=['GET'])
