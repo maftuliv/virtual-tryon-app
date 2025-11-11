@@ -638,6 +638,10 @@ body {
     .results-grid {
         grid-template-columns: 1fr;
     }
+
+    .logo-smile {
+        bottom: -18px;
+    }
 }
 
 /* Loading Animation */
