@@ -734,11 +734,22 @@ def submit_feedback():
         
         # Save to JSON file
         feedback_file = os.path.join(FEEDBACK_FOLDER, f'feedback_{int(time.time())}.json')
-        with open(feedback_file, 'w', encoding='utf-8') as f:
-            json.dump(feedback_data, f, ensure_ascii=False, indent=2)
-        
-        print(f"[FEEDBACK] Saved feedback: rating={rating}, comment_length={len(comment)}")
-        print(f"[FEEDBACK] File saved to: {feedback_file}")
+        try:
+            with open(feedback_file, 'w', encoding='utf-8') as f:
+                json.dump(feedback_data, f, ensure_ascii=False, indent=2)
+            
+            # Verify file was saved
+            if os.path.exists(feedback_file):
+                file_size = os.path.getsize(feedback_file)
+                print(f"[FEEDBACK] ✅ Saved feedback: rating={rating}, comment_length={len(comment)}")
+                print(f"[FEEDBACK] ✅ File saved to: {feedback_file} (size: {file_size} bytes)")
+            else:
+                print(f"[FEEDBACK] ❌ ERROR: File was not created: {feedback_file}")
+        except Exception as e:
+            print(f"[FEEDBACK] ❌ ERROR saving file: {e}")
+            import traceback
+            traceback.print_exc()
+            raise
         
         # Optional: Send to Telegram if configured
         telegram_bot_token = os.environ.get('TELEGRAM_BOT_TOKEN', '').strip()
