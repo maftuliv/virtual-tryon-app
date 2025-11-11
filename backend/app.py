@@ -937,11 +937,17 @@ def get_tryon_status(task_id):
     Returns: {status: 'queued'|'processing'|'completed'|'failed', results: [], error: null}
     """
     try:
+        print(f"[STATUS] Checking status for task: {task_id}")
+        
         with tasks_lock:
             task = tasks.get(task_id)
+            print(f"[STATUS] Task found: {task is not None}")
+            if task:
+                print(f"[STATUS] Task status: {task.get('status')}, results count: {len(task.get('results', []))}")
         
         if not task:
-            return jsonify({'error': 'Task not found'}), 404
+            print(f"[STATUS] Task {task_id} not found in tasks dict. Available tasks: {list(tasks.keys())[:5]}")
+            return jsonify({'error': 'Task not found', 'task_id': task_id}), 404
         
         response = {
             'task_id': task_id,
@@ -952,14 +958,20 @@ def get_tryon_status(task_id):
         if task['status'] == 'completed':
             response['results'] = task['results']
             response['completed_at'] = task.get('completed_at')
+            print(f"[STATUS] Returning completed task with {len(task['results'])} results")
         elif task['status'] == 'failed':
             response['error'] = task['error']
             response['failed_at'] = task.get('failed_at')
+            print(f"[STATUS] Returning failed task: {task['error']}")
+        else:
+            print(f"[STATUS] Returning {task['status']} task")
         
         return jsonify(response), 200
         
     except Exception as e:
         print(f"[STATUS ERROR] {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/result/<filename>', methods=['GET'])
@@ -968,12 +980,33 @@ def get_result(filename):
     Retrieve result image
     """
     try:
+        # Security: prevent directory traversal
+        filename = secure_filename(filename)
         file_path = os.path.join(app.config['RESULTS_FOLDER'], filename)
+        
+        # Additional security check
+        if not os.path.abspath(file_path).startswith(os.path.abspath(app.config['RESULTS_FOLDER'])):
+            return jsonify({'error': 'Invalid file path'}), 403
+        
         if os.path.exists(file_path):
-            return send_file(file_path, mimetype='image/png')
+            # Determine MIME type from extension
+            ext = filename.rsplit('.', 1)[-1].lower()
+            mimetype_map = {
+                'png': 'image/png',
+                'jpg': 'image/jpeg',
+                'jpeg': 'image/jpeg'
+            }
+            mimetype = mimetype_map.get(ext, 'image/png')
+            
+            print(f"[RESULT] Serving result image: {filename} ({mimetype})")
+            return send_file(file_path, mimetype=mimetype)
         else:
+            print(f"[RESULT] File not found: {filename}")
             return jsonify({'error': 'File not found'}), 404
     except Exception as e:
+        print(f"[RESULT ERROR] {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/cleanup', methods=['POST'])

@@ -472,6 +472,10 @@ async function handleTryOn() {
         console.log(`[TRYON] Task created: ${taskId}`);
 
         // Step 3: Poll for task status
+        // Small delay to ensure task is created on backend
+        updateProgressText('задача создается...');
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         updateProgressText('обработка изображений...');
         await pollTaskStatus(taskId);
 
@@ -535,19 +539,42 @@ async function handleTryOn() {
 async function pollTaskStatus(taskId, maxAttempts = 120, pollInterval = 2000) {
     let attempts = 0;
     
+    console.log(`[POLL] Starting polling for task: ${taskId}`);
+    
     while (attempts < maxAttempts) {
         try {
-            const statusResponse = await fetch(`${API_URL}/api/tryon/status/${taskId}`);
+            const statusUrl = `${API_URL}/api/tryon/status/${taskId}`;
+            console.log(`[POLL] Attempt ${attempts + 1}/${maxAttempts}: Fetching ${statusUrl}`);
+            
+            const statusResponse = await fetch(statusUrl);
             
             if (!statusResponse.ok) {
-                throw new Error(`Status check failed: ${statusResponse.status}`);
+                // If 404, task might not be created yet, continue polling
+                if (statusResponse.status === 404) {
+                    console.warn(`[POLL] Task not found (404), might be creating... continuing...`);
+                    if (attempts < 5) {
+                        // First few attempts, wait a bit longer
+                        await new Promise(resolve => setTimeout(resolve, pollInterval));
+                        attempts++;
+                        continue;
+                    } else {
+                        // After 5 attempts, throw error
+                        const errorData = await statusResponse.json().catch(() => ({}));
+                        throw new Error(errorData.error || `Task not found (404) after ${attempts + 1} attempts`);
+                    }
+                }
+                // For other errors, try to get error message
+                const errorText = await statusResponse.text();
+                throw new Error(`Status check failed: ${statusResponse.status} - ${errorText.substring(0, 100)}`);
             }
             
             const statusData = await statusResponse.json();
-            console.log(`[POLL] Status check ${attempts + 1}: ${statusData.status}`);
+            console.log(`[POLL] Status check ${attempts + 1}: ${statusData.status}`, statusData);
             
             if (statusData.status === 'completed') {
                 // Task completed successfully
+                console.log(`[POLL] Task completed! Results:`, statusData.results);
+                
                 if (!statusData.results || statusData.results.length === 0) {
                     throw new Error('Задача завершена, но результаты отсутствуют');
                 }
@@ -559,16 +586,19 @@ async function pollTaskStatus(taskId, maxAttempts = 120, pollInterval = 2000) {
                 progressBar.style.display = 'none';
                 resultsSection.style.display = 'block';
                 tryonBtn.disabled = false;
+                console.log(`[POLL] Results displayed successfully`);
                 return;
                 
             } else if (statusData.status === 'failed') {
                 // Task failed
                 const errorMsg = statusData.error || 'Ошибка обработки изображений';
+                console.error(`[POLL] Task failed:`, errorMsg);
                 throw new Error(errorMsg);
                 
             } else if (statusData.status === 'processing' || statusData.status === 'queued') {
                 // Still processing, continue polling
-                updateProgressText('обработка изображений...');
+                const progressText = statusData.status === 'queued' ? 'задача в очереди...' : 'обработка изображений...';
+                updateProgressText(progressText);
                 await new Promise(resolve => setTimeout(resolve, pollInterval));
                 attempts++;
                 continue;
@@ -581,10 +611,14 @@ async function pollTaskStatus(taskId, maxAttempts = 120, pollInterval = 2000) {
             }
             
         } catch (error) {
-            console.error(`[POLL] Error checking status:`, error);
+            console.error(`[POLL] Error checking status (attempt ${attempts + 1}):`, error);
             
-            // If it's a network error, continue polling
-            if (error.message.includes('fetch') || error.message.includes('network')) {
+            // If it's a network error or 404 in early attempts, continue polling
+            if (error.message.includes('fetch') || 
+                error.message.includes('network') || 
+                error.message.includes('Failed to fetch') ||
+                (error.message.includes('404') && attempts < 10)) {
+                console.log(`[POLL] Network/404 error, continuing polling...`);
                 await new Promise(resolve => setTimeout(resolve, pollInterval));
                 attempts++;
                 continue;
