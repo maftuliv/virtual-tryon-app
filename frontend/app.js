@@ -478,8 +478,8 @@ function displayResults(results) {
         successCount++;
     });
 
-    // Show message if no successful results
-    if (successCount === 0) {
+    // Show message if no successful results AND no error cards were added
+    if (successCount === 0 && resultsGrid.children.length === 0) {
         resultsGrid.innerHTML = `
             <div class="no-results">
                 <span class="error-icon">😔</span>
