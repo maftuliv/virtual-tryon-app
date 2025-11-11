@@ -149,43 +149,50 @@ def save_base64_image(base64_string, output_path):
         img_file.write(img_data)
     return output_path
 
-def upload_image_to_imgbb(image_path):
+def get_public_image_url(image_path):
     """
-    Upload image to ImgBB to get a public URL (NanoBanana API requires URLs, not base64)
-    Using free ImgBB API as temporary image hosting
+    Get public URL for image (NanoBanana API requires URLs, not base64)
+
+    Strategy:
+    1. Use Railway public URL to serve the uploaded file directly
+    2. Fallback: Try ImgBB if IMGBB_API_KEY is set
     """
-    try:
-        # Convert image to base64
-        image_b64 = image_to_base64(image_path)
+    filename = os.path.basename(image_path)
 
-        # ImgBB free API endpoint (no key needed for basic usage)
-        imgbb_url = "https://api.imgbb.com/1/upload"
+    # Get Railway public URL from environment or use default
+    railway_url = os.environ.get('RAILWAY_PUBLIC_DOMAIN', 'taptolook.up.railway.app')
 
-        # Use a public API key (or user can set their own IMGBB_API_KEY env var)
-        imgbb_key = os.environ.get('IMGBB_API_KEY', '3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e')  # Placeholder
+    # Construct public URL for the uploaded file
+    public_url = f"https://{railway_url}/uploads/{filename}"
 
-        payload = {
-            'key': imgbb_key,
-            'image': image_b64,
-            'expiration': 600  # Auto-delete after 10 minutes
-        }
+    print(f"[IMAGE URL] Generated public URL: {public_url}")
 
-        response = requests.post(imgbb_url, data=payload, timeout=30)
-        response.raise_for_status()
+    # Optional: Try ImgBB if API key is explicitly set (not required)
+    imgbb_key = os.environ.get('IMGBB_API_KEY', '')
+    if imgbb_key and imgbb_key != '':
+        try:
+            print(f"[IMGBB] Attempting to upload to ImgBB as alternative...")
+            image_b64 = image_to_base64(image_path)
 
-        result = response.json()
-        if result.get('success'):
-            return result['data']['url']
-        else:
-            raise ValueError(f"ImgBB upload failed: {result.get('error', {}).get('message', 'Unknown error')}")
+            imgbb_url = "https://api.imgbb.com/1/upload"
+            payload = {
+                'key': imgbb_key,
+                'image': image_b64,
+                'expiration': 600  # Auto-delete after 10 minutes
+            }
 
-    except Exception as e:
-        print(f"[IMGBB ERROR] Failed to upload to ImgBB: {e}")
-        # Fallback: serve from our own server if Railway deployment is available
-        # This assumes the backend is publicly accessible
-        filename = os.path.basename(image_path)
-        # Return relative path that frontend can access
-        return f"/uploads/{filename}"
+            response = requests.post(imgbb_url, data=payload, timeout=10)
+            if response.status_code == 200:
+                result = response.json()
+                if result.get('success'):
+                    imgbb_public_url = result['data']['url']
+                    print(f"[IMGBB] Successfully uploaded: {imgbb_public_url}")
+                    return imgbb_public_url
+        except Exception as e:
+            print(f"[IMGBB] Upload failed, using Railway URL: {e}")
+
+    # Return Railway public URL
+    return public_url
 
 def process_with_nanobanana(person_image_path, garment_image_path, category='auto'):
     """
@@ -213,21 +220,14 @@ def process_with_nanobanana(person_image_path, garment_image_path, category='aut
         garment_image_optimized = preprocess_image(garment_image_path, max_height=2000, quality=95)
 
         # NanoBananaAPI requires image URLs, not base64
-        # Option 1: Upload to temporary image host (ImgBB)
-        # Option 2: Serve from our own publicly accessible server
-        print(f"[NANOBANANA] Uploading images to get public URLs...")
+        # Generate public URLs for uploaded images (served via Railway)
+        print(f"[NANOBANANA] Generating public URLs for images...")
 
-        # For Railway deployment, images are already accessible via public URL
-        # We'll use ImgBB as a fallback for local development
-        try:
-            person_image_url = upload_image_to_imgbb(person_image_optimized)
-            garment_image_url = upload_image_to_imgbb(garment_image_optimized)
-            print(f"[NANOBANANA] Image URLs obtained successfully")
-        except Exception as upload_error:
-            print(f"[NANOBANANA WARNING] ImgBB upload failed, trying alternative method: {upload_error}")
-            # Fallback: use local server paths (works if backend is publicly accessible)
-            person_image_url = f"https://taptolook.up.railway.app/uploads/{os.path.basename(person_image_optimized)}"
-            garment_image_url = f"https://taptolook.up.railway.app/uploads/{os.path.basename(garment_image_optimized)}"
+        person_image_url = get_public_image_url(person_image_optimized)
+        garment_image_url = get_public_image_url(garment_image_optimized)
+
+        print(f"[NANOBANANA] Person image URL: {person_image_url}")
+        print(f"[NANOBANANA] Garment image URL: {garment_image_url}")
 
         # Create prompt for virtual try-on using Nano Banana's image editing
         category_map = {
@@ -561,6 +561,17 @@ def health_check():
         "status": "healthy",
         "timestamp": time.time()
     })
+
+@app.route('/uploads/<path:filename>', methods=['GET'])
+def serve_upload(filename):
+    """
+    Serve uploaded images publicly (needed for NanoBanana API)
+    """
+    try:
+        return send_from_directory(UPLOAD_FOLDER, filename)
+    except Exception as e:
+        print(f"[UPLOADS] Error serving file {filename}: {e}")
+        return jsonify({"error": "File not found"}), 404
 
 @app.route('/api/validate', methods=['POST'])
 def validate_uploaded_image():
