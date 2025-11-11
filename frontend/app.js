@@ -295,6 +295,11 @@ async function handleTryOn() {
             throw new Error(uploadData.error || 'Загрузка не удалась');
         }
 
+        // Display validation warnings if any
+        if (uploadData.validation_warnings) {
+            displayValidationWarnings(uploadData.validation_warnings);
+        }
+
         state.uploadedPersonPaths = uploadData.person_images;
         state.uploadedGarmentPath = uploadData.garment_image;
         state.sessionId = uploadData.session_id;
@@ -538,6 +543,71 @@ function resetApplication() {
 
     // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Validation Warnings Display
+function displayValidationWarnings(warnings) {
+    console.log('[VALIDATION] Warnings received:', warnings);
+
+    let warningMessages = [];
+
+    // Person images warnings
+    if (warnings.person_images && warnings.person_images.length > 0) {
+        warnings.person_images.forEach(item => {
+            if (item.warnings && item.warnings.length > 0) {
+                warningMessages.push(`Фото человека ${item.image_index + 1}:`);
+                item.warnings.forEach(w => warningMessages.push(`  • ${w}`));
+            }
+        });
+    }
+
+    // Garment image warnings
+    if (warnings.garment_image && warnings.garment_image.length > 0) {
+        warningMessages.push('Фото одежды:');
+        warnings.garment_image.forEach(w => warningMessages.push(`  • ${w}`));
+    }
+
+    // Display warnings if any
+    if (warningMessages.length > 0) {
+        const warningText = '⚠️ Обратите внимание:\n\n' + warningMessages.join('\n');
+        console.log('[VALIDATION] Displaying warnings:', warningText);
+        // Show as info, not error - don't block processing
+        showInfo(warningText);
+    }
+}
+
+// Info message (non-blocking warnings)
+function showInfo(message) {
+    // Create temporary info box if it doesn't exist
+    let infoBox = document.getElementById('infoMessage');
+    if (!infoBox) {
+        infoBox = document.createElement('div');
+        infoBox.id = 'infoMessage';
+        infoBox.className = 'info-message';
+        infoBox.style.cssText = `
+            display: none;
+            background: rgba(234, 179, 8, 0.15);
+            backdrop-filter: blur(15px);
+            border: 2px solid rgba(234, 179, 8, 0.5);
+            color: #78350f;
+            padding: 20px 25px;
+            border-radius: 20px;
+            margin: 25px 0;
+            animation: slideIn 0.4s ease;
+            white-space: pre-line;
+            font-size: 0.9em;
+            line-height: 1.6;
+        `;
+        document.querySelector('.action-section').insertBefore(infoBox, document.getElementById('tryonBtn'));
+    }
+
+    infoBox.textContent = message;
+    infoBox.style.display = 'block';
+
+    // Auto-hide after 8 seconds
+    setTimeout(() => {
+        infoBox.style.display = 'none';
+    }, 8000);
 }
 
 // Error Handling

@@ -36,11 +36,103 @@ FASHN_BASE_URL = "https://api.fashn.ai/v1"
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def preprocess_image(image_path, max_height=2000, quality=95):
+    """
+    Preprocess image according to FASHN best practices:
+    - Resize to max_height if larger (maintaining aspect ratio)
+    - Convert to JPEG format with quality setting
+    - Use LANCZOS resampling for quality preservation
+
+    Returns: path to preprocessed image
+    """
+    try:
+        img = Image.open(image_path)
+
+        # Convert RGBA to RGB if needed
+        if img.mode in ('RGBA', 'LA', 'P'):
+            background = Image.new('RGB', img.size, (255, 255, 255))
+            if img.mode == 'P':
+                img = img.convert('RGBA')
+            background.paste(img, mask=img.split()[-1] if img.mode in ('RGBA', 'LA') else None)
+            img = background
+        elif img.mode != 'RGB':
+            img = img.convert('RGB')
+
+        # Resize if height exceeds max_height
+        width, height = img.size
+        if height > max_height:
+            ratio = max_height / height
+            new_width = int(width * ratio)
+            img = img.resize((new_width, max_height), Image.Resampling.LANCZOS)
+            print(f"[PREPROCESS] Resized from {width}x{height} to {new_width}x{max_height}")
+
+        # Save as optimized JPEG
+        output_path = image_path.rsplit('.', 1)[0] + '_optimized.jpg'
+        img.save(output_path, 'JPEG', quality=quality, optimize=True)
+
+        print(f"[PREPROCESS] Optimized image saved to {output_path}")
+        return output_path
+
+    except Exception as e:
+        print(f"[PREPROCESS WARNING] Failed to preprocess {image_path}: {e}")
+        # Return original path if preprocessing fails
+        return image_path
+
 def image_to_base64(image_path):
     """Convert image file to base64 string"""
     with open(image_path, 'rb') as img_file:
         img_data = base64.b64encode(img_file.read()).decode('utf-8')
     return img_data
+
+def validate_image(image_path):
+    """
+    Validate image quality and provide recommendations
+    Returns: (is_valid, warnings_list)
+    """
+    warnings = []
+
+    try:
+        img = Image.open(image_path)
+        width, height = img.size
+
+        # Check minimum resolution
+        if width < 512 or height < 512:
+            warnings.append("Низкое разрешение - рекомендуется минимум 512px")
+
+        # Check if image is too large
+        if height > 2000 or width > 2000:
+            warnings.append("Изображение будет автоматически уменьшено до 2000px")
+
+        # Check aspect ratio
+        aspect_ratio = width / height
+        supported_ratios = {
+            "1:1": 1.0, "3:4": 0.75, "4:3": 1.33, "9:16": 0.56,
+            "16:9": 1.78, "2:3": 0.67, "3:2": 1.5, "4:5": 0.8, "5:4": 1.25
+        }
+
+        # Find closest supported ratio
+        closest_ratio = min(supported_ratios.values(), key=lambda x: abs(x - aspect_ratio))
+        if abs(aspect_ratio - closest_ratio) > 0.15:
+            warnings.append("Необычное соотношение сторон - может повлиять на качество")
+
+        # Check brightness (simple histogram analysis)
+        grayscale = img.convert('L')
+        histogram = grayscale.histogram()
+        pixels = sum(histogram)
+        brightness = sum(i * histogram[i] for i in range(256)) / pixels
+
+        if brightness < 80:
+            warnings.append("Изображение слишком темное - улучшите освещение")
+        elif brightness > 200:
+            warnings.append("Изображение слишком яркое - проверьте экспозицию")
+
+        print(f"[VALIDATION] Image: {width}x{height}, brightness: {brightness:.1f}, warnings: {len(warnings)}")
+
+        return True, warnings
+
+    except Exception as e:
+        print(f"[VALIDATION ERROR] Failed to validate {image_path}: {e}")
+        return False, ["Не удалось проанализировать изображение"]
 
 def save_base64_image(base64_string, output_path):
     """Save base64 image to file"""
@@ -57,24 +149,39 @@ def process_with_fashn(person_image_path, garment_image_path):
     """
     Process virtual try-on using FASHN API
     Generates high-quality realistic results in 5-17 seconds
+
+    Now includes:
+    - Image preprocessing (resize, optimize)
+    - Enhanced API parameters for better quality
+    - Validation and warnings
     """
     try:
         if not FASHN_API_KEY:
             raise ValueError("FASHN_API_KEY not set. Please configure your API key in environment variables.")
 
-        # Convert images to base64
-        model_image_b64 = image_to_base64(person_image_path)
-        garment_image_b64 = image_to_base64(garment_image_path)
+        print(f"[FASHN] Starting image preprocessing...")
 
-        # Prepare request payload
+        # Preprocess images according to FASHN best practices
+        person_image_optimized = preprocess_image(person_image_path, max_height=2000, quality=95)
+        garment_image_optimized = preprocess_image(garment_image_path, max_height=2000, quality=95)
+
+        # Convert images to base64
+        model_image_b64 = image_to_base64(person_image_optimized)
+        garment_image_b64 = image_to_base64(garment_image_optimized)
+
+        # Prepare request payload with enhanced parameters
         input_data = {
             "model_name": "tryon-v1.6",
             "inputs": {
                 "model_image": f"data:image/jpg;base64,{model_image_b64}",
                 "garment_image": f"data:image/jpg;base64,{garment_image_b64}",
-                "category": "auto",  # Auto-detect garment category
-                "num_samples": 1,    # Generate 1 result per image
-                "mode": "quality"    # Use quality mode for best results
+                "category": "auto",              # Auto-detect garment category
+                "garment_photo_type": "auto",    # Auto-detect flat-lay vs model
+                "segmentation_free": True,       # Better for bulky garments
+                "num_samples": 1,                # Generate 1 result per image
+                "mode": "quality",               # Use quality mode for best results
+                "output_format": "png",          # PNG for maximum quality
+                "seed": 42                       # Reproducible results
             }
         }
 
@@ -249,11 +356,51 @@ def health_check():
         "timestamp": time.time()
     })
 
+@app.route('/api/validate', methods=['POST'])
+def validate_uploaded_image():
+    """
+    Validate image quality before processing
+    Returns warnings and recommendations
+    """
+    try:
+        if 'image' not in request.files:
+            return jsonify({'error': 'No image provided'}), 400
+
+        image_file = request.files['image']
+
+        if not image_file or not allowed_file(image_file.filename):
+            return jsonify({'error': 'Invalid image file'}), 400
+
+        # Save temporarily for validation
+        timestamp = int(time.time())
+        filename = secure_filename(f'temp_validate_{timestamp}.{image_file.filename.rsplit(".", 1)[1].lower()}')
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        image_file.save(filepath)
+
+        # Validate image
+        is_valid, warnings = validate_image(filepath)
+
+        # Clean up temp file
+        try:
+            os.remove(filepath)
+        except:
+            pass
+
+        return jsonify({
+            'success': True,
+            'is_valid': is_valid,
+            'warnings': warnings
+        }), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/upload', methods=['POST'])
 def upload_files():
     """
     Upload person images and garment image
     Expected: person_images[] (3-4 images), garment_image (1 image)
+    Now includes automatic validation and warnings
     """
     try:
         # Check if files are present
@@ -272,6 +419,7 @@ def upload_files():
 
         # Validate and save files
         person_paths = []
+        person_warnings = []
         timestamp = int(time.time())
 
         for idx, person_file in enumerate(person_files):
@@ -280,6 +428,14 @@ def upload_files():
                 filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                 person_file.save(filepath)
                 person_paths.append(filepath)
+
+                # Validate each person image
+                is_valid, warnings = validate_image(filepath)
+                if warnings:
+                    person_warnings.append({
+                        'image_index': idx,
+                        'warnings': warnings
+                    })
             else:
                 return jsonify({'error': f'Invalid person image file: {person_file.filename}'}), 400
 
@@ -287,15 +443,27 @@ def upload_files():
             garment_filename = secure_filename(f'garment_{timestamp}.{garment_file.filename.rsplit(".", 1)[1].lower()}')
             garment_path = os.path.join(app.config['UPLOAD_FOLDER'], garment_filename)
             garment_file.save(garment_path)
+
+            # Validate garment image
+            is_valid, garment_warnings = validate_image(garment_path)
         else:
             return jsonify({'error': 'Invalid garment image file'}), 400
 
-        return jsonify({
+        response_data = {
             'success': True,
             'person_images': person_paths,
             'garment_image': garment_path,
             'session_id': timestamp
-        }), 200
+        }
+
+        # Add warnings if any
+        if person_warnings or garment_warnings:
+            response_data['validation_warnings'] = {
+                'person_images': person_warnings,
+                'garment_image': garment_warnings
+            }
+
+        return jsonify(response_data), 200
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500

@@ -259,12 +259,31 @@ body {
 
 /* Photo Requirements */
 .photo-requirements {
-    background: transparent;
-    padding: 10px 0;
-    margin: 10px 0 20px 0;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 15px;
+    margin: 15px 0 20px 0;
+    font-size: 0.9em;
+    line-height: 1.6;
+    color: #475569;
+    border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.requirement-title {
+    font-weight: 600;
+    color: #8b5cf6;
+    margin-bottom: 8px;
     font-size: 0.95em;
-    line-height: 1.8;
+}
+
+.requirement-item {
+    padding: 4px 0;
     color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 /* Upload Zone */
