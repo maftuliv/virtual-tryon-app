@@ -768,20 +768,49 @@ def submit_feedback():
         print(f"  TELEGRAM_BOT_TOKEN: {'✅ SET' if telegram_bot_token else '❌ MISSING'} (length: {len(telegram_bot_token)})")
         print(f"  TELEGRAM_CHAT_ID: {'✅ SET' if telegram_chat_id else '❌ MISSING'} (value: {telegram_chat_id})")
         
-        # If only token is set, try to get chat_id from last message
+        # If only token is set, automatically get chat_id from last message
         if telegram_bot_token and not telegram_chat_id:
+            print(f"[FEEDBACK] 🔍 Auto-detecting Chat ID from bot messages...")
             try:
                 updates_url = f"https://api.telegram.org/bot{telegram_bot_token}/getUpdates"
-                updates_response = requests.get(updates_url, timeout=5)
+                updates_response = requests.get(updates_url, timeout=10)
+                
                 if updates_response.status_code == 200:
                     updates_data = updates_response.json()
-                    if updates_data.get('ok') and updates_data.get('result'):
-                        last_message = updates_data['result'][-1].get('message', {})
-                        telegram_chat_id = str(last_message.get('chat', {}).get('id', ''))
-                        if telegram_chat_id:
-                            print(f"[FEEDBACK] Auto-detected Chat ID: {telegram_chat_id}")
+                    
+                    if updates_data.get('ok'):
+                        updates_result = updates_data.get('result', [])
+                        
+                        if updates_result:
+                            # Get the most recent message
+                            last_update = updates_result[-1]
+                            message = last_update.get('message') or last_update.get('edited_message')
+                            
+                            if message:
+                                chat = message.get('chat', {})
+                                telegram_chat_id = str(chat.get('id', ''))
+                                
+                                if telegram_chat_id:
+                                    print(f"[FEEDBACK] ✅ Auto-detected Chat ID: {telegram_chat_id}")
+                                    print(f"[FEEDBACK] 📱 Chat info: {chat.get('first_name', '')} {chat.get('last_name', '')} (@{chat.get('username', 'N/A')})")
+                                else:
+                                    print(f"[FEEDBACK] ⚠️  Could not extract Chat ID from message")
+                            else:
+                                print(f"[FEEDBACK] ⚠️  No message found in last update")
+                        else:
+                            print(f"[FEEDBACK] ⚠️  No messages found. Please send a message to your bot first!")
+                            print(f"[FEEDBACK] 💡 Tip: Write any message to your bot in Telegram, then try again")
+                    else:
+                        error_desc = updates_data.get('description', 'Unknown error')
+                        print(f"[FEEDBACK] ❌ Telegram API error: {error_desc}")
+                else:
+                    print(f"[FEEDBACK] ❌ Failed to get updates: HTTP {updates_response.status_code}")
+                    print(f"[FEEDBACK] Response: {updates_response.text[:200]}")
+                    
             except Exception as e:
-                print(f"[FEEDBACK] Could not auto-detect Chat ID: {e}")
+                print(f"[FEEDBACK] ❌ Could not auto-detect Chat ID: {e}")
+                import traceback
+                traceback.print_exc()
         
         if telegram_bot_token and telegram_chat_id:
             try:
