@@ -32,9 +32,6 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 # Removed: Task storage system - using simple synchronous processing instead
 
 # API configurations
-FASHN_API_KEY = os.environ.get('FASHN_API_KEY', '').strip()  # FASHN AI token
-FASHN_BASE_URL = "https://api.fashn.ai/v1"
-
 # Nano Banana API (Google Gemini 2.5 Flash) - Official API
 # Try multiple environment variable names as Railway might use different naming
 NANOBANANA_API_KEY = (
@@ -67,7 +64,6 @@ if not found_vars:
 
 # Show loaded API key status
 print("\n[API KEYS] Loaded values in Python:")
-print(f"  FASHN_API_KEY: {'✅ SET' if FASHN_API_KEY else '❌ MISSING'} (length: {len(FASHN_API_KEY)})")
 print(f"  NANOBANANA_API_KEY: {'✅ SET' if NANOBANANA_API_KEY else '❌ MISSING'} (length: {len(NANOBANANA_API_KEY)})")
 
 if NANOBANANA_API_KEY:
@@ -85,7 +81,7 @@ def allowed_file(filename):
 
 def preprocess_image(image_path, max_height=2000, quality=95):
     """
-    Preprocess image according to FASHN best practices:
+    Preprocess image for optimal quality:
     - Resize to max_height if larger (maintaining aspect ratio)
     - Convert to JPEG format with quality setting
     - Use LANCZOS resampling for quality preservation
@@ -243,7 +239,7 @@ def process_with_nanobanana(person_image_path, garment_image_path, category='aut
     Via Official NanoBananaAPI.ai: https://nanobananaapi.ai/
 
     Nano Banana is Google's image editing model powered by Gemini 2.5 Flash
-    Pricing: $0.02 per image (cheaper than FASHN!)
+    Pricing: $0.02 per image
     Speed: Very fast generation (5-10 seconds)
 
     API Documentation: https://docs.nanobananaapi.ai/quickstart
@@ -442,195 +438,7 @@ def process_with_nanobanana(person_image_path, garment_image_path, category='aut
         traceback.print_exc()
         raise
 
-def process_with_fashn(person_image_path, garment_image_path, category='auto'):
-    """
-    Process virtual try-on using FASHN API
-    Generates high-quality realistic results in 5-17 seconds
-
-    Now includes:
-    - Image preprocessing (resize, optimize)
-    - Enhanced API parameters for better quality
-    - Validation and warnings
-    """
-    try:
-        if not FASHN_API_KEY:
-            raise ValueError("FASHN_API_KEY not set. Please configure your API key in environment variables.")
-
-        print(f"[FASHN] Starting image preprocessing...")
-
-        # Preprocess images according to FASHN best practices
-        person_image_optimized = preprocess_image(person_image_path, max_height=2000, quality=95)
-        garment_image_optimized = preprocess_image(garment_image_path, max_height=2000, quality=95)
-
-        # Convert images to base64
-        model_image_b64 = image_to_base64(person_image_optimized)
-        garment_image_b64 = image_to_base64(garment_image_optimized)
-
-        # Prepare request payload with enhanced parameters
-        input_data = {
-            "model_name": "tryon-v1.6",
-            "inputs": {
-                "model_image": f"data:image/jpg;base64,{model_image_b64}",
-                "garment_image": f"data:image/jpg;base64,{garment_image_b64}",
-                "category": category,            # User-selected or auto category
-                "garment_photo_type": "auto",    # Auto-detect flat-lay vs model
-                "segmentation_free": True,       # Better for bulky garments
-                "num_samples": 1,                # Generate 1 result per image
-                "mode": "quality",               # Use quality mode for best results
-                "output_format": "png",          # PNG for maximum quality
-                "seed": 42                       # Reproducible results
-            }
-        }
-
-        print(f"[FASHN] Using category: {category}")
-
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {FASHN_API_KEY}"
-        }
-
-        print(f"[FASHN] Sending request to FASHN API...")
-        print(f"[FASHN] API Key (first 10 chars): {FASHN_API_KEY[:10]}...")
-        print(f"[FASHN] Model image size: {len(model_image_b64)} chars")
-        print(f"[FASHN] Garment image size: {len(garment_image_b64)} chars")
-
-        # POST to /run endpoint
-        run_response = requests.post(f"{FASHN_BASE_URL}/run", json=input_data, headers=headers, timeout=60)
-
-        print(f"[FASHN] Response status code: {run_response.status_code}")
-
-        if run_response.status_code != 200:
-            error_msg = f"FASHN API error: {run_response.status_code} - {run_response.text}"
-            print(f"[FASHN ERROR] {error_msg}")
-            raise ValueError(error_msg)
-
-        run_data = run_response.json()
-        print(f"[FASHN] Response data: {run_data}")
-
-        prediction_id = run_data.get("id")
-
-        if not prediction_id:
-            error_detail = run_data.get("error", "No error message")
-            raise ValueError(f"Failed to get prediction ID from FASHN API. Response: {error_detail}")
-
-        print(f"[FASHN] Prediction started, ID: {prediction_id}")
-
-        # Poll /status/<ID> until completion
-        max_attempts = 40  # 40 attempts * 3 seconds = 2 minutes max
-        attempt = 0
-
-        while attempt < max_attempts:
-            time.sleep(3)  # Wait 3 seconds between checks
-
-            status_response = requests.get(f"{FASHN_BASE_URL}/status/{prediction_id}", headers=headers, timeout=30)
-
-            if status_response.status_code != 200:
-                print(f"Status check error: {status_response.status_code}")
-                attempt += 1
-                continue
-
-            status_data = status_response.json()
-            status = status_data.get("status")
-
-            print(f"[FASHN] Attempt {attempt + 1}/{max_attempts} - Status: {status}")
-
-            if status == "completed":
-                # Get the output image
-                output = status_data.get("output")
-
-                if not output:
-                    raise ValueError("No output image in completed response")
-
-                print(f"[FASHN] Output type: {type(output)}, value: {output}")
-
-                # FASHN API returns a list of images (even if num_samples=1)
-                if isinstance(output, list):
-                    if len(output) == 0:
-                        raise ValueError("FASHN returned empty output list")
-                    # Get the first image from the list
-                    result_image_data = output[0]
-                    print(f"[FASHN] Using first image from list, type: {type(result_image_data)}")
-                elif isinstance(output, str):
-                    result_image_data = output
-                elif isinstance(output, dict) and "url" in output:
-                    result_image_data = output["url"]
-                elif isinstance(output, dict) and "image" in output:
-                    result_image_data = output["image"]
-                else:
-                    raise ValueError(f"Unexpected output format: {type(output)}")
-
-                # If result_image_data is a dict, extract the URL or image
-                if isinstance(result_image_data, dict):
-                    if "url" in result_image_data:
-                        result_image_data = result_image_data["url"]
-                    elif "image" in result_image_data:
-                        result_image_data = result_image_data["image"]
-                    else:
-                        raise ValueError(f"Dict output missing 'url' or 'image' key: {result_image_data}")
-
-                print(f"[FASHN] Final image data type: {type(result_image_data)}")
-                if isinstance(result_image_data, str):
-                    print(f"[FASHN] Image data starts with: {result_image_data[:100]}...")
-
-                # Save result
-                timestamp = int(time.time())
-                result_filename = f'result_{timestamp}_{prediction_id[:8]}.png'
-                result_path = os.path.join(app.config['RESULTS_FOLDER'], result_filename)
-
-                # Download or save the image
-                if isinstance(result_image_data, str) and result_image_data.startswith('http'):
-                    # Download from URL
-                    print(f"[FASHN] Downloading from URL: {result_image_data[:50]}...")
-                    img_response = requests.get(result_image_data, timeout=30)
-                    if img_response.status_code == 200:
-                        with open(result_path, 'wb') as img_file:
-                            img_file.write(img_response.content)
-                        print(f"[FASHN] Downloaded {len(img_response.content)} bytes")
-                    else:
-                        raise ValueError(f"Failed to download result image: {img_response.status_code}")
-                elif isinstance(result_image_data, str):
-                    # Save base64 image
-                    print(f"[FASHN] Saving base64 image...")
-                    save_base64_image(result_image_data, result_path)
-                else:
-                    raise ValueError(f"Cannot process result_image_data of type: {type(result_image_data)}")
-
-                print(f"[FASHN] ✅ Result saved to: {result_path}")
-                return result_path
-
-            elif status in ["starting", "in_queue", "processing"]:
-                # Still processing, continue polling
-                attempt += 1
-                continue
-            elif status == "failed":
-                error = status_data.get("error", "Unknown error")
-                error_str = str(error).lower()
-
-                # Parse FASHN API specific errors and provide user-friendly messages
-                if "imageloaderror" in error_str or "unable to load" in error_str:
-                    raise ValueError("IMAGE_LOAD_ERROR: Не удалось загрузить изображение. Проверьте формат и качество фото.")
-                elif "poseerror" in error_str or "unable to detect" in error_str or "pose" in error_str:
-                    raise ValueError("POSE_ERROR: Не удалось определить позу человека на фото. Используйте четкое фото в полный рост с хорошо видимым телом.")
-                elif "contentmoderation" in error_str or "prohibited content" in error_str:
-                    raise ValueError("CONTENT_ERROR: Обнаружен запрещенный контент на изображении.")
-                elif "invalid" in error_str or "format" in error_str:
-                    raise ValueError("FORMAT_ERROR: Неверный формат изображения. Используйте JPG или PNG.")
-                else:
-                    raise ValueError(f"FASHN_ERROR: {error}")
-            else:
-                # Unknown status
-                print(f"Unknown status: {status}")
-                attempt += 1
-                continue
-
-        # Timeout
-        raise TimeoutError(f"FASHN processing timed out after {max_attempts * 3} seconds")
-
-    except Exception as e:
-        print(f"[FASHN ERROR] ❌ Error in process_with_fashn: {e}")
-        import traceback
-        traceback.print_exc()
-        raise
+# FASHN AI removed - using only NanoBanana API
 
 # Serve frontend
 @app.route('/')
@@ -781,8 +589,8 @@ def upload_files():
 @app.route('/api/tryon', methods=['POST'])
 def virtual_tryon():
     """
-    Perform virtual try-on (synchronous)
-    Expects JSON: {person_images: [], garment_image: "", garment_category: "auto", ai_model: "fashn"}
+    Perform virtual try-on using NanoBanana API (synchronous)
+    Expects JSON: {person_images: [], garment_image: "", garment_category: "auto"}
     Returns: {success: true, results: [...]}
     """
     try:
@@ -794,27 +602,24 @@ def virtual_tryon():
         person_images = data['person_images']
         garment_image = data['garment_image']
         garment_category = data.get('garment_category', 'auto')
-        ai_model = data.get('ai_model', 'fashn')
 
         if not person_images or not garment_image:
             return jsonify({'error': 'Invalid image paths'}), 400
 
-        print(f"[TRYON] Processing with category: {garment_category}, AI model: {ai_model}")
+        print(f"[TRYON] Processing with category: {garment_category}, AI model: nanobanana")
 
-        # Early validation for Nano Banana API key
-        if ai_model == 'nanobanana':
-            if not NANOBANANA_API_KEY or NANOBANANA_API_KEY.strip() == '':
-                return jsonify({
-                    'error': 'NANOBANANA_API_KEY_MISSING',
-                    'message': '🍌 Nano Banana API ключ не настроен\n\n'
-                              'Пожалуйста, добавьте NANOBANANA_API_KEY в Railway Variables:\n'
-                              '1. Зайдите на https://nanobananaapi.ai/api-key\n'
-                              '2. Создайте API ключ\n'
-                              '3. Добавьте его в Railway Dashboard → Variables\n\n'
-                              'Или используйте FASHN AI (переключите слайдер).'
-                }), 400
+        # Validate Nano Banana API key
+        if not NANOBANANA_API_KEY or NANOBANANA_API_KEY.strip() == '':
+            return jsonify({
+                'error': 'NANOBANANA_API_KEY_MISSING',
+                'message': '🍌 Nano Banana API ключ не настроен\n\n'
+                          'Пожалуйста, добавьте NANOBANANA_API_KEY в Railway Variables:\n'
+                          '1. Зайдите на https://nanobananaapi.ai/api-key\n'
+                          '2. Создайте API ключ\n'
+                          '3. Добавьте его в Railway Dashboard → Variables'
+            }), 400
 
-        # Process each person image with the garment
+        # Process each person image with the garment using NanoBanana
         results = []
 
         for person_image in person_images:
@@ -822,11 +627,8 @@ def virtual_tryon():
                 continue
 
             try:
-                # Choose processing method based on AI model
-                if ai_model == 'nanobanana':
-                    result_path = process_with_nanobanana(person_image, garment_image, garment_category)
-                else:
-                    result_path = process_with_fashn(person_image, garment_image, garment_category)
+                # Always use NanoBanana API
+                result_path = process_with_nanobanana(person_image, garment_image, garment_category)
 
                 # Generate public URL for result image
                 result_filename = os.path.basename(result_path)
@@ -931,17 +733,16 @@ if __name__ == '__main__':
     print(f"Results folder: {RESULTS_FOLDER}")
     print("=" * 60)
 
-    # Diagnostic: Show ALL environment variables containing "NANO" or "API"
-    print("[DIAGNOSTICS] All Environment Variables containing 'NANO' or 'API':")
+    # Diagnostic: Show ALL environment variables containing "NANO" or "BANANA"
+    print("[DIAGNOSTICS] All Environment Variables containing 'NANO' or 'BANANA':")
     for key, value in os.environ.items():
-        if 'NANO' in key.upper() or 'API' in key.upper():
+        if 'NANO' in key.upper() or 'BANANA' in key.upper():
             preview = f"{value[:8]}...{value[-4:]}" if len(value) > 12 else value
             print(f"  {key}: {preview} (length: {len(value)})")
     print("=" * 60)
 
     # Diagnostic: Show API key status
     print("[DIAGNOSTICS] API Keys Status:")
-    print(f"  FASHN_API_KEY: {'✅ SET' if FASHN_API_KEY else '❌ MISSING'} (length: {len(FASHN_API_KEY) if FASHN_API_KEY else 0})")
     print(f"  NANOBANANA_API_KEY: {'✅ SET' if NANOBANANA_API_KEY else '❌ MISSING'} (length: {len(NANOBANANA_API_KEY) if NANOBANANA_API_KEY else 0})")
 
     if NANOBANANA_API_KEY:

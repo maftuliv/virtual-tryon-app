@@ -8,8 +8,7 @@ const state = {
     uploadedPersonPaths: [],
     uploadedGarmentPath: null,
     sessionId: null,
-    garmentCategory: 'auto',  // Default to auto
-    selectedModel: 'fashn'     // Default model: 'fashn' or 'nanobanana'
+    garmentCategory: 'auto'  // Default to auto
 };
 
 // DOM Elements
@@ -19,7 +18,7 @@ const personUploadZone = document.getElementById('personUploadZone');
 const garmentUploadZone = document.getElementById('garmentUploadZone');
 const personPreview = document.getElementById('personPreview');
 const garmentPreview = document.getElementById('garmentPreview');
-const tryonBtn = document.getElementById('tryonBtn');
+const generateSwitch = document.getElementById('generateSwitch');
 const progressBar = document.getElementById('progressBar');
 const resultsSection = document.getElementById('resultsSection');
 const resultsGrid = document.getElementById('resultsGrid');
@@ -81,7 +80,18 @@ function setupDragAndDrop(zone, dropHandler) {
 }
 
 function setupEventListeners() {
-    tryonBtn.addEventListener('click', handleTryOn);
+    // Generate switch - triggers generation when toggled ON
+    if (generateSwitch) {
+        generateSwitch.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                // Switch turned ON - start generation
+                handleTryOn();
+            } else {
+                // Switch turned OFF - do nothing (user can reset manually)
+            }
+        });
+    }
+
     resetBtn.addEventListener('click', resetApplication);
     downloadAllBtn.addEventListener('click', downloadAllResults);
 
@@ -92,9 +102,6 @@ function setupEventListeners() {
             console.log('[CATEGORY] Selected category:', state.garmentCategory);
         });
     });
-
-    // AI Model Switcher
-    setupModelSwitcher();
 }
 
 // Server Health Check
@@ -151,7 +158,7 @@ function processPersonImages(files) {
     console.log('Valid files:', validFiles.length);
     state.personImages = validFiles;
     displayPersonPreviews();
-    updateTryOnButton();
+    updateGenerateSwitch();
 }
 
 function displayPersonPreviews() {
@@ -208,7 +215,7 @@ function processGarmentImage(file) {
 
     state.garmentImage = file;
     displayGarmentPreview();
-    updateTryOnButton();
+    updateGenerateSwitch();
 }
 
 function displayGarmentPreview() {
@@ -350,7 +357,7 @@ async function validatePreviewImage(previewDiv, imageSrc, type, index) {
 
         // Update button state after validation
         setTimeout(() => {
-            updateTryOnButton();
+            updateGenerateSwitch();
         }, 100);
 
     } catch (error) {
@@ -362,42 +369,53 @@ async function validatePreviewImage(previewDiv, imageSrc, type, index) {
 function removePersonImage(index) {
     state.personImages.splice(index, 1);
     displayPersonPreviews();
-    updateTryOnButton();
+    updateGenerateSwitch();
 }
 
 function removeGarmentImage() {
     state.garmentImage = null;
     garmentPreview.innerHTML = '';
     garmentImageInput.value = '';
-    updateTryOnButton();
+    updateGenerateSwitch();
 }
 
-// Update Try-On Button State
-function updateTryOnButton() {
+// Update Generate Switch State
+function updateGenerateSwitch() {
     const hasPersonImages = state.personImages.length > 0;
     const hasGarmentImage = state.garmentImage !== null;
-
-    // Check if any preview has errors
     const hasErrors = document.querySelectorAll('.preview-item.has-errors').length > 0;
+    const canGenerate = hasPersonImages && hasGarmentImage && !hasErrors;
 
-    // Disable button if:
-    // 1. No images uploaded
-    // 2. Any image has validation errors
-    tryonBtn.disabled = !(hasPersonImages && hasGarmentImage) || hasErrors;
-
-    // Update button text if errors present
-    if (hasErrors && hasPersonImages && hasGarmentImage) {
-        tryonBtn.querySelector('.btn-text').textContent = 'исправьте ошибки в фото';
-    } else if (hasPersonImages && hasGarmentImage) {
-        tryonBtn.querySelector('.btn-text').textContent = 'нажми чтобы посмотреть';
+    if (generateSwitch) {
+        // Disable switch if images not ready
+        generateSwitch.disabled = !canGenerate;
+        
+        // Update labels
+        const labelOff = document.getElementById('generateLabelOff');
+        const labelOn = document.getElementById('generateLabelOn');
+        
+        if (labelOff && labelOn) {
+            if (hasErrors) {
+                labelOff.querySelector('.model-desc').textContent = 'Исправьте ошибки';
+                labelOn.querySelector('.model-desc').textContent = 'Исправьте ошибки';
+            } else if (!hasPersonImages || !hasGarmentImage) {
+                labelOff.querySelector('.model-desc').textContent = 'Загрузите фото';
+                labelOn.querySelector('.model-desc').textContent = 'Загрузите фото';
+            } else {
+                labelOff.querySelector('.model-desc').textContent = 'Готово';
+                labelOn.querySelector('.model-desc').textContent = 'Nano Banana 🍌';
+            }
+        }
     }
 }
 
 // Handle Try-On Process
 async function handleTryOn() {
     try {
-        // Disable button
-        tryonBtn.disabled = true;
+        // Disable switch
+        if (generateSwitch) {
+            generateSwitch.disabled = true;
+        }
         progressBar.style.display = 'block';
         resultsSection.style.display = 'none';
         hideError();
@@ -450,8 +468,7 @@ async function handleTryOn() {
             body: JSON.stringify({
                 person_images: state.uploadedPersonPaths,
                 garment_image: state.uploadedGarmentPath,
-                garment_category: state.garmentCategory,  // Send selected category
-                ai_model: state.selectedModel              // Send selected AI model
+                garment_category: state.garmentCategory  // Send selected category
             })
         });
 
@@ -479,6 +496,11 @@ async function handleTryOn() {
         // Hide progress, show results
         progressBar.style.display = 'none';
         resultsSection.style.display = 'block';
+        
+        // Re-enable switch (but keep it checked)
+        if (generateSwitch) {
+            generateSwitch.disabled = false;
+        }
 
     } catch (error) {
         console.error('Error:', error);
@@ -486,52 +508,32 @@ async function handleTryOn() {
         // More detailed error message
         let errorMsg = error.message;
 
-        // FASHN API specific errors
-        if (error.message.includes('POSE_ERROR')) {
-            errorMsg = '❌ Не удалось определить позу человека\n\n' +
-                       'Требования к фото:\n' +
-                       '• Человек в полный рост\n' +
-                       '• Четкое изображение\n' +
-                       '• Хорошее освещение\n' +
-                       '• Тело хорошо видно\n' +
-                       '• Простой фон';
-        } else if (error.message.includes('IMAGE_LOAD_ERROR')) {
-            errorMsg = '❌ Не удалось загрузить изображение\n\n' +
-                       'Проверьте:\n' +
-                       '• Формат файла (JPG или PNG)\n' +
-                       '• Размер не более 10MB\n' +
-                       '• Файл не поврежден';
-        } else if (error.message.includes('CONTENT_ERROR')) {
-            errorMsg = '❌ Обнаружен запрещенный контент\n\n' +
-                       'Используйте подходящие изображения';
-        } else if (error.message.includes('FORMAT_ERROR')) {
-            errorMsg = '❌ Неверный формат изображения\n\n' +
-                       'Используйте JPG или PNG файлы';
-        } else if (error.message.includes('FASHN_API_KEY')) {
-            errorMsg = '⚙️ API ключ FASHN не настроен\n\nОбратитесь к администратору';
-        } else if (error.message.includes('NANOBANANA_API_KEY_MISSING')) {
+        // NanoBanana API specific errors
+        if (error.message.includes('NANOBANANA_API_KEY_MISSING') || error.message.includes('NANOBANANA_API_KEY not set')) {
             // Special handling for missing Nano Banana key - show original message
             errorMsg = error.message.replace('NANOBANANA_API_KEY_MISSING', '').trim();
-        } else if (error.message.includes('NANOBANANA_API_KEY not set')) {
-            errorMsg = '🍌 Nano Banana API ключ не настроен\n\n' +
-                       'Добавьте NANOBANANA_API_KEY в Railway Variables\n' +
-                       'или переключитесь на FASHN AI';
+            if (!errorMsg || errorMsg === error.message) {
+                errorMsg = '🍌 Nano Banana API ключ не настроен\n\n' +
+                           'Добавьте NANOBANANA_API_KEY в Railway Variables:\n' +
+                           '1. Зайдите на https://nanobananaapi.ai/api-key\n' +
+                           '2. Создайте API ключ\n' +
+                           '3. Добавьте его в Railway Dashboard → Variables';
+            }
         } else if (error.message.includes('401')) {
             errorMsg = '🔑 Неверный API ключ\n\nПроверьте настройки';
         } else if (error.message.includes('402')) {
             errorMsg = '💳 Недостаточно кредитов\n\nПополните баланс';
         } else if (error.message.includes('timeout')) {
             errorMsg = '⏱️ Превышено время ожидания\n\nПопробуйте снова';
-        } else if (error.message.includes('NANOBANANA_NOT_READY') || error.message.includes('NotImplementedError')) {
-            errorMsg = '🚧 Nano Banana в разработке\n\n' +
-                       'Google Gemini 2.5 интеграция в процессе.\n' +
-                       'Пожалуйста, используйте FASHN AI.\n\n' +
-                       'Следите за обновлениями!';
         }
 
         showError(errorMsg);
         progressBar.style.display = 'none';
-        tryonBtn.disabled = false;
+        // Reset switch on error
+        if (generateSwitch) {
+            generateSwitch.checked = false;
+            generateSwitch.disabled = false;
+        }
     }
 }
 
@@ -552,26 +554,9 @@ function displayResults(results) {
         if (result.error) {
             console.error(`Error for image ${index}:`, result.error);
 
-            // Parse FASHN API specific errors
+            // Parse NanoBanana API specific errors
             let errorMsg = result.error;
             let errorTitle = 'Ошибка обработки изображения';
-
-            if (result.error.includes('POSE_ERROR')) {
-                errorTitle = 'Не удалось определить позу человека';
-                errorMsg = 'Требования к фото:\n• Человек в полный рост\n• Четкое изображение\n• Хорошее освещение\n• Тело хорошо видно\n• Простой фон';
-            } else if (result.error.includes('IMAGE_LOAD_ERROR')) {
-                errorTitle = 'Не удалось загрузить изображение';
-                errorMsg = 'Проверьте:\n• Формат файла (JPG или PNG)\n• Размер не более 10MB\n• Файл не поврежден';
-            } else if (result.error.includes('CONTENT_ERROR')) {
-                errorTitle = 'Обнаружен запрещенный контент';
-                errorMsg = 'Используйте подходящие изображения';
-            } else if (result.error.includes('FORMAT_ERROR')) {
-                errorTitle = 'Неверный формат изображения';
-                errorMsg = 'Используйте JPG или PNG файлы';
-            } else if (result.error.includes('NANOBANANA_NOT_READY') || result.error.includes('NotImplementedError')) {
-                errorTitle = 'Nano Banana в разработке';
-                errorMsg = 'Google Gemini 2.5 интеграция в процессе. Используйте FASHN AI.';
-            }
 
             // Show error card
             const errorCard = document.createElement('div');
@@ -688,8 +673,12 @@ function resetApplication() {
     resultsSection.style.display = 'none';
     resultsGrid.innerHTML = '';
 
-    // Reset button
-    tryonBtn.disabled = true;
+    // Reset generate switch
+    if (generateSwitch) {
+        generateSwitch.checked = false;
+        generateSwitch.disabled = false;
+    }
+    updateGenerateSwitch();
 
     // Hide error
     hideError();
@@ -751,7 +740,10 @@ function showInfo(message) {
             font-size: 0.9em;
             line-height: 1.6;
         `;
-        document.querySelector('.action-section').insertBefore(infoBox, document.getElementById('tryonBtn'));
+        const actionSection = document.querySelector('.action-section');
+        if (actionSection && generateSwitch) {
+            actionSection.insertBefore(infoBox, generateSwitch.parentElement);
+        }
     }
 
     infoBox.textContent = message;
@@ -887,152 +879,7 @@ window.onclick = function(event) {
     }
 };
 
-// ==================== AI Model Switcher ====================
-
-function setupModelSwitcher() {
-    const modelSwitch = document.getElementById('modelSwitch');
-    const modelLabels = document.querySelectorAll('.model-label');
-
-    if (!modelSwitch) {
-        console.warn('[MODEL SWITCH] Switch element not found');
-        return;
-    }
-
-    // Click on labels to toggle switch
-    modelLabels.forEach(label => {
-        label.addEventListener('click', () => {
-            const model = label.getAttribute('data-model');
-            
-            if (model === 'fashn') {
-                modelSwitch.checked = false;
-                switchToModel('fashn');
-            } else if (model === 'nanobanana') {
-                modelSwitch.checked = true;
-                switchToModel('nanobanana');
-            }
-        });
-    });
-
-    // Direct switch toggle
-    modelSwitch.addEventListener('change', (e) => {
-        const isNanoBanana = e.target.checked;
-        switchToModel(isNanoBanana ? 'nanobanana' : 'fashn');
-    });
-
-    // Initialize with default model
-    switchToModel(state.selectedModel);
-}
-
-function switchToModel(modelName) {
-    console.log(`[MODEL SWITCH] Switching to ${modelName}`);
-    
-    state.selectedModel = modelName;
-
-    // Update active states with animation
-    const modelLabels = document.querySelectorAll('.model-label');
-    
-    modelLabels.forEach(label => {
-        const labelModel = label.getAttribute('data-model');
-        
-        if (labelModel === modelName) {
-            // Activate selected model
-            label.classList.add('active');
-            
-            // Add slide-in animation
-            label.style.animation = 'none';
-            setTimeout(() => {
-                if (labelModel === 'fashn') {
-                    label.style.animation = 'slideInLeft 0.5s ease forwards';
-                } else {
-                    label.style.animation = 'slideInRight 0.5s ease forwards';
-                }
-            }, 10);
-        } else {
-            // Deactivate other model
-            label.classList.remove('active');
-            
-            // Add slide-out animation
-            label.style.animation = 'none';
-            setTimeout(() => {
-                if (labelModel === 'fashn') {
-                    label.style.animation = 'slideOutLeft 0.3s ease forwards';
-                } else {
-                    label.style.animation = 'slideOutRight 0.3s ease forwards';
-                }
-            }, 10);
-        }
-    });
-
-    // Show notification about model change
-    showModelChangeNotification(modelName);
-
-    // Update button state if needed
-    updateTryOnButton();
-}
-
-function showModelChangeNotification(modelName) {
-    // Remove existing notification if any
-    const existingNotification = document.querySelector('.model-change-notification');
-    if (existingNotification) {
-        existingNotification.remove();
-    }
-
-    // Create notification
-    const notification = document.createElement('div');
-    notification.className = 'model-change-notification';
-    
-    const modelInfo = {
-        fashn: {
-            icon: '⚡',
-            name: 'FASHN AI',
-            desc: 'Высокое качество, проверенная модель'
-        },
-        nanobanana: {
-            icon: '🍌',
-            name: 'Nano Banana',
-            desc: 'Google Gemini 2.5 Flash - Быстрая и креативная'
-        }
-    };
-
-    const info = modelInfo[modelName];
-    
-    notification.innerHTML = `
-        <div class="notification-icon">${info.icon}</div>
-        <div class="notification-content">
-            <div class="notification-title">Выбрана модель: ${info.name}</div>
-            <div class="notification-desc">${info.desc}</div>
-        </div>
-    `;
-
-    // Add styles inline for notification
-    notification.style.cssText = `
-        position: fixed;
-        bottom: 30px;
-        right: 30px;
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(20px);
-        padding: 15px 20px;
-        border-radius: 15px;
-        box-shadow: 0 8px 32px rgba(168, 85, 247, 0.3);
-        border: 2px solid rgba(168, 85, 247, 0.3);
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        z-index: 10000;
-        animation: slideInUp 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-        max-width: 350px;
-    `;
-
-    document.body.appendChild(notification);
-
-    // Auto-remove after 3 seconds
-    setTimeout(() => {
-        notification.style.animation = 'fadeOut 0.5s ease forwards';
-        setTimeout(() => {
-            notification.remove();
-        }, 500);
-    }, 3000);
-}
+// Model switcher removed - using only NanoBanana API
 
 // Add notification animations to document
 if (!document.getElementById('notification-styles')) {
