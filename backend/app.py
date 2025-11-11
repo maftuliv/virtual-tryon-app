@@ -40,7 +40,7 @@ NANOBANANA_API_KEY = (
     os.environ.get('NANOBANANA_API_KEY'.lower(), '') or
     os.environ.get('nanobanana_api_key', '')
 ).strip()
-NANOBANANA_BASE_URL = "https://api.nanobananaapi.ai/api/v1/nanobanana"
+NANOBANANA_BASE_URL = "https://api.nanobananaapi.ai/api/v1/nanobanana/generate"
 
 # ==================== DIAGNOSTICS (runs on import, works with gunicorn) ====================
 print("=" * 80)
