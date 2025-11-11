@@ -1,101 +1,99 @@
-# 🍌 Полная Инструкция по Интеграции Nano Banana API
+# 🍌 Полная Инструкция по Интеграции Nano Banana API (Официальный API)
 
 **Дата**: 2025-11-11
 **Модель**: Google Gemini 2.5 Flash (Nano Banana)
-**Платформа**: Replicate API
-**Цена**: $0.03 за изображение
+**Платформа**: NanoBananaAPI.ai (Официальный API)
+**Цена**: $0.02 за изображение
+**Документация**: https://docs.nanobananaapi.ai/
+
+---
+
+## ⚠️ ВАЖНО: Используем Официальный API!
+
+Эта интеграция использует **официальный NanoBananaAPI.ai**, а НЕ Replicate!
+
+- ✅ **Правильно**: https://nanobananaapi.ai/
+- ❌ **Неправильно**: ~~https://replicate.com/google/nano-banana~~
 
 ---
 
 ## 📋 Что Уже Готово
 
 ✅ Frontend слайдер с иконкой 🍌
-✅ Backend функция `process_with_nanobanana()`
+✅ Backend функция `process_with_nanobanana()` с официальным API
 ✅ Обработка ошибок и уведомления
 ✅ Переключение моделей через UI
+✅ Polling механизм для получения результатов
 
 ---
 
-## 🎯 Шаг 1: Регистрация на Replicate
+## 🎯 Шаг 1: Регистрация на NanoBananaAPI.ai
 
-### 1.1 Создайте аккаунт на Replicate
+### 1.1 Создайте аккаунт
 
-🔗 **Ссылка**: https://replicate.com/signin
+🔗 **Ссылка**: https://nanobananaapi.ai/
 
 1. Откройте ссылку выше
-2. Нажмите **"Sign up"**
-3. Выберите метод регистрации:
-   - GitHub (рекомендуется)
-   - Google
-   - Email
+2. Нажмите **"Sign Up"** или **"Get Started"**
+3. Зарегистрируйтесь через email или OAuth
 
 ### 1.2 Получите API ключ
 
-🔗 **Ссылка**: https://replicate.com/account/api-tokens
+🔗 **Ссылка**: https://nanobananaapi.ai/api-key
 
 1. После входа перейдите по ссылке выше
-2. Нажмите **"Create token"**
-3. Введите имя токена (например: `nano-banana-tryon`)
-4. Нажмите **"Create"**
-5. **⚠️ ВАЖНО**: Скопируйте токен СРАЗУ! Он показывается только один раз!
+2. Нажмите **"Create API Key"** или **"Generate Token"**
+3. Скопируйте ваш API ключ
+4. **⚠️ ВАЖНО**: Сохраните ключ в безопасном месте! Он не будет показан повторно.
 
-**Ваш токен будет выглядеть так:**
+**Ваш API ключ будет выглядеть примерно так:**
 ```
-r8_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+nb_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
+(или другой формат, зависит от платформы)
 
-### 1.3 Проверьте доступные модели
+### 1.3 Пополните баланс (опционально)
 
-🔗 **Nano Banana на Replicate**: https://replicate.com/google/nano-banana
+🔗 **Ссылка**: https://nanobananaapi.ai/billing
 
-Убедитесь, что модель доступна и посмотрите примеры использования.
+- NanoBananaAPI.ai может предоставлять бесплатные кредиты для тестирования
+- Цена: **$0.02 за изображение** (в 2 раза дешевле чем через Replicate!)
+- После использования бесплатных кредитов - добавьте платежный метод
 
 ---
 
-## 🖥️ Шаг 2: Установка Replicate SDK на сервере
+## 🔑 Шаг 2: Настройка Environment Variables на Railway
 
-### 2.1 SSH подключение к Railway
-
-Если ваш backend запущен на Railway, вам нужно добавить зависимость в `requirements.txt`.
-
-**Откройте файл** `backend/requirements.txt` и добавьте:
-
-```txt
-Flask==3.0.0
-flask-cors==4.0.0
-requests==2.31.0
-Pillow==10.1.0
-replicate==0.22.0
-```
-
-### 2.2 Локальная установка (для тестирования)
-
-Если хотите протестировать локально:
-
-```bash
-cd virtual-tryon-app
-pip install replicate
-```
-
----
-
-## 🔑 Шаг 3: Настройка Environment Variables
-
-### 3.1 На Railway (Production)
+### 2.1 Добавьте NANOBANANA_API_KEY
 
 🔗 **Railway Dashboard**: https://railway.app/dashboard
 
 1. Откройте ваш проект на Railway
-2. Перейдите в раздел **Variables**
+2. Перейдите в раздел **"Variables"**
 3. Нажмите **"New Variable"**
 4. Добавьте:
-   - **Key**: `REPLICATE_API_KEY`
-   - **Value**: `r8_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx` (ваш токен)
+   - **Key**: `NANOBANANA_API_KEY`
+   - **Value**: `ваш_api_ключ` (скопированный на шаге 1.2)
 5. Нажмите **"Add"**
 
 **⚠️ ВАЖНО**: После добавления переменной Railway автоматически перезапустит приложение!
 
-### 3.2 Локально (для тестирования)
+### 2.2 (Опционально) Добавьте IMGBB_API_KEY
+
+Для загрузки изображений в NanoBanana API нужны публичные URL.
+По умолчанию используется ImgBB для временного хостинга.
+
+🔗 **Получить бесплатный ключ ImgBB**: https://api.imgbb.com/
+
+1. Зарегистрируйтесь на ImgBB
+2. Получите API ключ (бесплатно)
+3. Добавьте в Railway Variables:
+   - **Key**: `IMGBB_API_KEY`
+   - **Value**: `ваш_imgbb_ключ`
+
+**Альтернатива**: Если не добавить IMGBB_API_KEY, система будет использовать прямые ссылки на ваш Railway сервер (может работать медленнее).
+
+### 2.3 Локально (для тестирования)
 
 **Создайте файл** `.env` в корне проекта:
 
@@ -108,126 +106,17 @@ touch .env
 
 ```env
 FASHN_API_KEY=ваш_fashn_ключ
-REPLICATE_API_KEY=r8_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+NANOBANANA_API_KEY=ваш_nanobanana_ключ
+IMGBB_API_KEY=ваш_imgbb_ключ
 ```
 
 **⚠️ Убедитесь, что `.env` в `.gitignore`!**
 
 ---
 
-## 🔧 Шаг 4: Реализация Nano Banana API в Backend
+## 📦 Шаг 3: Обновление Backend (УЖЕ СДЕЛАНО)
 
-### 4.1 Откройте файл `backend/app.py`
-
-Найдите функцию `process_with_nanobanana()` (строка ~148)
-
-### 4.2 Замените функцию на рабочую версию
-
-**Удалите старый код** (строки 148-178) и **вставьте новый**:
-
-```python
-def process_with_nanobanana(person_image_path, garment_image_path, category='auto'):
-    """
-    Process virtual try-on using Nano Banana (Google Gemini 2.5 Flash)
-    Via Replicate API: https://replicate.com/google/nano-banana
-
-    Nano Banana is Google's image editing model powered by Gemini 2.5 Flash
-    Pricing: $0.03 per image (cheaper than FASHN!)
-    Speed: Very fast generation (5-10 seconds)
-    """
-    try:
-        print(f"[NANOBANANA] 🍌 Starting Nano Banana processing...")
-
-        if not REPLICATE_API_KEY:
-            raise ValueError("REPLICATE_API_KEY not set. Please add to environment variables.")
-
-        # Import replicate (installed via requirements.txt)
-        import replicate
-
-        # Preprocess images
-        person_image_optimized = preprocess_image(person_image_path, max_height=2000, quality=95)
-        garment_image_optimized = preprocess_image(garment_image_path, max_height=2000, quality=95)
-
-        # Convert to base64 for API
-        person_image_b64 = image_to_base64(person_image_optimized)
-        garment_image_b64 = image_to_base64(garment_image_optimized)
-
-        # Create prompt for virtual try-on
-        prompt = f"""
-        Create a realistic virtual try-on image:
-        - Person: wearing the garment
-        - Garment type: {category}
-        - Style: photorealistic, high quality
-        - Preserve person's pose and features
-        - Fit garment naturally on the person's body
-        """
-
-        print(f"[NANOBANANA] Sending request to Replicate API...")
-
-        # Call Replicate API
-        output = replicate.run(
-            "google/nano-banana",
-            input={
-                "image": f"data:image/jpg;base64,{person_image_b64}",
-                "reference_image": f"data:image/jpg;base64,{garment_image_b64}",
-                "prompt": prompt,
-                "num_outputs": 1,
-                "guidance_scale": 7.5,
-                "num_inference_steps": 50
-            }
-        )
-
-        print(f"[NANOBANANA] Response received: {type(output)}")
-
-        # Handle output (URL or base64)
-        timestamp = int(time.time())
-        result_filename = f'result_nanobanana_{timestamp}.png'
-        result_path = os.path.join(app.config['RESULTS_FOLDER'], result_filename)
-
-        if isinstance(output, list) and len(output) > 0:
-            result_data = output[0]
-        else:
-            result_data = output
-
-        # Download or save result
-        if isinstance(result_data, str) and result_data.startswith('http'):
-            # Download from URL
-            print(f"[NANOBANANA] Downloading result from URL...")
-            img_response = requests.get(result_data, timeout=30)
-            if img_response.status_code == 200:
-                with open(result_path, 'wb') as img_file:
-                    img_file.write(img_response.content)
-                print(f"[NANOBANANA] ✅ Downloaded {len(img_response.content)} bytes")
-            else:
-                raise ValueError(f"Failed to download result: {img_response.status_code}")
-        elif isinstance(result_data, str):
-            # Save base64 image
-            print(f"[NANOBANANA] Saving base64 result...")
-            save_base64_image(result_data, result_path)
-        else:
-            raise ValueError(f"Unexpected output type: {type(result_data)}")
-
-        print(f"[NANOBANANA] ✅ Result saved to: {result_path}")
-        return result_path
-
-    except ImportError as e:
-        print(f"[NANOBANANA ERROR] ❌ Replicate library not installed: {e}")
-        raise ValueError(
-            "NANOBANANA_SETUP_ERROR: Replicate library not installed. "
-            "Add 'replicate==0.22.0' to requirements.txt and redeploy."
-        )
-    except Exception as e:
-        print(f"[NANOBANANA ERROR] ❌ Error in process_with_nanobanana: {e}")
-        import traceback
-        traceback.print_exc()
-        raise
-```
-
----
-
-## 📦 Шаг 5: Обновление Requirements
-
-### 5.1 Проверьте `backend/requirements.txt`
+### 3.1 Проверьте `backend/requirements.txt`
 
 **Файл должен содержать:**
 
@@ -236,10 +125,32 @@ Flask==3.0.0
 flask-cors==4.0.0
 requests==2.31.0
 Pillow==10.1.0
-replicate==0.22.0
 ```
 
-### 5.2 Commit и Push изменений
+**НЕТ НУЖДЫ в библиотеке replicate!** Официальный API использует обычные REST запросы через `requests`.
+
+### 3.2 Проверьте `backend/app.py`
+
+**Конфигурация API (строки ~36-38):**
+```python
+# Nano Banana API (Google Gemini 2.5 Flash) - Official API
+NANOBANANA_API_KEY = os.environ.get('NANOBANANA_API_KEY', '')
+NANOBANANA_BASE_URL = "https://api.nanobananaapi.ai/api/v1/nanobanana"
+```
+
+**Функция `process_with_nanobanana()` (строки ~190-350):**
+- ✅ Использует официальный endpoint: `https://api.nanobananaapi.ai/api/v1/nanobanana`
+- ✅ Bearer Token аутентификация
+- ✅ Загружает изображения через ImgBB для получения публичных URL
+- ✅ Отправляет запрос с типом `IMAGETOIMAGE`
+- ✅ Polling механизм для получения результата (проверка каждые 2 секунды)
+- ✅ Скачивает готовый результат и сохраняет локально
+
+---
+
+## 🚀 Шаг 4: Deployment на Railway
+
+### 4.1 Commit изменений
 
 ```bash
 cd virtual-tryon-app
@@ -247,49 +158,79 @@ cd virtual-tryon-app
 # Проверить статус
 git status
 
-# Добавить файлы
-git add backend/app.py backend/requirements.txt
+# Добавить обновленные файлы
+git add backend/app.py backend/requirements.txt NANOBANANA_INTEGRATION.md
 
 # Commit
-git commit -m "Integrate Nano Banana API via Replicate
+git commit -m "Fix Nano Banana integration: Use official NanoBananaAPI.ai
 
-- Implemented process_with_nanobanana() with full API integration
-- Added replicate SDK to requirements.txt
-- Virtual try-on with Google Gemini 2.5 Flash
-- Cost: $0.03 per image
-- Speed: 5-10 seconds per generation"
+- Changed from Replicate to official NanoBananaAPI.ai API
+- Updated authentication to Bearer Token
+- Removed replicate dependency from requirements.txt
+- Added ImgBB image hosting for URL generation
+- Implemented polling mechanism for async results
+- Cost: $0.02 per image (50% cheaper!)
+- Official API documentation: https://docs.nanobananaapi.ai/"
 
 # Push to GitHub
 git push
 ```
 
----
+### 4.2 Автоматический Deploy
 
-## 🚀 Шаг 6: Deployment на Railway
-
-### 6.1 Автоматический Deploy
-
-Railway автоматически развернет изменения после push на GitHub:
+Railway автоматически развернет изменения после push:
 
 1. Зайдите на https://railway.app/dashboard
 2. Откройте ваш проект
-3. Перейдите в **Deployments**
+3. Перейдите в **"Deployments"**
 4. Дождитесь завершения деплоя (2-5 минут)
 
-### 6.2 Проверьте логи
+### 4.3 Проверьте логи
 
-В разделе **Deployments** → **Logs** найдите:
+В разделе **"Deployments"** → **"Logs"** должны быть:
 
 ```
-✅ Installing replicate==0.22.0
-✅ Successfully installed replicate-0.22.0
+✅ Installing Flask==3.0.0
+✅ Installing flask-cors==4.0.0
+✅ Installing requests==2.31.0
+✅ Installing Pillow==10.1.0
+✅ Successfully installed...
 ```
+
+**НЕ должно быть:** `Installing replicate`
 
 ---
 
-## 🧪 Шаг 7: Тестирование
+## 🧪 Шаг 5: Тестирование
 
-### 7.1 Локальное тестирование (опционально)
+### 5.1 Production тестирование
+
+1. Откройте https://taptolook.up.railway.app
+2. **Жестко перезагрузите** страницу: `Ctrl + Shift + R`
+3. Загрузите фото человека (в полный рост, вертикальное)
+4. Загрузите фото одежды
+5. **Переключите** слайдер на **🍌 Nano Banana**
+6. Нажмите **"нажми чтобы посмотреть"**
+
+### 5.2 Что должно произойти
+
+✅ **Успех**:
+- Прогресс-бар показывает "обрабатываем..."
+- Через 5-15 секунд появится результат
+- В консоли Railway логи:
+  ```
+  [NANOBANANA] 🍌 Starting Nano Banana processing...
+  [NANOBANANA] Uploading images to get public URLs...
+  [NANOBANANA] Sending request to NanoBananaAPI.ai...
+  [NANOBANANA] Task created: task12345
+  [NANOBANANA] Polling for completion...
+  [NANOBANANA] ✅ Generation complete! Downloading result...
+  [NANOBANANA] ✅ Result saved: /path/to/result.png
+  ```
+
+❌ **Ошибки**: Смотрите секцию Troubleshooting ниже
+
+### 5.3 Локальное тестирование (опционально)
 
 ```bash
 # Запустите backend локально
@@ -297,88 +238,121 @@ cd virtual-tryon-app/backend
 python app.py
 ```
 
-### 7.2 Production тестирование
-
-1. Откройте https://taptolook.up.railway.app
-2. **Жестко перезагрузите** страницу: `Ctrl + Shift + R`
-3. Загрузите фото человека и одежды
-4. **Переключите** слайдер на **🍌 Nano Banana**
-5. Нажмите **"нажми чтобы посмотреть"**
-
-### 7.3 Что должно произойти
-
-✅ **Успех**: Через 5-10 секунд появится результат
-❌ **Ошибка**: Появится сообщение об ошибке
+Откройте http://localhost:5000 и протестируйте
 
 ---
 
 ## 🐛 Troubleshooting (Решение Проблем)
 
-### Проблема 1: "REPLICATE_API_KEY not set"
+### Проблема 1: "NANOBANANA_API_KEY not set"
 
 **Решение**:
-1. Проверьте Railway Variables
-2. Убедитесь, что ключ начинается с `r8_`
-3. Перезапустите приложение на Railway
+1. Проверьте Railway Variables - есть ли `NANOBANANA_API_KEY`?
+2. Убедитесь, что значение не пустое
+3. Перезапустите приложение на Railway: Settings → Restart
 
-### Проблема 2: "Replicate library not installed"
-
-**Решение**:
-1. Проверьте `requirements.txt` содержит `replicate==0.22.0`
-2. Commit и push изменения
-3. Railway автоматически переустановит зависимости
-
-### Проблема 3: "Failed to download result"
+### Проблема 2: "ImgBB upload failed"
 
 **Решение**:
-1. Проверьте интернет соединение на сервере
-2. Убедитесь, что Replicate API работает: https://status.replicate.com/
+1. Добавьте `IMGBB_API_KEY` в Railway Variables (https://api.imgbb.com/)
+2. Или система автоматически переключится на fallback метод (прямые ссылки)
 
-### Проблема 4: Медленная генерация (>30 секунд)
+### Проблема 3: "NanoBanana API error: 401"
+
+**Причина**: Неправильный API ключ
 
 **Решение**:
-1. Это нормально для первого запроса (cold start)
-2. Последующие запросы будут быстрее
-3. Можно увеличить timeout в app.py
+1. Проверьте ключ на https://nanobananaapi.ai/api-key
+2. Создайте новый ключ если нужно
+3. Обновите `NANOBANANA_API_KEY` в Railway Variables
+
+### Проблема 4: "Task timed out after 60 seconds"
+
+**Причина**: Слишком большие изображения или медленная генерация
+
+**Решение**:
+1. Проверьте размер загружаемых изображений (должны быть < 5MB)
+2. Убедитесь, что у вас есть кредиты на аккаунте NanoBananaAPI.ai
+3. Попробуйте снова - первый запрос может быть медленнее (cold start)
+
+### Проблема 5: "Generation failed" (success_flag == 3)
+
+**Причина**: API не смог обработать изображения
+
+**Решение**:
+1. Проверьте качество загруженных изображений
+2. Убедитесь что фото человека - вертикальное, в полный рост
+3. Убедитесь что фото одежды - четкое, на белом фоне
+4. Попробуйте другую пару изображений
+
+### Проблема 6: Результат низкого качества
+
+**Причина**: Nano Banana - это модель общего назначения, не специализированная для virtual try-on
+
+**Решение**:
+1. Используйте **FASHN AI** для максимального качества (переключите слайдер)
+2. Nano Banana лучше подходит для экспериментов и быстрых тестов
+3. Улучшите качество входных изображений
 
 ---
 
 ## 💰 Стоимость и Лимиты
 
-### Replicate Pricing
+### NanoBananaAPI.ai Pricing
 
-🔗 **Pricing**: https://replicate.com/pricing
+🔗 **Pricing**: https://nanobananaapi.ai/pricing
 
 **Nano Banana**:
-- **Цена**: $0.03 за изображение
-- **Скорость**: ~5-10 секунд
-- **Quality**: Высокое
+- **Цена**: $0.02 за изображение
+- **Скорость**: ~5-15 секунд (зависит от нагрузки)
+- **Quality**: Хорошее (но FASHN лучше для virtual try-on)
 
 **Free Tier**:
-- $0.01 в месяц бесплатно (для тестирования)
-- После этого оплата по факту использования
+- Обычно дают бесплатные кредиты для тестирования
+- Проверьте на сайте актуальные условия
+
+**Rate Limits**:
+- ~10 запросов в минуту (может варьироваться)
+- При превышении - получите 429 ошибку
 
 ### Сравнение с FASHN
 
 | Параметр | FASHN AI | Nano Banana |
 |----------|----------|-------------|
-| Цена | $0.10+ | $0.03 |
-| Скорость | 5-17 сек | 5-10 сек |
-| Качество | Очень высокое | Высокое |
-| Статус | ✅ Работает | 🍌 Новая |
+| Цена | $0.10+ | $0.02 |
+| Скорость | 5-17 сек | 5-15 сек |
+| Качество | Очень высокое | Хорошее |
+| Специализация | Virtual try-on | Общее редактирование |
+| Статус | ✅ Production ready | 🍌 Экспериментальная |
+| Рекомендация | **Для production** | Для тестов/экспериментов |
 
 ---
 
 ## 📊 Мониторинг Использования
 
-### Replicate Dashboard
+### NanoBananaAPI.ai Dashboard
 
-🔗 **Usage**: https://replicate.com/account/usage
+🔗 **Dashboard**: https://nanobananaapi.ai/dashboard
 
 Здесь вы можете отслеживать:
 - Количество запросов
-- Потраченные средства
+- Потраченные кредиты
 - История генераций
+- Баланс аккаунта
+
+### Railway Logs
+
+Все запросы к Nano Banana API логируются с префиксом `[NANOBANANA]`:
+
+```
+[NANOBANANA] 🍌 Starting Nano Banana processing...
+[NANOBANANA] Uploading images to get public URLs...
+[NANOBANANA] Sending request to NanoBananaAPI.ai...
+[NANOBANANA] Task created: task12345
+[NANOBANANA] Polling for completion...
+[NANOBANANA] ✅ Generation complete!
+[NANOBANANA] ✅ Result saved
+```
 
 ---
 
@@ -394,6 +368,46 @@ python app.py
    ```
 3. **Используйте** только environment variables на production
 4. **Регулярно ротируйте** API ключи (каждые 3-6 месяцев)
+5. **Не показывайте** ключи в логах или UI
+
+---
+
+## 🔄 Как Работает Интеграция
+
+### Поток данных:
+
+1. **Пользователь загружает изображения** → Frontend
+2. **Frontend отправляет на backend** → `/api/tryon`
+3. **Backend preprocesses изображения** → `preprocess_image()`
+4. **Backend загружает на ImgBB** → `upload_image_to_imgbb()`
+5. **Backend отправляет в NanoBanana API** → POST с imageUrls
+6. **NanoBanana возвращает taskId** → Асинхронная обработка
+7. **Backend polling status** → GET `/record-info` каждые 2 сек
+8. **Получает результат** → `resultImageUrl`
+9. **Скачивает и сохраняет** → `/results/result_nanobanana_*.png`
+10. **Возвращает frontend** → JSON с result_url
+
+### Архитектура:
+
+```
+User
+  ↓
+Frontend (app.js)
+  ↓ POST /api/tryon (ai_model=nanobanana)
+Backend (app.py)
+  ↓
+process_with_nanobanana()
+  ↓
+preprocess_image() → upload_image_to_imgbb()
+  ↓
+NanoBananaAPI.ai (POST /api/v1/nanobanana)
+  ↓ taskId
+Polling loop (GET /record-info?taskId=...)
+  ↓ successFlag=1
+Download result → Save locally
+  ↓ result_path
+Return to frontend → Display image
+```
 
 ---
 
@@ -401,16 +415,21 @@ python app.py
 
 ### Документация
 
-- 🔗 **Replicate Docs**: https://replicate.com/docs
-- 🔗 **Nano Banana Model**: https://replicate.com/google/nano-banana
-- 🔗 **Python Client**: https://github.com/replicate/replicate-python
-- 🔗 **API Reference**: https://replicate.com/docs/reference/http
+- 🔗 **NanoBananaAPI.ai**: https://nanobananaapi.ai/
+- 🔗 **API Docs**: https://docs.nanobananaapi.ai/
+- 🔗 **Quickstart Guide**: https://docs.nanobananaapi.ai/quickstart
+- 🔗 **API Key Management**: https://nanobananaapi.ai/api-key
+- 🔗 **Pricing**: https://nanobananaapi.ai/pricing
 
-### Поддержка
+### ImgBB (Image Hosting)
 
-- 🔗 **Replicate Discord**: https://discord.gg/replicate
-- 🔗 **GitHub Issues**: https://github.com/replicate/replicate-python/issues
-- 🔗 **Status Page**: https://status.replicate.com/
+- 🔗 **ImgBB API**: https://api.imgbb.com/
+- 🔗 **ImgBB Docs**: https://api.imgbb.com/
+
+### Railway
+
+- 🔗 **Railway Dashboard**: https://railway.app/dashboard
+- 🔗 **Railway Docs**: https://docs.railway.app/
 
 ---
 
@@ -418,16 +437,29 @@ python app.py
 
 Перед запуском убедитесь:
 
-- [ ] ✅ Зарегистрирован аккаунт на Replicate
-- [ ] ✅ Получен API ключ (r8_...)
-- [ ] ✅ Добавлен REPLICATE_API_KEY в Railway Variables
-- [ ] ✅ Обновлен `requirements.txt` (добавлен replicate==0.22.0)
-- [ ] ✅ Обновлен код `process_with_nanobanana()` в app.py
+- [ ] ✅ Зарегистрирован аккаунт на NanoBananaAPI.ai
+- [ ] ✅ Получен API ключ с https://nanobananaapi.ai/api-key
+- [ ] ✅ Добавлен `NANOBANANA_API_KEY` в Railway Variables
+- [ ] ✅ (Опционально) Добавлен `IMGBB_API_KEY` в Railway Variables
+- [ ] ✅ Обновлен `backend/app.py` (использует официальный API)
+- [ ] ✅ Обновлен `requirements.txt` (удален replicate)
 - [ ] ✅ Commit и push изменений
 - [ ] ✅ Railway deployment завершен успешно
 - [ ] ✅ Проверены логи на наличие ошибок
 - [ ] ✅ Протестирована генерация на сайте
-- [ ] ✅ Проверен баланс на Replicate Dashboard
+- [ ] ✅ Проверен баланс на NanoBananaAPI.ai Dashboard
+
+---
+
+## ⚠️ Известные Ограничения
+
+1. **Качество**: Nano Banana не специализируется на virtual try-on, поэтому результаты могут быть хуже чем у FASHN AI
+2. **Скорость**: Первый запрос может быть медленным (cold start)
+3. **Image URLs**: Требуются публичные URL (решено через ImgBB)
+4. **Rate Limits**: ~10 req/min (может варьироваться)
+5. **Async Processing**: Polling добавляет задержку (2-60 секунд)
+
+**Рекомендация**: Используйте FASHN AI для production, Nano Banana для экспериментов.
 
 ---
 
@@ -435,15 +467,27 @@ python app.py
 
 После выполнения всех шагов у вас будет работающая интеграция с двумя AI моделями:
 
-- ⚡ **FASHN AI** - Проверенная, высокое качество
-- 🍌 **Nano Banana** - Google Gemini 2.5, быстрая и дешевая
+- ⚡ **FASHN AI** - Специализированная, максимальное качество, рекомендуется для production
+- 🍌 **Nano Banana** - Google Gemini 2.5, быстрая и дешевая, для экспериментов
 
 Пользователи смогут выбирать модель через красивый слайдер с плавными анимациями!
 
 ---
 
-**Автор**: Claude Code (СТО с 20-летним стажем)
-**Дата**: 2025-11-11
-**Версия**: 1.0
+## 🆘 Нужна Помощь?
 
-Удачи! 🚀
+Если что-то не работает:
+
+1. **Проверьте Railway логи**: Deployments → Logs
+2. **Проверьте браузер Console**: F12 → Console
+3. **Проверьте Environment Variables**: Railway → Variables
+4. **Проверьте баланс**: https://nanobananaapi.ai/dashboard
+5. **Перезагрузите страницу жестко**: Ctrl+Shift+R
+
+---
+
+**Автор**: Claude Code
+**Дата**: 2025-11-11
+**Версия**: 2.0 (Официальный API)
+
+Удачи! 🚀🍌

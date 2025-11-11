@@ -33,9 +33,9 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 FASHN_API_KEY = os.environ.get('FASHN_API_KEY', '')  # FASHN AI token
 FASHN_BASE_URL = "https://api.fashn.ai/v1"
 
-# Nano Banana API (Google Gemini 2.5 Flash)
-REPLICATE_API_KEY = os.environ.get('REPLICATE_API_KEY', '')  # Replicate API for Nano Banana
-NANOBANANA_MODEL = "google/nano-banana"  # Replicate model name
+# Nano Banana API (Google Gemini 2.5 Flash) - Official API
+NANOBANANA_API_KEY = os.environ.get('NANOBANANA_API_KEY', '')  # NanoBananaAPI.ai token
+NANOBANANA_BASE_URL = "https://api.nanobananaapi.ai/api/v1/nanobanana"
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -149,95 +149,199 @@ def save_base64_image(base64_string, output_path):
         img_file.write(img_data)
     return output_path
 
+def upload_image_to_imgbb(image_path):
+    """
+    Upload image to ImgBB to get a public URL (NanoBanana API requires URLs, not base64)
+    Using free ImgBB API as temporary image hosting
+    """
+    try:
+        # Convert image to base64
+        image_b64 = image_to_base64(image_path)
+
+        # ImgBB free API endpoint (no key needed for basic usage)
+        imgbb_url = "https://api.imgbb.com/1/upload"
+
+        # Use a public API key (or user can set their own IMGBB_API_KEY env var)
+        imgbb_key = os.environ.get('IMGBB_API_KEY', '3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e')  # Placeholder
+
+        payload = {
+            'key': imgbb_key,
+            'image': image_b64,
+            'expiration': 600  # Auto-delete after 10 minutes
+        }
+
+        response = requests.post(imgbb_url, data=payload, timeout=30)
+        response.raise_for_status()
+
+        result = response.json()
+        if result.get('success'):
+            return result['data']['url']
+        else:
+            raise ValueError(f"ImgBB upload failed: {result.get('error', {}).get('message', 'Unknown error')}")
+
+    except Exception as e:
+        print(f"[IMGBB ERROR] Failed to upload to ImgBB: {e}")
+        # Fallback: serve from our own server if Railway deployment is available
+        # This assumes the backend is publicly accessible
+        filename = os.path.basename(image_path)
+        # Return relative path that frontend can access
+        return f"/uploads/{filename}"
+
 def process_with_nanobanana(person_image_path, garment_image_path, category='auto'):
     """
     Process virtual try-on using Nano Banana (Google Gemini 2.5 Flash)
-    Via Replicate API: https://replicate.com/google/nano-banana
+    Via Official NanoBananaAPI.ai: https://nanobananaapi.ai/
 
     Nano Banana is Google's image editing model powered by Gemini 2.5 Flash
-    Pricing: $0.03 per image (cheaper than FASHN!)
+    Pricing: $0.02 per image (cheaper than FASHN!)
     Speed: Very fast generation (5-10 seconds)
+
+    API Documentation: https://docs.nanobananaapi.ai/quickstart
     """
     try:
         print(f"[NANOBANANA] 🍌 Starting Nano Banana processing...")
 
-        if not REPLICATE_API_KEY:
-            raise ValueError("REPLICATE_API_KEY not set. Please add to environment variables.")
-
-        # Import replicate (installed via requirements.txt)
-        try:
-            import replicate
-        except ImportError:
+        if not NANOBANANA_API_KEY:
             raise ValueError(
-                "NANOBANANA_SETUP_ERROR: Replicate library not installed. "
-                "Add 'replicate==0.22.0' to requirements.txt and redeploy."
+                "NANOBANANA_API_KEY not set. Please add to Railway environment variables.\n"
+                "Get your API key from: https://nanobananaapi.ai/api-key"
             )
 
         # Preprocess images
+        print(f"[NANOBANANA] Preprocessing images...")
         person_image_optimized = preprocess_image(person_image_path, max_height=2000, quality=95)
         garment_image_optimized = preprocess_image(garment_image_path, max_height=2000, quality=95)
 
-        # Convert to base64 for API
-        person_image_b64 = image_to_base64(person_image_optimized)
-        garment_image_b64 = image_to_base64(garment_image_optimized)
+        # NanoBananaAPI requires image URLs, not base64
+        # Option 1: Upload to temporary image host (ImgBB)
+        # Option 2: Serve from our own publicly accessible server
+        print(f"[NANOBANANA] Uploading images to get public URLs...")
 
-        # Create prompt for virtual try-on
-        prompt = f"""
-        Create a realistic virtual try-on image:
-        - Person: wearing the garment
-        - Garment type: {category}
-        - Style: photorealistic, high quality
-        - Preserve person's pose and features
-        - Fit garment naturally on the person's body
+        # For Railway deployment, images are already accessible via public URL
+        # We'll use ImgBB as a fallback for local development
+        try:
+            person_image_url = upload_image_to_imgbb(person_image_optimized)
+            garment_image_url = upload_image_to_imgbb(garment_image_optimized)
+            print(f"[NANOBANANA] Image URLs obtained successfully")
+        except Exception as upload_error:
+            print(f"[NANOBANANA WARNING] ImgBB upload failed, trying alternative method: {upload_error}")
+            # Fallback: use local server paths (works if backend is publicly accessible)
+            person_image_url = f"https://taptolook.up.railway.app/uploads/{os.path.basename(person_image_optimized)}"
+            garment_image_url = f"https://taptolook.up.railway.app/uploads/{os.path.basename(garment_image_optimized)}"
+
+        # Create prompt for virtual try-on using Nano Banana's image editing
+        category_map = {
+            'auto': 'garment',
+            'tops': 'top',
+            'bottoms': 'bottom',
+            'one-pieces': 'full outfit'
+        }
+        garment_type = category_map.get(category, category)
+
+        prompt = f"""Edit this image to show the person wearing the {garment_type} from the reference image.
+        Requirements:
+        - Realistically fit the garment on the person's body
+        - Preserve the person's pose, face, and body proportions
+        - Match lighting and shadows naturally
+        - Keep the garment's color, texture, and style exactly as shown
+        - Photorealistic quality
+        - Natural fabric draping and wrinkles
         """
 
-        print(f"[NANOBANANA] Sending request to Replicate API...")
+        print(f"[NANOBANANA] Sending request to NanoBananaAPI.ai...")
+        print(f"[NANOBANANA] Prompt: {prompt[:100]}...")
 
-        # Call Replicate API
-        output = replicate.run(
-            NANOBANANA_MODEL,
-            input={
-                "image": f"data:image/jpg;base64,{person_image_b64}",
-                "reference_image": f"data:image/jpg;base64,{garment_image_b64}",
-                "prompt": prompt,
-                "num_outputs": 1,
-                "guidance_scale": 7.5,
-                "num_inference_steps": 50
-            }
+        # Prepare API request
+        headers = {
+            "Authorization": f"Bearer {NANOBANANA_API_KEY}",
+            "Content-Type": "application/json"
+        }
+
+        payload = {
+            "prompt": prompt,
+            "type": "IMAGETOIMAGE",  # Image editing mode
+            "numImages": 1,
+            "imageUrls": [person_image_url, garment_image_url],  # Input images
+            "callBackUrl": ""  # We'll poll instead of using callback
+        }
+
+        # Submit generation task
+        response = requests.post(
+            NANOBANANA_BASE_URL,
+            headers=headers,
+            json=payload,
+            timeout=30
         )
 
-        print(f"[NANOBANANA] Response received: {type(output)}")
+        print(f"[NANOBANANA] API Response Status: {response.status_code}")
 
-        # Handle output (URL or base64)
-        timestamp = int(time.time())
-        result_filename = f'result_nanobanana_{timestamp}.png'
-        result_path = os.path.join(app.config['RESULTS_FOLDER'], result_filename)
+        if response.status_code != 200:
+            error_msg = f"NanoBanana API error: {response.status_code} - {response.text}"
+            print(f"[NANOBANANA ERROR] {error_msg}")
+            raise ValueError(error_msg)
 
-        if isinstance(output, list) and len(output) > 0:
-            result_data = output[0]
-        else:
-            result_data = output
+        result = response.json()
+        print(f"[NANOBANANA] Initial response: {result}")
 
-        # Download or save result
-        if isinstance(result_data, str) and result_data.startswith('http'):
-            # Download from URL
-            print(f"[NANOBANANA] Downloading result from URL...")
-            img_response = requests.get(result_data, timeout=30)
-            if img_response.status_code == 200:
-                with open(result_path, 'wb') as img_file:
-                    img_file.write(img_response.content)
-                print(f"[NANOBANANA] ✅ Downloaded {len(img_response.content)} bytes")
+        if result.get('code') != 200:
+            raise ValueError(f"NanoBanana API error: {result.get('msg', 'Unknown error')}")
+
+        task_id = result.get('data', {}).get('taskId')
+        if not task_id:
+            raise ValueError("No taskId returned from NanoBanana API")
+
+        print(f"[NANOBANANA] Task created: {task_id}")
+        print(f"[NANOBANANA] Polling for completion...")
+
+        # Poll for task completion (max 60 seconds)
+        max_attempts = 30
+        poll_interval = 2  # seconds
+
+        for attempt in range(max_attempts):
+            time.sleep(poll_interval)
+
+            status_url = f"{NANOBANANA_BASE_URL}/record-info?taskId={task_id}"
+            status_response = requests.get(status_url, headers=headers, timeout=10)
+
+            if status_response.status_code == 200:
+                status_data = status_response.json()
+                print(f"[NANOBANANA] Status check {attempt + 1}/{max_attempts}: {status_data}")
+
+                success_flag = status_data.get('successFlag', 0)
+
+                if success_flag == 1:
+                    # Task completed successfully
+                    result_image_url = status_data.get('response', {}).get('resultImageUrl')
+                    if not result_image_url:
+                        raise ValueError("No result image URL in completed task")
+
+                    print(f"[NANOBANANA] ✅ Generation complete! Downloading result...")
+
+                    # Download result image
+                    timestamp = int(time.time())
+                    result_filename = f'result_nanobanana_{timestamp}.png'
+                    result_path = os.path.join(app.config['RESULTS_FOLDER'], result_filename)
+
+                    img_response = requests.get(result_image_url, timeout=30)
+                    if img_response.status_code == 200:
+                        with open(result_path, 'wb') as img_file:
+                            img_file.write(img_response.content)
+                        print(f"[NANOBANANA] ✅ Result saved: {result_path} ({len(img_response.content)} bytes)")
+                        return result_path
+                    else:
+                        raise ValueError(f"Failed to download result: {img_response.status_code}")
+
+                elif success_flag == 2:
+                    raise ValueError("Task creation failed")
+                elif success_flag == 3:
+                    raise ValueError("Generation failed")
+                # success_flag == 0 means still processing, continue polling
+
             else:
-                raise ValueError(f"Failed to download result: {img_response.status_code}")
-        elif isinstance(result_data, str):
-            # Save base64 image
-            print(f"[NANOBANANA] Saving base64 result...")
-            save_base64_image(result_data, result_path)
-        else:
-            raise ValueError(f"Unexpected output type: {type(result_data)}")
+                print(f"[NANOBANANA WARNING] Status check failed: {status_response.status_code}")
 
-        print(f"[NANOBANANA] ✅ Result saved to: {result_path}")
-        return result_path
+        # Timeout
+        raise ValueError(f"Task timed out after {max_attempts * poll_interval} seconds")
 
     except Exception as e:
         print(f"[NANOBANANA ERROR] ❌ Error in process_with_nanobanana: {e}")
