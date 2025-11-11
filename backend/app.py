@@ -42,6 +42,42 @@ NANOBANANA_API_KEY = (
 ).strip()
 NANOBANANA_BASE_URL = "https://api.nanobananaapi.ai/api/v1/nanobanana"
 
+# ==================== DIAGNOSTICS (runs on import, works with gunicorn) ====================
+print("=" * 80)
+print("🔍 RAILWAY ENVIRONMENT DIAGNOSTICS")
+print("=" * 80)
+
+# Show ALL environment variables containing "NANO", "BANANA", or "API"
+print("\n[ENV VARS] All variables containing 'NANO', 'BANANA', or 'API':")
+found_vars = False
+for key, value in sorted(os.environ.items()):
+    if any(keyword in key.upper() for keyword in ['NANO', 'BANANA', 'API']):
+        found_vars = True
+        # Show preview of value (hide sensitive info)
+        if len(value) > 20:
+            preview = f"{value[:10]}...{value[-6:]}"
+        else:
+            preview = value if len(value) <= 12 else f"{value[:8]}...{value[-4:]}"
+        print(f"  ✓ {key} = {preview} (length: {len(value)})")
+
+if not found_vars:
+    print("  ⚠️  NO variables found containing 'NANO', 'BANANA', or 'API'!")
+
+# Show loaded API key status
+print("\n[API KEYS] Loaded values in Python:")
+print(f"  FASHN_API_KEY: {'✅ SET' if FASHN_API_KEY else '❌ MISSING'} (length: {len(FASHN_API_KEY)})")
+print(f"  NANOBANANA_API_KEY: {'✅ SET' if NANOBANANA_API_KEY else '❌ MISSING'} (length: {len(NANOBANANA_API_KEY)})")
+
+if NANOBANANA_API_KEY:
+    print(f"  NANOBANANA_API_KEY preview: {NANOBANANA_API_KEY[:8]}...{NANOBANANA_API_KEY[-4:]}")
+else:
+    print("  ⚠️  NANOBANANA_API_KEY is EMPTY or MISSING!")
+    print("  ℹ️  Checked: NANOBANANA_API_KEY, nanobanana_api_key")
+
+print("=" * 80)
+print()
+# ==================== END DIAGNOSTICS ====================
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
