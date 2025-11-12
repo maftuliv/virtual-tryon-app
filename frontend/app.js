@@ -590,6 +590,16 @@ async function handleTryOn() {
             throw new Error(uploadData.error || 'Загрузка не удалась');
         }
 
+        // Check person detection results
+        if (uploadData.person_detection) {
+            displayPersonDetectionResults(uploadData.person_detection);
+        }
+
+        // Block proceeding if person not detected
+        if (uploadData.can_proceed === false) {
+            throw new Error('❌ Человек не обнаружен на фото. Пожалуйста, загрузите фото человека в полный рост.');
+        }
+
         // Display validation warnings if any
         if (uploadData.validation_warnings) {
             displayValidationWarnings(uploadData.validation_warnings);
@@ -855,6 +865,53 @@ function resetApplication() {
 
     // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Person Detection Results Display
+function displayPersonDetectionResults(detectionResults) {
+    console.log('[PERSON DETECTION] Results received:', detectionResults);
+
+    // Update preview badges with detection results
+    detectionResults.forEach(result => {
+        const previewItems = document.querySelectorAll('.preview-item');
+        if (previewItems[result.image_index]) {
+            const previewItem = previewItems[result.image_index];
+
+            // Remove old badge if exists
+            const oldBadge = previewItem.querySelector('.preview-status-badge');
+            if (oldBadge) {
+                oldBadge.remove();
+            }
+
+            // Create new badge based on detection result
+            const badge = document.createElement('div');
+            badge.className = 'preview-status-badge';
+
+            if (result.error || !result.person_detected) {
+                // Critical error - person not detected
+                badge.classList.add('status-error');
+                badge.innerHTML = '<span class="status-icon">❌</span><span>Человек не обнаружен</span>';
+                previewItem.classList.add('has-errors');
+            } else if (result.confidence < 0.5) {
+                // Low confidence warning
+                badge.classList.add('status-warning');
+                badge.innerHTML = '<span class="status-icon">⚠️</span><span>Низкая уверенность</span>';
+                previewItem.classList.add('has-warnings');
+            } else if (!result.is_full_body) {
+                // Not full body warning
+                badge.classList.add('status-warning');
+                badge.innerHTML = '<span class="status-icon">⚠️</span><span>Не полный рост</span>';
+                previewItem.classList.add('has-warnings');
+            } else {
+                // Success
+                badge.classList.add('status-success');
+                badge.innerHTML = `<span class="status-icon">✅</span><span>Человек обнаружен (${Math.round(result.confidence * 100)}%)</span>`;
+                previewItem.classList.add('has-success');
+            }
+
+            previewItem.appendChild(badge);
+        }
+    });
 }
 
 // Validation Warnings Display

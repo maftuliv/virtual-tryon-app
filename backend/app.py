@@ -9,6 +9,9 @@ from flask_cors import CORS
 from werkzeug.utils import secure_filename
 from PIL import Image
 import io
+import cv2
+import mediapipe as mp
+import numpy as np
 
 # Database imports
 try:
@@ -307,6 +310,97 @@ def image_to_base64(image_path):
     with open(image_path, 'rb') as img_file:
         img_data = base64.b64encode(img_file.read()).decode('utf-8')
     return img_data
+
+def detect_person_in_image(image_path):
+    """
+    Detect if there is a person in the image using MediaPipe Pose Detection
+    Returns: (person_detected: bool, confidence: float, details: dict)
+    """
+    try:
+        print(f"[PERSON DETECTION] Analyzing image: {image_path}")
+
+        # Read image
+        image = cv2.imread(image_path)
+        if image is None:
+            print(f"[PERSON DETECTION ERROR] Could not read image")
+            return False, 0.0, {"error": "Could not read image"}
+
+        # Convert BGR to RGB
+        image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+        # Initialize MediaPipe Pose
+        mp_pose = mp.solutions.pose
+        pose = mp_pose.Pose(
+            static_image_mode=True,
+            model_complexity=2,
+            enable_segmentation=False,
+            min_detection_confidence=0.3  # Lower threshold for better detection
+        )
+
+        # Process image
+        results = pose.process(image_rgb)
+        pose.close()
+
+        if results.pose_landmarks:
+            # Person detected! Calculate confidence based on visible landmarks
+            visible_landmarks = 0
+            total_landmarks = len(results.pose_landmarks.landmark)
+            landmark_confidences = []
+
+            for landmark in results.pose_landmarks.landmark:
+                if landmark.visibility > 0.5:  # Landmark is visible
+                    visible_landmarks += 1
+                    landmark_confidences.append(landmark.visibility)
+
+            # Calculate average confidence
+            avg_confidence = sum(landmark_confidences) / len(landmark_confidences) if landmark_confidences else 0.0
+            visibility_ratio = visible_landmarks / total_landmarks
+
+            # Overall confidence score
+            confidence = (avg_confidence + visibility_ratio) / 2.0
+
+            print(f"[PERSON DETECTION] ✅ Person detected!")
+            print(f"[PERSON DETECTION] Visible landmarks: {visible_landmarks}/{total_landmarks}")
+            print(f"[PERSON DETECTION] Confidence: {confidence:.2f}")
+
+            # Check if it's a full-body photo
+            # Key landmarks for full-body: shoulders, hips, knees, ankles
+            key_landmarks = {
+                'left_shoulder': results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_SHOULDER],
+                'right_shoulder': results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_SHOULDER],
+                'left_hip': results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_HIP],
+                'right_hip': results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_HIP],
+                'left_knee': results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_KNEE],
+                'right_knee': results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_KNEE],
+                'left_ankle': results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_ANKLE],
+                'right_ankle': results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_ANKLE]
+            }
+
+            visible_key_landmarks = sum(1 for lm in key_landmarks.values() if lm.visibility > 0.5)
+            is_full_body = visible_key_landmarks >= 6  # At least 6 out of 8 key landmarks visible
+
+            details = {
+                "person_detected": True,
+                "confidence": round(confidence, 2),
+                "visible_landmarks": visible_landmarks,
+                "total_landmarks": total_landmarks,
+                "is_full_body": is_full_body,
+                "visibility_ratio": round(visibility_ratio, 2)
+            }
+
+            if not is_full_body:
+                print(f"[PERSON DETECTION] ⚠️ Warning: Not a full-body photo (visible key landmarks: {visible_key_landmarks}/8)")
+
+            return True, confidence, details
+        else:
+            print(f"[PERSON DETECTION] ❌ No person detected in image")
+            return False, 0.0, {"person_detected": False, "message": "No person detected"}
+
+    except Exception as e:
+        print(f"[PERSON DETECTION ERROR] {e}")
+        import traceback
+        traceback.print_exc()
+        return False, 0.0, {"error": str(e)}
 
 def validate_image(image_path):
     """
@@ -807,6 +901,9 @@ def upload_files():
         person_warnings = []
         timestamp = int(time.time())
 
+        # Track person detection results
+        person_detection_results = []
+
         for idx, person_file in enumerate(person_files):
             if person_file and allowed_file(person_file.filename):
                 filename = secure_filename(f'person_{timestamp}_{idx}.{person_file.filename.rsplit(".", 1)[1].lower()}')
@@ -814,8 +911,32 @@ def upload_files():
                 person_file.save(filepath)
                 person_paths.append(filepath)
 
+                # Detect person in image using AI
+                person_detected, confidence, detection_details = detect_person_in_image(filepath)
+
                 # Validate each person image
                 is_valid, warnings = validate_image(filepath)
+
+                # Add person detection results
+                detection_result = {
+                    'image_index': idx,
+                    'person_detected': person_detected,
+                    'confidence': confidence,
+                    'is_full_body': detection_details.get('is_full_body', False),
+                    'warnings': warnings
+                }
+
+                # Add critical warnings if person not detected
+                if not person_detected:
+                    detection_result['warnings'].insert(0, "❌ Человек не обнаружен на фото")
+                    detection_result['error'] = True
+                elif confidence < 0.5:
+                    detection_result['warnings'].insert(0, "⚠️ Низкая уверенность в детекции человека")
+                elif not detection_details.get('is_full_body', False):
+                    detection_result['warnings'].insert(0, "⚠️ Возможно, это не фото в полный рост")
+
+                person_detection_results.append(detection_result)
+
                 if warnings:
                     person_warnings.append({
                         'image_index': idx,
@@ -838,7 +959,8 @@ def upload_files():
             'success': True,
             'person_images': person_paths,
             'garment_image': garment_path,
-            'session_id': timestamp
+            'session_id': timestamp,
+            'person_detection': person_detection_results
         }
 
         # Add warnings if any
@@ -847,6 +969,10 @@ def upload_files():
                 'person_images': person_warnings,
                 'garment_image': garment_warnings
             }
+
+        # Check if any person image has critical errors (no person detected)
+        has_critical_error = any(result.get('error', False) for result in person_detection_results)
+        response_data['can_proceed'] = not has_critical_error
 
         return jsonify(response_data), 200
 
