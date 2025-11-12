@@ -19,10 +19,7 @@
                     <span class="logo-text">Tap to look</span>
                 </div>
                 <div class="top-bar-badge">
-                    <svg class="sparkles-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 2L13.09 8.26L19 9L13.09 9.74L12 16L10.91 9.74L5 9L10.91 8.26L12 2Z"/>
-                    </svg>
-                    <span class="badge-text badge-text-responsive">Здесь рождается твой новый стиль — просто нажми, чтобы посмотреть!</span>
+                    <span class="badge-text badge-text-responsive">✨✨ Здесь рождается твой новый стиль — просто нажми, чтобы посмотреть! ✨✨</span>
                 </div>
             </div>
         </header>
@@ -30,7 +27,7 @@
         <!-- Hero Section -->
         <section class="hero-section">
             <h1 class="hero-title">Примерьте любую одежду на своём фото</h1>
-            <p class="hero-subtitle">Загрузите фото в полный рост и вещь, которую хотите примерить. Нажмите «Сделать примерку» — и получите результат за секунды.</p>
+            <p class="hero-subtitle">Загрузите свое фото в полный рост и вещь, которую хотите примерить. Нажмите «Сделать примерку» и получите результат за секунды.</p>
         </section>
 
         <!-- Stepper Navigation -->
@@ -54,7 +51,7 @@
                 <button class="stepper-btn" id="step2Btn" data-step="2">
                     <div class="stepper-icon">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M4 7h16M4 12h16M4 17h16"/>
+                            <path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.47a1 1 0 00.99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.47a2 2 0 00-1.34-2.23z"/>
                         </svg>
                     </div>
                     <div class="stepper-content">
@@ -265,11 +262,11 @@
                 <!-- CTA Card -->
                 <div class="cta-card">
                     <h3 class="cta-title">Готовы примерить?</h3>
-                    <p class="cta-text">Загрузите фото и одежду. Нажмите кнопку — всё остальное сделает ИИ.</p>
+                    <p class="cta-text">Загрузите свое фото и одежду. Нажмите кнопку - всё остальное сделает мы.</p>
                     
                     <div class="action-section">
                         <div class="generate-container">
-                            <div class="generate-text">нажми чтобы посмотреть</div>
+                            <div class="generate-text">нажми чтобы сделать примерку</div>
                             <div class="switch-wrapper">
                                 <input type="checkbox" id="generateSwitch" class="model-switch-input">
                                 <label for="generateSwitch" class="model-switch-label">
@@ -277,16 +274,10 @@
                                 </label>
                             </div>
                         </div>
-                        <p class="waiting-time-text">Примерное ожидание 5-17 секунд</p>
+                        <p class="waiting-time-text">Примерное ожидание 10-30 секунд</p>
                     </div>
 
-                    <button id="testFeedbackBtn" class="btn-test-feedback">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                        </svg>
-                        <span>Оставить отзыв</span>
-                    </button>
-                    <p class="cta-hint">Никаких селфи и обрезанных фото — только полный рост.</p>
+                    <p class="cta-thanks">Спасибо, что используете наш сервис! Мы ценим каждого пользователя и постоянно работаем над улучшением качества примерки. Ваша поддержка вдохновляет нас делать сервис еще лучше! 💜</p>
 
                     <div id="progressBar" class="progress-bar" style="display: none;">
                         <div class="progress-fill"></div>
@@ -351,7 +342,6 @@
 
         <!-- Footer -->
         <footer class="footer-section">
-            <div class="footer-text">Загружая файлы, вы соглашаетесь с условиями сервиса и политикой конфиденциальности.</div>
             <div class="feedback-bar">
                 <div class="feedback-bar-content">
                     <div class="feedback-bar-text">
@@ -361,6 +351,7 @@
                     <button class="feedback-bar-btn" onclick="document.getElementById('testFeedbackBtn')?.click()">Отправить отзыв</button>
                 </div>
             </div>
+            <div class="footer-text">Загружая файлы, вы соглашаетесь с условиями сервиса и политикой конфиденциальности. Все права защищены.</div>
         </footer>
     </div>
 
