@@ -982,6 +982,77 @@ def validate_uploaded_image():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/validate-person', methods=['POST'])
+def validate_person_image():
+    """
+    Validate a single person image immediately after selection
+    Returns validation results including AI person detection
+    """
+    try:
+        if 'image' not in request.files:
+            return jsonify({'error': 'No image provided'}), 400
+
+        image_file = request.files['image']
+
+        if not image_file or not allowed_file(image_file.filename):
+            return jsonify({'error': 'Invalid image file'}), 400
+
+        # Save temporarily
+        timestamp = int(time.time())
+        filename = secure_filename(f'temp_validate_{timestamp}.{image_file.filename.rsplit(".", 1)[1].lower()}')
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        image_file.save(filepath)
+
+        print(f"[VALIDATE-PERSON] Validating image: {filepath}")
+
+        # Run basic validation
+        is_valid, warnings = validate_image(filepath)
+
+        # Run AI person detection
+        detection_result = detect_person_with_huggingface(filepath)
+
+        # Combine warnings
+        all_warnings = warnings + detection_result.get('warnings', [])
+
+        # Clean up temp file
+        try:
+            os.remove(filepath)
+            print(f"[VALIDATE-PERSON] Cleaned up temp file")
+        except:
+            pass
+
+        response = {
+            'success': True,
+            'person_detected': detection_result.get('person_detected', True),
+            'confidence': detection_result.get('confidence', 0.5),
+            'is_full_body': detection_result.get('is_full_body', True),
+            'height_ratio': detection_result.get('height_ratio', 0.8),
+            'width_ratio': detection_result.get('width_ratio', 0.6),
+            'warnings': all_warnings,
+            'critical': detection_result.get('critical', False),
+            'ai_validated': detection_result.get('ai_validated', False),
+            'validation_method': detection_result.get('validation_method', 'heuristic')
+        }
+
+        print(f"[VALIDATE-PERSON] Validation result: {response}")
+        return jsonify(response), 200
+
+    except Exception as e:
+        print(f"[VALIDATE-PERSON ERROR] {e}")
+        import traceback
+        traceback.print_exc()
+        # Return safe fallback on error
+        return jsonify({
+            'success': True,
+            'person_detected': True,
+            'confidence': 0.5,
+            'is_full_body': True,
+            'warnings': ['⚠️ Ошибка валидации, фото принято'],
+            'critical': False,
+            'ai_validated': False,
+            'validation_method': 'error_fallback'
+        }), 200
+
 @app.route('/api/upload', methods=['POST'])
 def upload_files():
     """

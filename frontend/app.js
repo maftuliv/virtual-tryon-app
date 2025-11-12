@@ -425,7 +425,73 @@ function createPreviewItem(src, index, type) {
 // Validate preview image and add status badge
 async function validatePreviewImage(previewDiv, imageSrc, type, index) {
     try {
-        // Create a temporary image to get dimensions and analyze
+        console.log(`[VALIDATE] Starting validation for ${type} image at index ${index}`);
+
+        // For person images, use AI validation via API
+        if (type === 'person') {
+            // Show loading badge
+            const loadingBadge = document.createElement('div');
+            loadingBadge.className = 'preview-status-badge status-warning';
+            loadingBadge.innerHTML = '<span class="status-icon">⏳</span><span>Проверка...</span>';
+            previewDiv.appendChild(loadingBadge);
+
+            // Get the file from state
+            const file = state.personImages[index];
+            if (!file) {
+                console.error('[VALIDATE] File not found in state');
+                return;
+            }
+
+            // Send to server for AI validation
+            const formData = new FormData();
+            formData.append('image', file);
+
+            try {
+                console.log('[VALIDATE] Sending to /api/validate-person...');
+                const response = await fetch(`${API_URL}/api/validate-person`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const validationData = await response.json();
+                console.log('[VALIDATE] Validation response:', validationData);
+
+                // Remove loading badge
+                loadingBadge.remove();
+
+                // Create result badge with detection data
+                const result = {
+                    image_index: index,
+                    person_detected: validationData.person_detected,
+                    confidence: validationData.confidence,
+                    is_full_body: validationData.is_full_body,
+                    height_ratio: validationData.height_ratio,
+                    width_ratio: validationData.width_ratio,
+                    warnings: validationData.warnings || [],
+                    critical: validationData.critical,
+                    ai_validated: validationData.ai_validated,
+                    validation_method: validationData.validation_method
+                };
+
+                // Use the same display function as before
+                displaySinglePersonDetectionResult(previewDiv, result);
+
+            } catch (error) {
+                console.error('[VALIDATE] API error:', error);
+                // Remove loading badge
+                loadingBadge.remove();
+
+                // Show error badge
+                const errorBadge = document.createElement('div');
+                errorBadge.className = 'preview-status-badge status-warning';
+                errorBadge.innerHTML = '<span class="status-icon">⚠️</span><span>Проверка недоступна</span>';
+                previewDiv.appendChild(errorBadge);
+            }
+
+            return; // Exit early for person images
+        }
+
+        // For garment images, use simple client-side validation
         const tempImg = new Image();
         tempImg.src = imageSrc;
 
@@ -437,49 +503,17 @@ async function validatePreviewImage(previewDiv, imageSrc, type, index) {
         const height = tempImg.height;
         const aspectRatio = width / height;
 
-        // Check for common issues
         const warnings = [];
         const errors = [];
 
         // Resolution checks
-        if (width < 512 || height < 512) {
-            errors.push('Разрешение слишком низкое (мин. 512px)');
+        if (width < 512 && height < 512) {
+            errors.push('Разрешение слишком низкое');
         }
 
-        if (height > 2000 || width > 2000) {
-            warnings.push('Будет автоматически уменьшено');
-        }
-
-        // Aspect ratio and orientation checks
-        if (type === 'person') {
-            // For person images, we need portrait orientation (height > width)
-            // Typical full-body photos have aspect ratio between 0.5-0.8 (width/height)
-            if (width > height) {
-                errors.push('❌ Фото должно быть вертикальным (портрет)');
-            } else if (aspectRatio > 0.85) {
-                // Too square - likely a cropped photo or just upper body
-                errors.push('❌ Похоже на обрезанное фото. Нужен человек в ПОЛНЫЙ РОСТ');
-            } else if (aspectRatio < 0.4) {
-                warnings.push('Необычные пропорции - проверьте результат');
-            }
-
-            // Additional hints for person photos
-            if (width >= 512 && height >= 512 && width < height && aspectRatio <= 0.85) {
-                // Good signs - but still show helpful hint
-                if (aspectRatio > 0.65 && aspectRatio <= 0.85) {
-                    warnings.push('Убедитесь, что виден человек ПОЛНОСТЬЮ (с ног до головы)');
-                }
-            }
-        } else if (type === 'garment') {
-            // For garment images, more flexible
-            if (width < 512 && height < 512) {
-                errors.push('Разрешение слишком низкое');
-            }
-
-            // Garments can be landscape or portrait, but not too extreme
-            if (aspectRatio > 2.0 || aspectRatio < 0.5) {
-                warnings.push('Необычные пропорции - убедитесь, что одежда видна полностью');
-            }
+        // Garments can be landscape or portrait, but not too extreme
+        if (aspectRatio > 2.0 || aspectRatio < 0.5) {
+            warnings.push('Необычные пропорции - убедитесь, что одежда видна полностью');
         }
 
         // Create status badge
@@ -487,24 +521,14 @@ async function validatePreviewImage(previewDiv, imageSrc, type, index) {
         badge.className = 'preview-status-badge';
 
         if (errors.length > 0) {
-            // Critical errors - show error badge
             badge.classList.add('status-error');
             badge.innerHTML = '<span class="status-icon">❌</span><span>' + errors[0] + '</span>';
             previewDiv.classList.add('has-errors');
-            badge.title = errors.join('\n');
-
-            // Show detailed error message
-            setTimeout(() => {
-                showError('⚠️ Проблема с изображением:\n\n' + errors.join('\n') + '\n\nПожалуйста, загрузите другое фото.');
-            }, 300);
         } else if (warnings.length > 0) {
-            // Warnings - might still work
             badge.classList.add('status-warning');
             badge.innerHTML = '<span class="status-icon">⚠️</span><span>' + warnings[0] + '</span>';
             previewDiv.classList.add('has-warnings');
-            badge.title = warnings.join('\n');
         } else {
-            // All good
             badge.classList.add('status-ok');
             badge.innerHTML = '<span class="status-icon">✅</span><span>OK</span>';
             previewDiv.classList.add('validated-ok');
@@ -873,6 +897,48 @@ function resetApplication() {
 
     // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Display single person detection result (for immediate validation)
+function displaySinglePersonDetectionResult(previewDiv, result) {
+    console.log(`[SINGLE DETECTION] Displaying result for preview:`, result);
+
+    // Create new badge based on detection result
+    const badge = document.createElement('div');
+    badge.className = 'preview-status-badge';
+    badge.style.cursor = 'pointer';
+
+    if (result.error || !result.person_detected) {
+        // Critical error - person not detected
+        badge.classList.add('status-error');
+        badge.innerHTML = '<span class="status-icon">❌</span><span>Человек не обнаружен</span>';
+        previewDiv.classList.add('has-errors');
+    } else if (result.confidence < 0.5) {
+        // Low confidence warning
+        badge.classList.add('status-warning');
+        badge.innerHTML = '<span class="status-icon">⚠️</span><span>Низкая уверенность</span>';
+        previewDiv.classList.add('has-warnings');
+    } else if (!result.is_full_body) {
+        // Not full body warning
+        badge.classList.add('status-warning');
+        badge.innerHTML = '<span class="status-icon">⚠️</span><span>Не полный рост</span>';
+        previewDiv.classList.add('has-warnings');
+    } else {
+        // Success
+        badge.classList.add('status-success');
+        badge.innerHTML = `<span class="status-icon">✅</span><span>Человек обнаружен (${Math.round(result.confidence * 100)}%)</span>`;
+        previewDiv.classList.add('has-success');
+    }
+
+    // Add click handler to show detailed info
+    badge.addEventListener('click', (e) => {
+        e.stopPropagation();
+        console.log(`[SINGLE DETECTION] Badge clicked`);
+        showDetectionDetails(result, result.image_index + 1);
+    });
+
+    console.log(`[SINGLE DETECTION] Appending clickable badge`);
+    previewDiv.appendChild(badge);
 }
 
 // Person Detection Results Display
