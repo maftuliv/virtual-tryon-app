@@ -10,6 +10,19 @@ from werkzeug.utils import secure_filename
 from PIL import Image
 import io
 
+# Database imports
+try:
+    from database import (
+        db_available,
+        save_feedback_to_db,
+        get_unsent_telegram_feedbacks,
+        mark_telegram_sent
+    )
+    print("[DATABASE] ✅ Database module loaded successfully")
+except ImportError as e:
+    print(f"[DATABASE] ⚠️ Database module not available: {e}")
+    db_available = False
+
 # Configuration for static files
 FRONTEND_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend')
 
@@ -119,6 +132,101 @@ else:
 print("=" * 80)
 print()
 # ==================== END DIAGNOSTICS ====================
+
+# ==================== ENVIRONMENT VALIDATION ====================
+def validate_environment():
+    """
+    Validate all required environment variables on startup
+    Critical variables will cause warnings but won't stop the app
+    """
+    REQUIRED_ENV_VARS = {
+        'TELEGRAM_BOT_TOKEN': {
+            'description': 'Telegram Bot API token for feedback notifications',
+            'instruction': 'Get from https://t.me/BotFather',
+            'critical': False  # App can work without it, but feedback won't be sent to Telegram
+        },
+        'TELEGRAM_CHAT_ID': {
+            'description': 'Telegram Chat ID to send notifications to',
+            'instruction': 'Send /start to your bot, then use getUpdates API',
+            'critical': False  # Can be auto-detected
+        },
+        'FASHN_API_KEY': {
+            'description': 'FASHN AI API key for virtual try-on',
+            'instruction': 'Get from FASHN dashboard',
+            'critical': False  # Optional if using only Nano Banana
+        },
+        'NANOBANANA_API_KEY': {
+            'description': 'Nano Banana API key for virtual try-on',
+            'instruction': 'Get from https://nanobananaapi.ai/api-key',
+            'critical': False  # Optional if using only FASHN
+        }
+    }
+
+    missing_vars = []
+    warnings = []
+
+    print("\n" + "=" * 80)
+    print("🔍 ENVIRONMENT VARIABLES VALIDATION")
+    print("=" * 80)
+
+    for var_name, var_info in REQUIRED_ENV_VARS.items():
+        # Try multiple variations of variable name
+        value = (
+            os.environ.get(var_name, '').strip() or
+            os.environ.get(var_name.lower(), '').strip()
+        )
+
+        status = "✅ SET" if value else "❌ MISSING"
+        length_info = f"(length: {len(value)})" if value else ""
+
+        print(f"{status} {var_name} {length_info}")
+        print(f"     → {var_info['description']}")
+
+        if not value:
+            if var_info['critical']:
+                missing_vars.append({
+                    'name': var_name,
+                    'instruction': var_info['instruction']
+                })
+            else:
+                warnings.append({
+                    'name': var_name,
+                    'instruction': var_info['instruction']
+                })
+
+    print("=" * 80)
+
+    # Show critical errors
+    if missing_vars:
+        print("\n🚨 CRITICAL: Missing required environment variables!")
+        print("=" * 80)
+        for var in missing_vars:
+            print(f"❌ {var['name']}")
+            print(f"   How to fix: {var['instruction']}")
+        print("=" * 80)
+        print("⚠️  Application may not work correctly!")
+        print("⚠️  Add variables in Railway Dashboard → Variables → Redeploy\n")
+
+    # Show warnings
+    if warnings:
+        print("\n⚠️  WARNING: Optional environment variables not set")
+        print("=" * 80)
+        for var in warnings:
+            print(f"⚠️  {var['name']}")
+            print(f"   Impact: Some features will be disabled")
+            print(f"   How to fix: {var['instruction']}")
+        print("=" * 80)
+        print("💡 Application will continue but some features may not work\n")
+
+    if not missing_vars and not warnings:
+        print("\n✅ All environment variables are properly configured!\n")
+
+    return len(missing_vars) == 0
+
+# Run validation on module import (works with gunicorn)
+validate_environment()
+
+# ==================== END VALIDATION ====================
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -261,23 +369,43 @@ def save_base64_image(base64_string, output_path):
         img_file.write(img_data)
     return output_path
 
-def get_public_image_url(image_path):
+def get_public_image_url(image_path, request_obj=None):
     """
     Get public URL for image (NanoBanana API requires URLs, not base64)
 
     Strategy:
     1. Use Railway public URL to serve the uploaded file directly
     2. Fallback: Try ImgBB if IMGBB_API_KEY is set
+    3. Auto-detect domain from request if available
     """
     filename = os.path.basename(image_path)
 
-    # Get Railway public URL from environment or use default
-    railway_url = os.environ.get('RAILWAY_PUBLIC_DOMAIN', 'taptolook.net')
+    # Try to get domain from request first (most reliable)
+    domain = None
+    if request_obj:
+        try:
+            # Get host from request headers (works with custom domains)
+            host = request_obj.headers.get('Host', '')
+            if host:
+                # Remove port if present
+                domain = host.split(':')[0]
+                print(f"[IMAGE URL] Detected domain from request: {domain}")
+        except Exception as e:
+            print(f"[IMAGE URL] Could not get domain from request: {e}")
+
+    # Fallback to environment variable or default
+    if not domain:
+        domain = os.environ.get('RAILWAY_PUBLIC_DOMAIN', 'taptolook.net')
+        print(f"[IMAGE URL] Using domain from environment/default: {domain}")
 
     # Construct public URL for the uploaded file
-    public_url = f"https://{railway_url}/uploads/{filename}"
+    public_url = f"https://{domain}/uploads/{filename}"
 
     print(f"[IMAGE URL] Generated public URL: {public_url}")
+
+    # Verify file exists before generating URL
+    if not os.path.exists(image_path):
+        print(f"[IMAGE URL] ⚠️ WARNING: Image file does not exist: {image_path}")
 
     # Optional: Try ImgBB if API key is explicitly set (not required)
     imgbb_key = os.environ.get('IMGBB_API_KEY', '')
@@ -335,8 +463,32 @@ def process_with_nanobanana(person_image_path, garment_image_path, category='aut
         # Generate public URLs for uploaded images (served via Railway)
         print(f"[NANOBANANA] Generating public URLs for images...")
 
-        person_image_url = get_public_image_url(person_image_optimized)
-        garment_image_url = get_public_image_url(garment_image_optimized)
+        # Try to get request object from Flask context (if available)
+        from flask import has_request_context, request as flask_request
+        request_obj = flask_request if has_request_context() else None
+
+        person_image_url = get_public_image_url(person_image_optimized, request_obj)
+        garment_image_url = get_public_image_url(garment_image_optimized, request_obj)
+        
+        # Verify URLs are accessible (quick check)
+        print(f"[NANOBANANA] Verifying image URLs are accessible...")
+        try:
+            # Quick HEAD request to check if URLs are accessible
+            person_check = requests.head(person_image_url, timeout=5, allow_redirects=True)
+            garment_check = requests.head(garment_image_url, timeout=5, allow_redirects=True)
+            
+            if person_check.status_code != 200:
+                print(f"[NANOBANANA] ⚠️ WARNING: Person image URL returned {person_check.status_code}: {person_image_url}")
+            else:
+                print(f"[NANOBANANA] ✅ Person image URL is accessible")
+                
+            if garment_check.status_code != 200:
+                print(f"[NANOBANANA] ⚠️ WARNING: Garment image URL returned {garment_check.status_code}: {garment_image_url}")
+            else:
+                print(f"[NANOBANANA] ✅ Garment image URL is accessible")
+        except Exception as e:
+            print(f"[NANOBANANA] ⚠️ Could not verify URL accessibility: {e}")
+            print(f"[NANOBANANA] Continuing anyway - API will handle errors...")
 
         print(f"[NANOBANANA] Person image URL: {person_image_url}")
         print(f"[NANOBANANA] Garment image URL: {garment_image_url}")
@@ -352,7 +504,8 @@ def process_with_nanobanana(person_image_path, garment_image_path, category='aut
         garment_type = category_map.get(category, 'garment')
 
         # Optimized prompt for virtual try-on (based on NanoBanana outfit editing best practices)
-        prompt = f"Put the {garment_type} from the second image onto the person in the first image. The garment should fit naturally on the person's body, maintaining their original pose and proportions. Keep the garment's exact color, pattern, and style. Ensure realistic lighting, shadows, and fabric texture."
+        # More explicit prompt to ensure the API actually modifies the image
+        prompt = f"Replace the clothing on the person in the first image with the {garment_type} shown in the second image. The {garment_type} must be placed accurately on the person's body, matching their pose and body shape. Preserve the exact colors, patterns, textures, and style of the {garment_type} from the second image. Ensure the {garment_type} fits naturally with realistic shadows, lighting, and fabric draping. The result should show the person wearing the {garment_type}, not just the original image."
 
         print(f"[NANOBANANA] Sending request to NanoBananaAPI.ai...")
         print(f"[NANOBANANA] Prompt: {prompt[:100]}...")
@@ -479,7 +632,17 @@ def process_with_nanobanana(person_image_path, garment_image_path, category='aut
                         if img_response.status_code == 200:
                             with open(result_path, 'wb') as img_file:
                                 img_file.write(img_response.content)
-                            print(f"[NANOBANANA] ✅ Result saved: {result_path} ({len(img_response.content)} bytes)")
+                            file_size = len(img_response.content)
+                            print(f"[NANOBANANA] ✅ Result saved: {result_path} ({file_size} bytes)")
+                            
+                            # Verify the result image is valid
+                            try:
+                                result_img = Image.open(result_path)
+                                result_width, result_height = result_img.size
+                                print(f"[NANOBANANA] ✅ Result image verified: {result_width}x{result_height} pixels")
+                            except Exception as e:
+                                print(f"[NANOBANANA] ⚠️ WARNING: Could not verify result image: {e}")
+                            
                             return result_path
                         else:
                             raise ValueError(f"Failed to download result: HTTP {img_response.status_code}")
@@ -540,11 +703,32 @@ def health_check():
 def serve_upload(filename):
     """
     Serve uploaded images publicly (needed for NanoBanana API)
+    This includes both original and optimized (_optimized.jpg) files
     """
     try:
+        # Security: prevent directory traversal
+        filename = secure_filename(filename)
+        file_path = os.path.join(UPLOAD_FOLDER, filename)
+        
+        # Additional security check
+        if not os.path.abspath(file_path).startswith(os.path.abspath(UPLOAD_FOLDER)):
+            print(f"[UPLOADS] ⚠️ Security check failed for: {filename}")
+            return jsonify({"error": "Invalid file path"}), 403
+        
+        if not os.path.exists(file_path):
+            print(f"[UPLOADS] ⚠️ File not found: {filename} (path: {file_path})")
+            # List available files for debugging
+            if os.path.exists(UPLOAD_FOLDER):
+                available_files = [f for f in os.listdir(UPLOAD_FOLDER) if os.path.isfile(os.path.join(UPLOAD_FOLDER, f))]
+                print(f"[UPLOADS] Available files in uploads folder: {available_files[:10]}...")  # Show first 10
+            return jsonify({"error": "File not found"}), 404
+        
+        print(f"[UPLOADS] ✅ Serving file: {filename} ({os.path.getsize(file_path)} bytes)")
         return send_from_directory(UPLOAD_FOLDER, filename)
     except Exception as e:
-        print(f"[UPLOADS] Error serving file {filename}: {e}")
+        print(f"[UPLOADS] ❌ Error serving file {filename}: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": "File not found"}), 404
 
 @app.route('/api/validate', methods=['POST'])
@@ -700,13 +884,22 @@ def virtual_tryon():
                 continue
 
             try:
-                # Always use NanoBanana API
+                # Always use NanoBanana API (pass request for domain detection)
                 result_path = process_with_nanobanana(person_image, garment_image, garment_category)
 
-                # Generate public URL for result image
+                # Generate public URL for result image (use same domain detection logic)
                 result_filename = os.path.basename(result_path)
-                railway_url = os.environ.get('RAILWAY_PUBLIC_DOMAIN', 'taptolook.net')
-                result_url = f"https://{railway_url}/api/result/{result_filename}"
+                # Try to get domain from request
+                from flask import has_request_context, request as flask_request
+                if has_request_context():
+                    host = flask_request.headers.get('Host', '')
+                    if host:
+                        domain = host.split(':')[0]
+                    else:
+                        domain = os.environ.get('RAILWAY_PUBLIC_DOMAIN', 'taptolook.net')
+                else:
+                    domain = os.environ.get('RAILWAY_PUBLIC_DOMAIN', 'taptolook.net')
+                result_url = f"https://{domain}/api/result/{result_filename}"
 
                 # Read result image and encode to base64 for frontend
                 with open(result_path, 'rb') as img_file:
@@ -772,6 +965,103 @@ def get_result(filename):
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
+# ==================== TELEGRAM NOTIFICATION WITH RETRY ====================
+def send_telegram_notification_with_retry(bot_token, chat_id, message, max_retries=3):
+    """
+    Send notification to Telegram with retry mechanism
+
+    Args:
+        bot_token: Telegram bot API token
+        chat_id: Telegram chat ID to send to
+        message: Message text to send
+        max_retries: Maximum number of retry attempts (default: 3)
+
+    Returns:
+        tuple: (success: bool, error_message: str or None)
+    """
+    telegram_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+
+    # Chat ID should be integer or string - try integer first
+    try:
+        chat_id_int = int(chat_id)
+    except (ValueError, TypeError):
+        chat_id_int = chat_id
+
+    telegram_data = {
+        'chat_id': chat_id_int,
+        'text': message,
+        'parse_mode': 'HTML'
+    }
+
+    last_error = None
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            print(f"[TELEGRAM] Attempt {attempt}/{max_retries}: Sending to chat_id={chat_id_int}")
+
+            # Use timeout for each request
+            response = requests.post(telegram_url, json=telegram_data, timeout=10)
+
+            if response.status_code == 200:
+                response_data = response.json()
+                if response_data.get('ok'):
+                    message_id = response_data.get('result', {}).get('message_id', 'N/A')
+                    print(f"[TELEGRAM] ✅ SUCCESS on attempt {attempt}: Message ID {message_id}")
+                    return True, None
+                else:
+                    error_desc = response_data.get('description', 'Unknown API error')
+                    print(f"[TELEGRAM] ❌ API error on attempt {attempt}: {error_desc}")
+                    last_error = f"Telegram API error: {error_desc}"
+            else:
+                print(f"[TELEGRAM] ❌ HTTP {response.status_code} on attempt {attempt}")
+                try:
+                    error_data = response.json()
+                    error_desc = error_data.get('description', 'Unknown')
+                    print(f"[TELEGRAM] Error details: {error_desc}")
+                    last_error = f"HTTP {response.status_code}: {error_desc}"
+                except:
+                    print(f"[TELEGRAM] Response: {response.text[:200]}")
+                    last_error = f"HTTP {response.status_code}: {response.text[:100]}"
+
+            # If this wasn't the last attempt, wait before retrying
+            if attempt < max_retries:
+                # Exponential backoff: 1s, 2s, 4s
+                delay = 2 ** (attempt - 1)
+                print(f"[TELEGRAM] ⏳ Retrying in {delay} seconds...")
+                time.sleep(delay)
+
+        except requests.exceptions.Timeout:
+            print(f"[TELEGRAM] ⏰ Timeout on attempt {attempt}")
+            last_error = "Request timeout"
+            if attempt < max_retries:
+                delay = 2 ** (attempt - 1)
+                print(f"[TELEGRAM] ⏳ Retrying in {delay} seconds...")
+                time.sleep(delay)
+
+        except requests.exceptions.ConnectionError as e:
+            print(f"[TELEGRAM] 🔌 Connection error on attempt {attempt}: {e}")
+            last_error = f"Connection error: {str(e)[:100]}"
+            if attempt < max_retries:
+                delay = 2 ** (attempt - 1)
+                print(f"[TELEGRAM] ⏳ Retrying in {delay} seconds...")
+                time.sleep(delay)
+
+        except Exception as e:
+            print(f"[TELEGRAM] ❌ Unexpected error on attempt {attempt}: {e}")
+            import traceback
+            traceback.print_exc()
+            last_error = f"Unexpected error: {str(e)[:100]}"
+            if attempt < max_retries:
+                delay = 2 ** (attempt - 1)
+                print(f"[TELEGRAM] ⏳ Retrying in {delay} seconds...")
+                time.sleep(delay)
+
+    # All retries failed
+    print(f"[TELEGRAM] ❌ FAILED after {max_retries} attempts. Last error: {last_error}")
+    return False, last_error
+
+# ==================== END TELEGRAM RETRY ====================
+
 @app.route('/api/feedback', methods=['POST'])
 def submit_feedback():
     """
@@ -800,27 +1090,46 @@ def submit_feedback():
             'session_id': session_id,
             'ip_address': request.remote_addr
         }
-        
-        # Save to JSON file
-        feedback_file = os.path.join(FEEDBACK_FOLDER, f'feedback_{int(time.time())}.json')
-        file_saved_successfully = False
-        try:
-            with open(feedback_file, 'w', encoding='utf-8') as f:
-                json.dump(feedback_data, f, ensure_ascii=False, indent=2)
 
-            # Verify file was saved
-            if os.path.exists(feedback_file):
-                file_size = os.path.getsize(feedback_file)
-                print(f"[FEEDBACK] ✅ Saved feedback: rating={rating}, comment_length={len(comment)}")
-                print(f"[FEEDBACK] ✅ File saved to: {feedback_file} (size: {file_size} bytes)")
-                file_saved_successfully = True
+        feedback_id = None
+        db_saved = False
+
+        # Save to PostgreSQL database (primary storage)
+        if db_available:
+            print(f"[FEEDBACK] 💾 Saving to PostgreSQL database...")
+            success, feedback_id, error = save_feedback_to_db(
+                rating=rating,
+                comment=comment,
+                timestamp=timestamp,
+                session_id=session_id,
+                ip_address=request.remote_addr,
+                telegram_sent=False  # Will update after Telegram send
+            )
+            if success:
+                db_saved = True
+                print(f"[FEEDBACK] ✅ Saved to database with ID: {feedback_id}")
             else:
-                print(f"[FEEDBACK] ❌ ERROR: File was not created: {feedback_file}")
-        except Exception as e:
-            print(f"[FEEDBACK] ❌ ERROR saving file: {e}")
-            import traceback
-            traceback.print_exc()
-            # Don't raise - continue to try sending to Telegram anyway
+                print(f"[FEEDBACK] ⚠️ Database save failed: {error}")
+                print(f"[FEEDBACK] ℹ️ Falling back to file storage...")
+
+        # Fallback: Save to JSON file (temporary, will be lost on redeploy)
+        if not db_saved:
+            feedback_file = os.path.join(FEEDBACK_FOLDER, f'feedback_{int(time.time())}.json')
+            try:
+                with open(feedback_file, 'w', encoding='utf-8') as f:
+                    json.dump(feedback_data, f, ensure_ascii=False, indent=2)
+
+                # Verify file was saved
+                if os.path.exists(feedback_file):
+                    file_size = os.path.getsize(feedback_file)
+                    print(f"[FEEDBACK] ✅ Saved to file: {feedback_file} (size: {file_size} bytes)")
+                else:
+                    print(f"[FEEDBACK] ❌ ERROR: File was not created: {feedback_file}")
+            except Exception as e:
+                print(f"[FEEDBACK] ❌ ERROR saving file: {e}")
+                import traceback
+                traceback.print_exc()
+                # Continue anyway - at least try to send to Telegram
 
         # Optional: Send to Telegram if configured (even if file save failed)
         # Try multiple variations of variable names
@@ -920,63 +1229,60 @@ def submit_feedback():
                 traceback.print_exc()
         
         if telegram_bot_token and telegram_chat_id:
-            try:
-                # Format message for Telegram (using HTML format - simpler and more reliable)
-                stars = '⭐' * rating + '☆' * (5 - rating)
-                message = f"📊 <b>Новый отзыв</b>\n\n"
-                message += f"⭐ Оценка: {stars} ({rating}/5)\n"
-                if comment:
-                    # Escape HTML special characters in comment
-                    safe_comment = comment.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
-                    message += f"💬 Комментарий: {safe_comment}\n"
-                message += f"🕐 Время: {timestamp}\n"
-                if session_id:
-                    message += f"🆔 Session: {session_id[:8]}...\n"
-                
-                telegram_url = f"https://api.telegram.org/bot{telegram_bot_token}/sendMessage"
-                
-                # Chat ID should be integer or string - try integer first (Telegram API accepts both)
-                try:
-                    chat_id_int = int(telegram_chat_id)
-                except (ValueError, TypeError):
-                    chat_id_int = telegram_chat_id
-                
-                telegram_data = {
-                    'chat_id': chat_id_int,  # Use integer format (Telegram prefers this)
-                    'text': message,
-                    'parse_mode': 'HTML'  # Use HTML instead of MarkdownV2 (simpler, no escaping needed)
-                }
-                
-                print(f"[FEEDBACK] Sending to Telegram: chat_id={chat_id_int}, message_length={len(message)}")
-                
-                telegram_response = requests.post(telegram_url, json=telegram_data, timeout=10)
-                if telegram_response.status_code == 200:
-                    response_data = telegram_response.json()
-                    if response_data.get('ok'):
-                        print(f"[FEEDBACK] ✅ Sent to Telegram successfully")
-                        print(f"[FEEDBACK] Message ID: {response_data.get('result', {}).get('message_id', 'N/A')}")
-                    else:
-                        print(f"[FEEDBACK] ❌ Telegram API error: {response_data.get('description', 'Unknown')}")
+            # Format message for Telegram (using HTML format - simpler and more reliable)
+            stars = '⭐' * rating + '☆' * (5 - rating)
+            message = f"📊 <b>Новый отзыв</b>\n\n"
+            message += f"⭐ Оценка: {stars} ({rating}/5)\n"
+            if comment:
+                # Escape HTML special characters in comment
+                safe_comment = comment.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+                message += f"💬 Комментарий: {safe_comment}\n"
+            message += f"🕐 Время: {timestamp}\n"
+            if session_id:
+                message += f"🆔 Session: {session_id[:8]}...\n"
+
+            # Use retry mechanism for reliable delivery
+            print(f"[FEEDBACK] 📤 Sending to Telegram with retry mechanism...")
+            telegram_success, telegram_error = send_telegram_notification_with_retry(
+                bot_token=telegram_bot_token,
+                chat_id=telegram_chat_id,
+                message=message,
+                max_retries=3
+            )
+
+            # Update database with Telegram delivery status
+            if db_available and feedback_id:
+                mark_telegram_sent(
+                    feedback_id=feedback_id,
+                    success=telegram_success,
+                    error=telegram_error
+                )
+
+            if not telegram_success:
+                print(f"[FEEDBACK] ⚠️ Warning: Telegram notification failed after retries: {telegram_error}")
+                if db_saved:
+                    print(f"[FEEDBACK] ℹ️ Feedback was saved to database (ID: {feedback_id}), but Telegram notification could not be sent")
                 else:
-                    print(f"[FEEDBACK] ❌ Telegram HTTP error: {telegram_response.status_code}")
-                    try:
-                        error_data = telegram_response.json()
-                        print(f"[FEEDBACK] Error details: {error_data}")
-                    except:
-                        print(f"[FEEDBACK] Response text: {telegram_response.text[:500]}")
-            except Exception as e:
-                print(f"[FEEDBACK] ❌ Telegram error (non-critical): {e}")
-                import traceback
-                traceback.print_exc()
+                    print(f"[FEEDBACK] ℹ️ Feedback was saved to file, but Telegram notification could not be sent")
         else:
             if not telegram_bot_token:
                 print(f"[FEEDBACK] ⚠️ TELEGRAM_BOT_TOKEN not set - skipping Telegram notification")
             if not telegram_chat_id:
                 print(f"[FEEDBACK] ⚠️ TELEGRAM_CHAT_ID not set - skipping Telegram notification")
-        
+
+            # Mark as not sent in database
+            if db_available and feedback_id:
+                mark_telegram_sent(
+                    feedback_id=feedback_id,
+                    success=False,
+                    error="Telegram credentials not configured"
+                )
+
         return jsonify({
             'success': True,
-            'message': 'Feedback saved successfully'
+            'message': 'Feedback saved successfully',
+            'saved_to': 'database' if db_saved else 'file',
+            'feedback_id': feedback_id if db_saved else None
         }), 200
         
     except Exception as e:
@@ -988,9 +1294,27 @@ def submit_feedback():
 @app.route('/api/feedback/list', methods=['GET'])
 def list_feedback():
     """
-    List all saved feedback files (for debugging)
+    List all saved feedback (from database if available, otherwise from files)
     """
     try:
+        # Try database first
+        if db_available:
+            from database import SessionLocal, Feedback as FeedbackModel
+            db = SessionLocal()
+            try:
+                feedbacks = db.query(FeedbackModel).order_by(FeedbackModel.timestamp.desc()).all()
+                feedback_list = [fb.to_dict() for fb in feedbacks]
+
+                return jsonify({
+                    'success': True,
+                    'source': 'database',
+                    'count': len(feedback_list),
+                    'feedbacks': feedback_list
+                }), 200
+            finally:
+                db.close()
+
+        # Fallback: Read from files
         feedback_files = []
         if os.path.exists(FEEDBACK_FOLDER):
             for filename in os.listdir(FEEDBACK_FOLDER):
@@ -1011,9 +1335,10 @@ def list_feedback():
                             'filename': filename,
                             'error': str(e)
                         })
-        
+
         return jsonify({
             'success': True,
+            'source': 'files',
             'count': len(feedback_files),
             'files': feedback_files,
             'folder': FEEDBACK_FOLDER
