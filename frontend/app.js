@@ -58,6 +58,15 @@ function setupStepper() {
         step2Btn.addEventListener('click', () => switchStep(2));
     }
 
+    // Initialize with step 1 - set initial state
+    if (step1Content) {
+        step1Content.style.display = 'block';
+        step1Content.classList.add('step-active');
+    }
+    if (step2Content) {
+        step2Content.style.display = 'none';
+    }
+    
     // Initialize with step 1
     switchStep(1);
 }
@@ -85,37 +94,50 @@ function switchStep(step) {
         }
     }
 
-    // Update content visibility with smooth transition
-    if (step1Content) {
+    // Smooth slide animation
+    if (step1Content && step2Content) {
         if (step === 1) {
-            step1Content.style.opacity = '0';
+            // Switching to step 1: step2 slides out left, step1 slides in from right
+            step2Content.classList.remove('step-active');
+            step2Content.classList.add('step-slide-out-left');
+            
             step1Content.style.display = 'block';
+            step1Content.classList.remove('step-slide-out-left');
+            step1Content.classList.add('step-slide-in-right');
+            
+            // Trigger reflow
+            step1Content.offsetHeight;
+            
             setTimeout(() => {
-                step1Content.style.transition = 'opacity 0.3s ease';
-                step1Content.style.opacity = '1';
+                step1Content.classList.remove('step-slide-in-right');
+                step1Content.classList.add('step-active');
+                
+                setTimeout(() => {
+                    step2Content.style.display = 'none';
+                    step2Content.classList.remove('step-slide-out-left');
+                }, 500);
             }, 10);
         } else {
-            step1Content.style.transition = 'opacity 0.3s ease';
-            step1Content.style.opacity = '0';
-            setTimeout(() => {
-                step1Content.style.display = 'none';
-            }, 300);
-        }
-    }
-    if (step2Content) {
-        if (step === 2) {
-            step2Content.style.opacity = '0';
+            // Switching to step 2: step1 slides out left, step2 slides in from right
+            step1Content.classList.remove('step-active');
+            step1Content.classList.add('step-slide-out-left');
+            
             step2Content.style.display = 'block';
+            step2Content.classList.remove('step-slide-out-left');
+            step2Content.classList.add('step-slide-in-right');
+            
+            // Trigger reflow
+            step2Content.offsetHeight;
+            
             setTimeout(() => {
-                step2Content.style.transition = 'opacity 0.3s ease';
-                step2Content.style.opacity = '1';
+                step2Content.classList.remove('step-slide-in-right');
+                step2Content.classList.add('step-active');
+                
+                setTimeout(() => {
+                    step1Content.style.display = 'none';
+                    step1Content.classList.remove('step-slide-out-left');
+                }, 500);
             }, 10);
-        } else {
-            step2Content.style.transition = 'opacity 0.3s ease';
-            step2Content.style.opacity = '0';
-            setTimeout(() => {
-                step2Content.style.display = 'none';
-            }, 300);
         }
     }
 }

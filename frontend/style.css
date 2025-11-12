@@ -362,6 +362,23 @@ body {
     -webkit-backdrop-filter: blur(24px);
     padding: 20px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform, opacity;
+}
+
+.upload-card-step.step-slide-out-left {
+    transform: translateX(-100%);
+    opacity: 0;
+}
+
+.upload-card-step.step-slide-in-right {
+    transform: translateX(100%);
+    opacity: 0;
+}
+
+.upload-card-step.step-active {
+    transform: translateX(0);
+    opacity: 1;
 }
 
 .step-header {
