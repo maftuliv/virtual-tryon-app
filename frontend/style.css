@@ -274,12 +274,22 @@ body {
 
 .upload-card-step {
     border-radius: 24px;
-    border: 1px solid rgba(255, 255, 255, 0.6);
-    background: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    border: 2px solid rgba(99, 102, 241, 0.15);
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     padding: 32px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.08), 
+                0 1px 3px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    transition: all 0.3s ease;
+}
+
+.upload-card-step:hover {
+    box-shadow: 0 8px 30px rgba(99, 102, 241, 0.12), 
+                0 2px 6px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    border-color: rgba(99, 102, 241, 0.25);
 }
 
 .step-header {
@@ -449,12 +459,25 @@ body {
 
 /* Requirements Card */
 .requirements-card {
-    border-radius: 16px;
-    background: linear-gradient(to bottom, #f8fafc 0%, #ffffff 100%);
-    border: 1px solid rgba(255, 255, 255, 0.6);
-    padding: 16px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 2px solid rgba(99, 102, 241, 0.12);
+    padding: 20px;
     font-size: 0.875rem;
     color: var(--slate-600);
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.06), 
+                0 1px 3px rgba(0, 0, 0, 0.08),
+                inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    transition: all 0.3s ease;
+}
+
+.requirements-card:hover {
+    box-shadow: 0 6px 24px rgba(99, 102, 241, 0.1), 
+                0 2px 6px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    border-color: rgba(99, 102, 241, 0.2);
 }
 
 .requirements-title {
@@ -555,13 +578,23 @@ body {
 
 /* Tips Card */
 .tips-card {
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.6);
-    background: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    padding: 16px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border-radius: 20px;
+    border: 2px solid rgba(99, 102, 241, 0.15);
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.08), 
+                0 1px 3px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    transition: all 0.3s ease;
+}
+
+.tips-card:hover {
+    box-shadow: 0 8px 30px rgba(99, 102, 241, 0.12), 
+                0 2px 6px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    border-color: rgba(99, 102, 241, 0.25);
 }
 
 .tips-header {
@@ -658,11 +691,23 @@ body {
 
 /* CTA Card */
 .cta-card {
-    border-radius: 16px;
-    border: 1px solid rgba(99, 102, 241, 0.2);
-    background: linear-gradient(to bottom, var(--indigo-50) 0%, #fdf4ff 100%);
-    padding: 16px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border-radius: 20px;
+    border: 2px solid rgba(99, 102, 241, 0.15);
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.08), 
+                0 1px 3px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    transition: all 0.3s ease;
+}
+
+.cta-card:hover {
+    box-shadow: 0 8px 30px rgba(99, 102, 241, 0.12), 
+                0 2px 6px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    border-color: rgba(99, 102, 241, 0.25);
 }
 
 .cta-title {
