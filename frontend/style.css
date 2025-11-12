@@ -29,7 +29,7 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-    background: linear-gradient(to bottom, #f5f3ff 0%, #ffffff 50%, #fdf4ff 100%);
+    background: linear-gradient(to bottom, #f5f3ff 0%, #ffffff 30%, #fdf4ff 100%);
     color: var(--slate-800);
     min-height: 100vh;
     line-height: 1.6;
@@ -49,10 +49,10 @@ body {
     position: sticky;
     top: 0;
     z-index: 40;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    background: rgba(255, 255, 255, 0.6);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    background: rgba(255, 255, 255, 0.2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .top-bar-content {
@@ -123,36 +123,40 @@ body {
     color: var(--slate-600);
 }
 
-@media (max-width: 640px) {
-    .badge-text {
-        display: none;
+.badge-text-responsive {
+    display: none;
+}
+
+@media (min-width: 640px) {
+    .badge-text-responsive {
+        display: inline;
     }
 }
 
 /* Hero Section - New Design */
 .hero-section {
-    max-width: 1400px;
+    max-width: 1152px;
     margin: 0 auto;
-    padding: 32px 24px 8px;
+    padding: 32px 16px 8px;
 }
 
 .hero-title {
-    font-size: 2.5rem;
+    font-size: 1.5rem;
     font-weight: 700;
     letter-spacing: -0.025em;
     color: var(--slate-800);
-    margin-bottom: 12px;
+    margin-bottom: 8px;
 }
 
 @media (min-width: 640px) {
     .hero-title {
-        font-size: 3rem;
+        font-size: 2rem;
     }
 }
 
 .hero-subtitle {
-    margin-top: 12px;
-    font-size: 1.125rem;
+    margin-top: 8px;
+    font-size: 0.875rem;
     color: var(--slate-600);
     max-width: 42rem;
     line-height: 1.6;
@@ -160,9 +164,9 @@ body {
 
 /* Stepper Navigation - New Design */
 .stepper-nav {
-    max-width: 1400px;
+    max-width: 1152px;
     margin: 0 auto;
-    padding: 16px 24px;
+    padding: 8px 16px;
 }
 
 .stepper-grid {
@@ -176,15 +180,15 @@ body {
     display: flex;
     align-items: center;
     gap: 16px;
-    border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.6);
-    background: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
     padding: 20px 24px;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
     text-align: left;
     width: 100%;
 }
@@ -194,8 +198,8 @@ body {
 }
 
 .stepper-btn.active {
-    border-color: rgba(99, 102, 241, 0.3);
-    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2), 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
 .stepper-icon {
@@ -204,9 +208,12 @@ body {
     display: grid;
     place-content: center;
     border-radius: 12px;
-    background: #f1f5f9;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
     color: var(--slate-600);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
     flex-shrink: 0;
 }
 
@@ -218,6 +225,7 @@ body {
 .stepper-btn.active .stepper-icon {
     background: var(--indigo-600);
     color: white;
+    border-color: var(--indigo-600);
 }
 
 .stepper-content {
@@ -253,12 +261,12 @@ body {
 
 /* Main Content Grid - New Design */
 .main-content-grid {
-    max-width: 1400px;
+    max-width: 1152px;
     margin: 0 auto;
-    padding: 32px 24px;
+    padding: 24px 16px;
     display: grid;
     grid-template-columns: 1fr;
-    gap: 32px;
+    gap: 24px;
 }
 
 @media (min-width: 1024px) {
@@ -345,16 +353,17 @@ body {
 
 .upload-zone {
     position: relative;
-    background: rgba(255, 255, 255, 0.4);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 2px dashed #e2e8f0;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 2px dashed rgba(255, 255, 255, 0.4);
     border-radius: 16px;
     padding: 24px;
     text-align: center;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     margin-bottom: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
 .upload-zone-person {
@@ -449,13 +458,14 @@ body {
 /* Requirements Card */
 .requirements-card {
     border-radius: 16px;
-    background: #ffffff;
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
     padding: 20px;
     font-size: 0.875rem;
     color: var(--slate-600);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 
-                0 1px 2px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
 .requirements-title {
@@ -557,11 +567,12 @@ body {
 /* Tips Card */
 .tips-card {
     border-radius: 16px;
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    background: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
     padding: 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 
-                0 1px 2px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
 .tips-header {
@@ -659,11 +670,12 @@ body {
 /* CTA Card */
 .cta-card {
     border-radius: 16px;
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    background: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
     padding: 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 
-                0 1px 2px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
 .cta-title {
