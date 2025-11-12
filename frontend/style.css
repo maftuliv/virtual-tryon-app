@@ -2040,14 +2040,16 @@ body::before {
 }
 
 .modal-dialog {
-    max-width: 80rem;
+    max-width: 64rem;
     width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
     animation: modalSlideIn 0.18s ease;
 }
 
 @keyframes modalSlideIn {
     from {
-        transform: scale(0.96) translateY(8px);
+        transform: scale(0.985) translateY(14px);
         opacity: 0;
     }
     to {
@@ -2056,9 +2058,9 @@ body::before {
     }
 }
 
-.modal-dialog > div:first-child {
+.modal-content-wrapper {
     border-radius: 24px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.4);
     background: rgba(255, 255, 255, 0.2);
     backdrop-filter: blur(40px);
     -webkit-backdrop-filter: blur(40px);
@@ -2069,14 +2071,26 @@ body::before {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 20px 24px;
+    padding: 16px 24px;
+}
+
+@media (min-width: 768px) {
+    .modal-header {
+        padding: 20px 24px;
+    }
 }
 
 .modal-title-new {
-    font-size: 1.5rem;
-    font-weight: 700;
+    font-size: 1.125rem;
+    font-weight: 600;
     letter-spacing: -0.025em;
-    color: var(--slate-800);
+    color: rgb(15, 23, 42);
+}
+
+@media (min-width: 768px) {
+    .modal-title-new {
+        font-size: 1.5rem;
+    }
 }
 
 .modal-close-btn {
@@ -2090,37 +2104,42 @@ body::before {
 }
 
 .modal-close-btn:hover {
-    background: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.3);
 }
 
 .modal-content-grid {
     display: grid;
     grid-template-columns: repeat(1, 1fr);
-    gap: 24px;
-    padding: 0 24px 24px;
+    gap: 16px;
+    padding: 0 16px 20px;
 }
 
 @media (min-width: 768px) {
     .modal-content-grid {
         grid-template-columns: repeat(2, 1fr);
+        gap: 24px;
+        padding: 0 24px 24px;
     }
 }
 
 /* Example Cards */
 .example-card {
     border-radius: 16px;
-    background: rgba(255, 255, 255, 0.3);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 .example-card-good {
-    border: 1px solid rgba(16, 185, 129, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.4);
 }
 
 .example-card-bad {
-    border: 1px solid rgba(244, 63, 94, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.4);
 }
 
 .example-card-header {
@@ -2131,8 +2150,8 @@ body::before {
 }
 
 .example-icon {
-    width: 20px;
-    height: 20px;
+    width: 16px;
+    height: 16px;
     flex-shrink: 0;
 }
 
@@ -2145,7 +2164,8 @@ body::before {
 }
 
 .example-title {
-    font-weight: 600;
+    font-weight: 500;
+    font-size: 0.875rem;
 }
 
 .example-title-good {
@@ -2156,43 +2176,33 @@ body::before {
     color: #be123c;
 }
 
-.example-image-placeholder {
-    margin: 12px 16px 0;
+.example-image-container {
+    padding: 12px 16px 0;
+}
+
+.example-image-box {
     border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    display: grid;
-    place-content: center;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
     aspect-ratio: 4/3;
-    background: linear-gradient(to bottom right, var(--from), var(--to));
 }
 
-.example-image-good {
-    --from: rgba(16, 185, 129, 0.3);
-    --to: rgba(16, 185, 129, 0.1);
+.example-image-box-good {
+    box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.3);
 }
 
-.example-image-bad {
-    --from: rgba(244, 63, 94, 0.3);
-    --to: rgba(244, 63, 94, 0.1);
+.example-image-box-bad {
+    box-shadow: 0 0 0 1px rgba(244, 63, 94, 0.3);
 }
 
-.example-icon-circle {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    display: grid;
-    place-content: center;
-}
-
-.example-icon-dot {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: rgb(203, 213, 225);
+.example-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }
 
 .example-list {
@@ -2219,7 +2229,7 @@ body::before {
     min-width: 6px;
     border-radius: 50%;
     background: rgba(100, 116, 139, 0.7);
-    margin-top: 6px;
+    margin-top: 7px;
 }
 
 .example-card.good {
