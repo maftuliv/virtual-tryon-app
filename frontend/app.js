@@ -33,12 +33,75 @@ const submitFeedbackBtn = document.getElementById('submitFeedbackBtn');
 const feedbackSuccess = document.getElementById('feedbackSuccess');
 const testFeedbackBtn = document.getElementById('testFeedbackBtn');
 
+// Step Management
+let currentStep = 1;
+
 // Event Listeners
 document.addEventListener('DOMContentLoaded', () => {
     setupUploadZones();
     setupEventListeners();
+    setupStepper();
     checkServerHealth();
 });
+
+// Setup Stepper Navigation
+function setupStepper() {
+    const step1Btn = document.getElementById('step1Btn');
+    const step2Btn = document.getElementById('step2Btn');
+    const step1Content = document.getElementById('step1Content');
+    const step2Content = document.getElementById('step2Content');
+
+    if (step1Btn) {
+        step1Btn.addEventListener('click', () => switchStep(1));
+    }
+    if (step2Btn) {
+        step2Btn.addEventListener('click', () => switchStep(2));
+    }
+
+    // Initialize with step 1
+    switchStep(1);
+}
+
+function switchStep(step) {
+    currentStep = step;
+    const step1Btn = document.getElementById('step1Btn');
+    const step2Btn = document.getElementById('step2Btn');
+    const step1Content = document.getElementById('step1Content');
+    const step2Content = document.getElementById('step2Content');
+
+    // Update buttons
+    if (step1Btn) {
+        if (step === 1) {
+            step1Btn.classList.add('active');
+        } else {
+            step1Btn.classList.remove('active');
+        }
+    }
+    if (step2Btn) {
+        if (step === 2) {
+            step2Btn.classList.add('active');
+        } else {
+            step2Btn.classList.remove('active');
+        }
+    }
+
+    // Update content visibility
+    if (step1Content) {
+        step1Content.style.display = step === 1 ? 'block' : 'none';
+    }
+    if (step2Content) {
+        step2Content.style.display = step === 2 ? 'block' : 'none';
+    }
+
+    // Auto-advance to step 2 when person images are uploaded
+    if (step === 1 && state.personImages.length > 0) {
+        setTimeout(() => {
+            if (currentStep === 1) {
+                switchStep(2);
+            }
+        }, 500);
+    }
+}
 
 function setupUploadZones() {
     // Person images upload - only trigger if clicking on upload zone itself, not previews
@@ -124,6 +187,22 @@ function setupEventListeners() {
     if (testFeedbackBtn) {
         testFeedbackBtn.addEventListener('click', showTestFeedbackForm);
     }
+
+    // Tips toggle button
+    const tipsToggle = document.getElementById('tipsToggle');
+    const tipsExamples = document.getElementById('tipsExamples');
+    if (tipsToggle && tipsExamples) {
+        tipsToggle.addEventListener('click', () => {
+            const isActive = tipsToggle.classList.contains('active');
+            if (isActive) {
+                tipsToggle.classList.remove('active');
+                tipsExamples.style.display = 'none';
+            } else {
+                tipsToggle.classList.add('active');
+                tipsExamples.style.display = 'grid';
+            }
+        });
+    }
 }
 
 // Server Health Check
@@ -181,6 +260,13 @@ function processPersonImages(files) {
     state.personImages = validFiles;
     displayPersonPreviews();
     updateGenerateSwitch();
+    
+    // Auto-advance to step 2 after successful upload
+    if (validFiles.length > 0 && currentStep === 1) {
+        setTimeout(() => {
+            switchStep(2);
+        }, 500);
+    }
 }
 
 function displayPersonPreviews() {
@@ -238,6 +324,11 @@ function processGarmentImage(file) {
     state.garmentImage = file;
     displayGarmentPreview();
     updateGenerateSwitch();
+    
+    // Ensure we're on step 2 when garment is uploaded
+    if (currentStep !== 2) {
+        switchStep(2);
+    }
 }
 
 function displayGarmentPreview() {
@@ -701,6 +792,17 @@ function resetApplication() {
         generateSwitch.disabled = false;
     }
     updateGenerateSwitch();
+
+    // Reset to step 1
+    switchStep(1);
+
+    // Hide tips examples
+    const tipsToggle = document.getElementById('tipsToggle');
+    const tipsExamples = document.getElementById('tipsExamples');
+    if (tipsToggle && tipsExamples) {
+        tipsToggle.classList.remove('active');
+        tipsExamples.style.display = 'none';
+    }
 
     // Hide error
     hideError();

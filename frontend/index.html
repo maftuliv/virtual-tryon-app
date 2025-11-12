@@ -7,189 +7,292 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Animated Blobs -->
-    <div class="blob blob-1"></div>
-    <div class="blob blob-2"></div>
-
-    <!-- Moving Shine Effect -->
-    <div class="shine-effect"></div>
-
-    <div class="container">
-        <!-- Header -->
-        <header class="header">
-            <div class="glass-reflection"></div>
-            <h1 class="logo-title">Tap to l<span class="logo-eyes-wrapper">oo<span class="logo-smile">)</span></span>k</h1>
-            <p class="subtitle">Здесь рождается твой новый стиль - просто нажми чтобы посмотреть!</p>
+    <div class="app-wrapper">
+        <!-- Top Bar -->
+        <header class="top-bar">
+            <div class="top-bar-content">
+                <div class="logo-container">
+                    <div class="logo-icon"></div>
+                    <span class="logo-text">Tap to look</span>
+                </div>
+                <div class="top-bar-badge">
+                    <span class="sparkles-icon">✨</span>
+                    <span class="badge-text">AI примерка за 10 сек</span>
+                </div>
+            </div>
         </header>
 
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Upload Section -->
-            <section class="upload-section">
-                <div class="upload-card upload-card-person">
-                    <div class="glass-reflection"></div>
-                    <h2 class="step-title step-title-person">Шаг 1: Загрузите ваше фото</h2>
-                    <div class="photo-requirements">
-                        <div class="requirement-title">⚠️ ВАЖНО - Требования к фото:</div>
-                        <div class="requirement-item">✅ Человек в ПОЛНЫЙ РОСТ (с головы до ног)</div>
-                        <div class="requirement-item">✅ Вертикальное фото (портретная ориентация)</div>
-                        <div class="requirement-item">✅ Четкое изображение, хорошее освещение</div>
-                        <div class="requirement-item">✅ Простой однотонный фон</div>
-                        <div class="requirement-item">✅ Разрешение: минимум 512px</div>
-                        <div class="requirement-item" style="color: #ef4444; font-weight: 600;">❌ НЕ подходят: селфи, обрезанные фото, только лицо</div>
-                        <button class="examples-link" onclick="showExamplesModal('person')">🖼️ Посмотреть примеры</button>
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <h1 class="hero-title">Tap to look</h1>
+            <p class="hero-subtitle">Здесь рождается твой новый стиль — просто нажми, чтобы посмотреть!</p>
+        </section>
+
+        <!-- Stepper Navigation -->
+        <nav class="stepper-nav">
+            <div class="stepper-grid">
+                <button class="stepper-btn" id="step1Btn" data-step="1">
+                    <div class="stepper-icon step-icon-active">📸</div>
+                    <div class="stepper-content">
+                        <div class="stepper-title">Шаг 1</div>
+                        <div class="stepper-subtitle">Загрузите своё фото</div>
                     </div>
-
-                    <input type="file" id="personImages" accept="image/*" multiple class="file-input">
-                    <div class="upload-zone upload-zone-person" id="personUploadZone">
-                        <div class="upload-icon">📸</div>
-                        <p>Нажмите или перетащите фото</p>
-                    </div>
-
-                    <div class="preview-container" id="personPreview"></div>
-                </div>
-
-                <div class="upload-card upload-card-garment">
-                    <div class="glass-reflection"></div>
-                    <h2 class="step-title step-title-garment">Шаг 2: Загрузите одежду</h2>
-
-                    <!-- Category Selector -->
-                    <div class="category-selector">
-                        <label class="category-label">Тип одежды:</label>
-                        <div class="category-options">
-                            <label class="category-option">
-                                <input type="radio" name="garmentCategory" value="auto" checked>
-                                <span class="category-btn">
-                                    <span class="category-icon">🤖</span>
-                                    <span class="category-text">Авто</span>
-                                </span>
-                            </label>
-                            <label class="category-option">
-                                <input type="radio" name="garmentCategory" value="tops">
-                                <span class="category-btn">
-                                    <span class="category-icon">👕</span>
-                                    <span class="category-text">Верх</span>
-                                </span>
-                            </label>
-                            <label class="category-option">
-                                <input type="radio" name="garmentCategory" value="bottoms">
-                                <span class="category-btn">
-                                    <span class="category-icon">👖</span>
-                                    <span class="category-text">Низ</span>
-                                </span>
-                            </label>
-                            <label class="category-option">
-                                <input type="radio" name="garmentCategory" value="one-pieces">
-                                <span class="category-btn">
-                                    <span class="category-icon">👗</span>
-                                    <span class="category-text">Платья</span>
-                                </span>
-                            </label>
-                        </div>
-                        <p class="category-hint">💡 Выберите тип одежды для лучшего результата, или оставьте "Авто"</p>
-                    </div>
-
-                    <div class="photo-requirements">
-                        <div class="requirement-title">Для лучшего результата:</div>
-                        <div class="requirement-item">⭐ Flat-lay или манекен (лучше всего)</div>
-                        <div class="requirement-item">👤 Можно фото на модели</div>
-                        <div class="requirement-item">✨ Четкое изображение одежды</div>
-                        <div class="requirement-item">🎨 Контрастный фон</div>
-                        <div class="requirement-item">📏 Разрешение: 512px - 2000px</div>
-                        <button class="examples-link" onclick="showExamplesModal('garment')">🖼️ Посмотреть примеры</button>
-                    </div>
-
-                    <input type="file" id="garmentImage" accept="image/*" class="file-input">
-                    <div class="upload-zone upload-zone-garment" id="garmentUploadZone">
-                        <div class="upload-icon">👕</div>
-                        <p>Нажмите или перетащите фото одежды</p>
-                    </div>
-
-                    <div class="preview-container" id="garmentPreview"></div>
-                </div>
-            </section>
-
-            <!-- Action Section with Toggle Switch -->
-            <div class="action-section">
-                <div class="generate-container">
-                    <div class="generate-text">нажми чтобы посмотреть</div>
-                    <div class="switch-wrapper">
-                        <input type="checkbox" id="generateSwitch" class="model-switch-input">
-                        <label for="generateSwitch" class="model-switch-label">
-                            <span class="switch-slider"></span>
-                        </label>
-                    </div>
-                </div>
-                <p class="waiting-time-text">Примерное ожидание 5-17 секунд</p>
-                
-                <!-- Test Feedback Button (for testing without generation) -->
-                <button id="testFeedbackBtn" class="btn-test-feedback" style="margin-top: 15px;">
-                    <span>🧪 Тест формы отзыва (без генерации)</span>
+                    <span class="stepper-arrow">→</span>
                 </button>
-
-                <div id="progressBar" class="progress-bar" style="display: none;">
-                    <div class="progress-fill"></div>
-                    <p class="progress-text">Обработка изображений...</p>
-                </div>
+                <button class="stepper-btn" id="step2Btn" data-step="2">
+                    <div class="stepper-icon">👕</div>
+                    <div class="stepper-content">
+                        <div class="stepper-title">Шаг 2</div>
+                        <div class="stepper-subtitle">Добавьте одежду</div>
+                    </div>
+                    <span class="stepper-arrow">→</span>
+                </button>
             </div>
+        </nav>
 
-            <!-- Results Section -->
-            <section class="results-section" id="resultsSection" style="display: none;">
-                <h2>Результаты примерки</h2>
-                <div class="results-grid" id="resultsGrid"></div>
+        <!-- Main Content -->
+        <main class="main-content-grid">
+            <!-- Left Column: Upload Section -->
+            <section class="upload-section-main" id="uploadSection">
+                <!-- Step 1: Person Photo Upload -->
+                <div class="upload-card-step" id="step1Content" data-step="1">
+                    <div class="step-header">
+                        <span class="step-icon-large">📸</span>
+                        <h2 class="step-title-large">Шаг 1 — Ваше фото</h2>
+                    </div>
 
-                <!-- Feedback Form -->
-                <div class="feedback-section" id="feedbackSection">
-                    <h3>Поделитесь вашим мнением</h3>
-                    <div class="feedback-form">
-                        <div class="feedback-rating">
-                            <label for="ratingSlider">Оценка качества:</label>
-                            <div class="rating-container">
-                                <span class="rating-label rating-bad">😞 Плохо</span>
-                                <input type="range" id="ratingSlider" min="1" max="5" value="3" step="1" class="rating-slider">
-                                <span class="rating-label rating-good">😊 Отлично</span>
+                    <div class="upload-grid">
+                        <div class="upload-zone-wrapper">
+                            <input type="file" id="personImages" accept="image/*" multiple class="file-input">
+                            <div class="upload-zone upload-zone-person" id="personUploadZone">
+                                <div class="upload-icon-large">☁️</div>
+                                <p class="upload-title">Перетащите фото или выберите</p>
+                                <p class="upload-subtitle">JPG/PNG, минимум 512px</p>
+                                <div class="upload-buttons">
+                                    <button class="btn-upload-primary" onclick="document.getElementById('personImages').click()">Выбрать файл</button>
+                                    <button class="btn-upload-secondary">Вставить ссылку</button>
+                                </div>
                             </div>
-                            <div class="rating-value">
-                                <span id="ratingValue">3</span>/5
-                            </div>
+                            <div class="preview-container" id="personPreview"></div>
                         </div>
-                        
-                        <div class="feedback-comment">
-                            <label for="feedbackComment">Ваш комментарий (необязательно):</label>
-                            <textarea id="feedbackComment" class="feedback-textarea" placeholder="Расскажите, что можно улучшить или что вам понравилось..."></textarea>
-                        </div>
-                        
-                        <button id="submitFeedbackBtn" class="btn-feedback">
-                            <span>📤 Отправить отзыв</span>
-                        </button>
-                        
-                        <div id="feedbackSuccess" class="feedback-success" style="display: none;">
-                            <span>✅ Спасибо за ваш отзыв!</span>
+
+                        <div class="requirements-card">
+                            <h4 class="requirements-title">Требования</h4>
+                            <ul class="requirements-list">
+                                <li>Полный рост, вертикальное фото</li>
+                                <li>Хорошее освещение, чёткое изображение</li>
+                                <li>Однотонный фон желателен</li>
+                                <li class="requirement-error">Не подойдут: селфи и обрезанные фото</li>
+                            </ul>
+                            <button class="examples-link" onclick="showExamplesModal('person')">🖼️ Посмотреть примеры</button>
                         </div>
                     </div>
                 </div>
 
-                <div class="action-buttons">
-                    <button id="downloadAllBtn" class="btn-secondary">
-                        <span>💾 Скачать все результаты</span>
-                    </button>
-                    <button id="resetBtn" class="btn-secondary">
-                        <span>🔄 Начать заново</span>
-                    </button>
+                <!-- Step 2: Garment Upload -->
+                <div class="upload-card-step" id="step2Content" data-step="2" style="display: none;">
+                    <div class="step-header">
+                        <span class="step-icon-large">👕</span>
+                        <h2 class="step-title-large">Шаг 2 — Одежда</h2>
+                    </div>
+
+                    <div class="garment-upload-grid">
+                        <div class="garment-upload-main">
+                            <!-- Category Selector -->
+                            <div class="category-selector-new">
+                                <h4 class="category-label-new">Тип одежды</h4>
+                                <div class="category-options-new">
+                                    <label class="category-option-new">
+                                        <input type="radio" name="garmentCategory" value="auto" checked>
+                                        <span class="category-btn-new">
+                                            <span class="category-icon-new">✨</span>
+                                            <span class="category-text-new">Авто</span>
+                                        </span>
+                                    </label>
+                                    <label class="category-option-new">
+                                        <input type="radio" name="garmentCategory" value="tops">
+                                        <span class="category-btn-new">
+                                            <span class="category-icon-new">👕</span>
+                                            <span class="category-text-new">Верх</span>
+                                        </span>
+                                    </label>
+                                    <label class="category-option-new">
+                                        <input type="radio" name="garmentCategory" value="bottoms">
+                                        <span class="category-btn-new">
+                                            <span class="category-icon-new">👖</span>
+                                            <span class="category-text-new">Низ</span>
+                                        </span>
+                                    </label>
+                                    <label class="category-option-new">
+                                        <input type="radio" name="garmentCategory" value="one-pieces">
+                                        <span class="category-btn-new">
+                                            <span class="category-icon-new">👗</span>
+                                            <span class="category-text-new">Платье</span>
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="upload-zone-wrapper">
+                                <input type="file" id="garmentImage" accept="image/*" class="file-input">
+                                <div class="upload-zone upload-zone-garment" id="garmentUploadZone">
+                                    <div class="upload-icon-large">☁️</div>
+                                    <p class="upload-title">Перетащите одежду или выберите</p>
+                                    <p class="upload-subtitle">Лучше flat‑lay / манекен, 512–2000px</p>
+                                    <div class="upload-buttons">
+                                        <button class="btn-upload-primary" onclick="document.getElementById('garmentImage').click()">Выбрать файл</button>
+                                        <button class="btn-upload-secondary">Вставить ссылку</button>
+                                    </div>
+                                </div>
+                                <div class="preview-container" id="garmentPreview"></div>
+                            </div>
+                        </div>
+
+                        <div class="requirements-card">
+                            <h4 class="requirements-title">Подсказки</h4>
+                            <ul class="requirements-list">
+                                <li>Чёткая картинка, контрастный фон</li>
+                                <li>Фото спереди (без сильной перспективы)</li>
+                                <li>Подойдут также фото на модели</li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
             </section>
 
-            <!-- Error Message -->
-            <div id="errorMessage" class="error-message" style="display: none;">
-                <span class="error-icon">⚠️</span>
-                <span id="errorText"></span>
-                <button class="error-close" onclick="hideError()">×</button>
-            </div>
+            <!-- Right Column: Tips + CTA -->
+            <aside class="sidebar-section">
+                <!-- Tips Card -->
+                <div class="tips-card">
+                    <div class="tips-header">
+                        <span class="info-icon">ℹ️</span>
+                        <h3 class="tips-title">Советы для идеального результата</h3>
+                    </div>
+                    <div class="tips-list">
+                        <div class="tip-item">
+                            <span class="tip-check">✅</span>
+                            <span>Нейтральный фон и хорошее освещение.</span>
+                        </div>
+                        <div class="tip-item">
+                            <span class="tip-check">✅</span>
+                            <span>Фото в полный рост, вертикальная ориентация.</span>
+                        </div>
+                        <div class="tip-item">
+                            <span class="tip-check">✅</span>
+                            <span>Для одежды — фото спереди, лучше flat‑lay или на манекене.</span>
+                        </div>
+                        <div class="tip-item">
+                            <span class="tip-check">✅</span>
+                            <span>Поддерживаем PNG/JPG, от 512px.</span>
+                        </div>
+                    </div>
+                    <button class="tips-toggle" id="tipsToggle">
+                        <span class="chevron-down">▼</span>
+                        Показать примеры
+                    </button>
+                    <div class="tips-examples" id="tipsExamples" style="display: none;">
+                        <div class="example-placeholder">пример 1</div>
+                        <div class="example-placeholder">пример 2</div>
+                        <div class="example-placeholder">пример 3</div>
+                    </div>
+                </div>
+
+                <!-- CTA Card -->
+                <div class="cta-card">
+                    <h3 class="cta-title">Готовы примерить?</h3>
+                    <p class="cta-text">Загрузите фото и одежду. Нажмите кнопку — всё остальное сделает ИИ.</p>
+                    
+                    <div class="action-section">
+                        <div class="generate-container">
+                            <div class="generate-text">нажми чтобы посмотреть</div>
+                            <div class="switch-wrapper">
+                                <input type="checkbox" id="generateSwitch" class="model-switch-input">
+                                <label for="generateSwitch" class="model-switch-label">
+                                    <span class="switch-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <p class="waiting-time-text">Примерное ожидание 5-17 секунд</p>
+                    </div>
+
+                    <button id="testFeedbackBtn" class="btn-test-feedback">
+                        <span>✨ Оставить отзыв</span>
+                    </button>
+                    <p class="cta-hint">Никаких селфи и обрезанных фото — только полный рост.</p>
+
+                    <div id="progressBar" class="progress-bar" style="display: none;">
+                        <div class="progress-fill"></div>
+                        <p class="progress-text">Обработка изображений...</p>
+                    </div>
+                </div>
+            </aside>
         </main>
 
+        <!-- Results Section -->
+        <section class="results-section" id="resultsSection" style="display: none;">
+            <h2 class="results-title">Результаты примерки</h2>
+            <div class="results-grid" id="resultsGrid"></div>
+
+            <!-- Feedback Form -->
+            <div class="feedback-section" id="feedbackSection">
+                <h3 class="feedback-title">Поделитесь вашим мнением</h3>
+                <div class="feedback-form">
+                    <div class="feedback-rating">
+                        <label for="ratingSlider">Оценка качества:</label>
+                        <div class="rating-container">
+                            <span class="rating-label rating-bad">😞 Плохо</span>
+                            <input type="range" id="ratingSlider" min="1" max="5" value="3" step="1" class="rating-slider">
+                            <span class="rating-label rating-good">😊 Отлично</span>
+                        </div>
+                        <div class="rating-value">
+                            <span id="ratingValue">3</span>/5
+                        </div>
+                    </div>
+                    
+                    <div class="feedback-comment">
+                        <label for="feedbackComment">Ваш комментарий (необязательно):</label>
+                        <textarea id="feedbackComment" class="feedback-textarea" placeholder="Расскажите, что можно улучшить или что вам понравилось..."></textarea>
+                    </div>
+                    
+                    <button id="submitFeedbackBtn" class="btn-feedback">
+                        <span>📤 Отправить отзыв</span>
+                    </button>
+                    
+                    <div id="feedbackSuccess" class="feedback-success" style="display: none;">
+                        <span>✅ Спасибо за ваш отзыв!</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button id="downloadAllBtn" class="btn-secondary">
+                    <span>💾 Скачать все результаты</span>
+                </button>
+                <button id="resetBtn" class="btn-secondary">
+                    <span>🔄 Начать заново</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Error Message -->
+        <div id="errorMessage" class="error-message" style="display: none;">
+            <span class="error-icon">⚠️</span>
+            <span id="errorText"></span>
+            <button class="error-close" onclick="hideError()">×</button>
+        </div>
+
         <!-- Footer -->
-        <footer class="footer">
-            <p>Tap to look version: A0.01 2025</p>
+        <footer class="footer-section">
+            <div class="footer-text">Загружая файлы, вы соглашаетесь с условиями сервиса и политикой конфиденциальности.</div>
+            <div class="feedback-bar">
+                <div class="feedback-bar-content">
+                    <div class="feedback-bar-text">
+                        <div class="feedback-bar-title">Поделитесь мнением</div>
+                        <div class="feedback-bar-subtitle">Это поможет нам улучшить Tap to look</div>
+                    </div>
+                    <button class="feedback-bar-btn" onclick="document.getElementById('testFeedbackBtn')?.click()">Отправить отзыв</button>
+                </div>
+            </div>
         </footer>
     </div>
 
