@@ -1,0 +1,31 @@
+# Exclude large image files from Cloud plugin context
+# These folders contain user-uploaded images that can be very large
+uploads/
+results/
+feedback/
+
+# Exclude virtual environment
+venv/
+env/
+ENV/
+
+# Exclude cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Exclude large files
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+
+# Exclude node modules if any
+node_modules/
+
+# Exclude build artifacts
+build/
+dist/
+*.egg-info/
+
