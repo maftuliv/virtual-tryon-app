@@ -226,9 +226,8 @@
                 <div class="tips-card">
                     <div class="tips-header">
                         <svg class="info-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"/>
-                            <line x1="12" y1="16" x2="12" y2="12"/>
-                            <line x1="12" y1="8" x2="12.01" y2="8"/>
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" fill="none"/>
+                            <circle cx="12" cy="12" r="2" fill="currentColor"/>
                         </svg>
                         <h3 class="tips-title">Советы для идеального результата</h3>
                     </div>
@@ -258,16 +257,16 @@
                             <span>Поддерживаем PNG/JPG, от 512px.</span>
                         </div>
                     </div>
-                    <button class="tips-toggle" id="tipsToggle">
+                    <button class="tips-toggle-btn" id="tipsToggle">
+                        <span class="tips-toggle-text">Результат нашей примерочной</span>
                         <svg class="chevron-down" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="6 9 12 15 18 9"/>
                         </svg>
-                        Показать примеры
                     </button>
                     <div class="tips-examples" id="tipsExamples" style="display: none;">
-                        <div class="example-placeholder">пример 1</div>
-                        <div class="example-placeholder">пример 2</div>
-                        <div class="example-placeholder">пример 3</div>
+                        <img src="examples/result/rs_01.jpg" alt="Результат примерки 1" class="tips-example-image">
+                        <img src="examples/result/rs_02.jpg" alt="Результат примерки 2" class="tips-example-image">
+                        <img src="examples/result/rs_03.jpg" alt="Результат примерки 3" class="tips-example-image">
                     </div>
                 </div>
 

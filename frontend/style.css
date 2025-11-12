@@ -164,7 +164,7 @@ body {
     height: 16px;
 }
 
-.tips-toggle.active .chevron-down {
+.tips-toggle-btn.active .chevron-down {
     transform: rotate(180deg);
 }
 
@@ -717,43 +717,85 @@ body {
     height: 20px;
 }
 
-.tips-toggle {
-    margin-top: 12px;
-    display: inline-flex;
+.tips-toggle-btn {
+    margin-top: 16px;
+    width: 100%;
+    display: flex;
     align-items: center;
-    gap: 4px;
-    font-size: 0.75rem;
-    color: var(--indigo-600);
-    background: none;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: white;
+    background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
     border: none;
+    border-radius: 12px;
     cursor: pointer;
-    padding: 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.tips-toggle-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(168, 85, 247, 0.4);
+}
+
+.tips-toggle-btn:active {
+    transform: translateY(0);
+}
+
+.tips-toggle-text {
+    flex: 1;
+    text-align: center;
 }
 
 .chevron-down {
-    font-size: 0.75rem;
-    transition: transform 0.2s;
+    font-size: 0.875rem;
+    transition: transform 0.3s ease;
+    flex-shrink: 0;
 }
 
-.tips-toggle.active .chevron-down {
+.tips-toggle-btn.active .chevron-down {
     transform: rotate(180deg);
 }
 
 .tips-examples {
-    margin-top: 12px;
+    margin-top: 16px;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
+    gap: 12px;
+    animation: fadeIn 0.3s ease;
 }
 
-.example-placeholder {
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.tips-example-image {
+    width: 100%;
     aspect-ratio: 4/5;
+    object-fit: cover;
     border-radius: 12px;
-    background: linear-gradient(to bottom, #f1f5f9 0%, #f8fafc 100%);
-    display: grid;
-    place-content: center;
-    color: var(--slate-400);
-    font-size: 0.75rem;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.tips-example-image:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(168, 85, 247, 0.3);
+    border-color: rgba(168, 85, 247, 0.5);
 }
 
 /* CTA Card */
