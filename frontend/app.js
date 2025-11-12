@@ -1386,24 +1386,39 @@ function showTestFeedbackForm() {
     
     // Show results section to contain the feedback form
     const resultsSection = document.getElementById('resultsSection');
+    const resultsGrid = document.getElementById('resultsGrid');
+    const resultsTitle = document.querySelector('.results-title');
+    const actionButtons = document.querySelector('.action-buttons');
+    
+    // Check if there are actual results
+    const hasResults = resultsGrid && resultsGrid.children.length > 0;
+    
     if (resultsSection) {
         resultsSection.style.display = 'block';
     }
     
-    // Hide results title and action buttons when showing form without results
-    const resultsTitle = document.querySelector('.results-title');
-    const actionButtons = document.querySelector('.action-buttons');
-    if (resultsTitle) {
-        resultsTitle.style.display = 'none';
-    }
-    if (actionButtons) {
-        actionButtons.style.display = 'none';
-    }
-    
-    // Hide results grid (no actual results needed)
-    const resultsGrid = document.getElementById('resultsGrid');
-    if (resultsGrid) {
-        resultsGrid.style.display = 'none';
+    if (hasResults) {
+        // If there are results, show everything (title, grid, buttons, feedback form)
+        if (resultsTitle) {
+            resultsTitle.style.display = 'block';
+        }
+        if (actionButtons) {
+            actionButtons.style.display = 'flex';
+        }
+        if (resultsGrid) {
+            resultsGrid.style.display = 'grid';
+        }
+    } else {
+        // If no results, hide title, grid, and buttons (test mode)
+        if (resultsTitle) {
+            resultsTitle.style.display = 'none';
+        }
+        if (actionButtons) {
+            actionButtons.style.display = 'none';
+        }
+        if (resultsGrid) {
+            resultsGrid.style.display = 'none';
+        }
     }
     
     // Show feedback form
