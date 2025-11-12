@@ -188,7 +188,7 @@ body {
     padding: 20px 24px;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     text-align: left;
     width: 100%;
 }
@@ -199,7 +199,7 @@ body {
 
 .stepper-btn.active {
     border-color: rgba(255, 255, 255, 0.4);
-    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2), 0 8px 32px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2), 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .stepper-icon {
@@ -213,7 +213,7 @@ body {
     -webkit-backdrop-filter: blur(24px);
     border: 1px solid rgba(255, 255, 255, 0.4);
     color: var(--slate-600);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
     flex-shrink: 0;
 }
 
@@ -287,7 +287,7 @@ body {
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
     padding: 20px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .step-header {
@@ -364,7 +364,7 @@ body {
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     margin-bottom: 0;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .upload-zone-person {
@@ -468,7 +468,7 @@ body {
     padding: 20px;
     font-size: 0.875rem;
     color: var(--slate-600);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .requirements-title {
@@ -533,7 +533,7 @@ body {
     border-radius: 12px;
     transition: all 0.3s ease;
     cursor: pointer;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 .category-option-new input[type="radio"]:checked + .category-btn-new {
@@ -545,7 +545,7 @@ body {
 .category-btn-new:hover {
     border-color: rgba(255, 255, 255, 0.6);
     background: rgba(255, 255, 255, 0.3);
-    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 .category-icon-new {
@@ -587,7 +587,7 @@ body {
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
     padding: 20px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .tips-header {
@@ -690,7 +690,7 @@ body {
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
     padding: 20px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .cta-title {
