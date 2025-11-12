@@ -305,9 +305,12 @@ function processPersonImages(files) {
     displayPersonPreviews();
     updateGenerateSwitch();
     
-    // Show notification and suggest moving to step 2
+    // Automatically switch to step 2 after successful photo upload
     if (validFiles.length > 0 && currentStep === 1) {
-        showInfo('Фото загружено! Теперь перейдите к шагу 2, чтобы добавить одежду.');
+        // Small delay for better UX
+        setTimeout(() => {
+            switchStep(2);
+        }, 300);
     }
 }
 
