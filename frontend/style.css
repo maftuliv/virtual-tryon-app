@@ -794,13 +794,16 @@ body {
 
 .tips-example-image {
     width: 100%;
-    aspect-ratio: 4/5;
-    object-fit: cover;
+    aspect-ratio: auto;
+    height: 300px;
+    object-fit: contain;
+    object-position: center;
     border-radius: 12px;
     border: 2px solid rgba(255, 255, 255, 0.3);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     cursor: pointer;
+    background: rgba(255, 255, 255, 0.5);
 }
 
 .tips-example-image:hover {
@@ -809,12 +812,7 @@ body {
 }
 
 .tips-example-image-last {
-    object-fit: contain;
-    object-position: center;
-    background: rgba(255, 255, 255, 0.5);
-    aspect-ratio: auto;
-    min-height: 200px;
-    max-height: 400px;
+    /* Same styles as .tips-example-image - no special handling needed */
 }
 
 /* CTA Card */
