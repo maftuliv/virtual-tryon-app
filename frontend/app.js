@@ -591,12 +591,20 @@ async function handleTryOn() {
         }
 
         // Check person detection results
+        console.log('[UPLOAD] Upload data received:', uploadData);
+        console.log('[UPLOAD] Person detection data:', uploadData.person_detection);
+        console.log('[UPLOAD] Can proceed:', uploadData.can_proceed);
+
         if (uploadData.person_detection) {
+            console.log('[UPLOAD] Calling displayPersonDetectionResults...');
             displayPersonDetectionResults(uploadData.person_detection);
+        } else {
+            console.warn('[UPLOAD] ⚠️ No person_detection data in upload response');
         }
 
         // Block proceeding if person not detected
         if (uploadData.can_proceed === false) {
+            console.error('[UPLOAD] ❌ Cannot proceed - person not detected');
             throw new Error('❌ Человек не обнаружен на фото. Пожалуйста, загрузите фото человека в полный рост.');
         }
 
@@ -869,18 +877,28 @@ function resetApplication() {
 
 // Person Detection Results Display
 function displayPersonDetectionResults(detectionResults) {
+    console.log('[PERSON DETECTION] ========================================');
     console.log('[PERSON DETECTION] Results received:', detectionResults);
+    console.log('[PERSON DETECTION] Number of results:', detectionResults.length);
 
     // Update preview badges with detection results
     detectionResults.forEach(result => {
+        console.log(`[PERSON DETECTION] Processing result for image ${result.image_index}:`, result);
+
         const previewItems = document.querySelectorAll('.preview-item');
+        console.log(`[PERSON DETECTION] Found ${previewItems.length} preview items`);
+
         if (previewItems[result.image_index]) {
             const previewItem = previewItems[result.image_index];
+            console.log(`[PERSON DETECTION] Found preview item for index ${result.image_index}`);
 
             // Remove old badge if exists
             const oldBadge = previewItem.querySelector('.preview-status-badge');
             if (oldBadge) {
+                console.log(`[PERSON DETECTION] Removing old badge`);
                 oldBadge.remove();
+            } else {
+                console.log(`[PERSON DETECTION] No old badge found`);
             }
 
             // Create new badge based on detection result
@@ -913,12 +931,18 @@ function displayPersonDetectionResults(detectionResults) {
             // Add click handler to show detailed info
             badge.addEventListener('click', (e) => {
                 e.stopPropagation();
+                console.log(`[PERSON DETECTION] Badge clicked for image ${result.image_index + 1}`);
                 showDetectionDetails(result, result.image_index + 1);
             });
 
+            console.log(`[PERSON DETECTION] Appending new clickable badge to preview item`);
             previewItem.appendChild(badge);
+            console.log(`[PERSON DETECTION] Badge successfully added`);
+        } else {
+            console.error(`[PERSON DETECTION] ❌ Preview item not found for index ${result.image_index}`);
         }
     });
+    console.log('[PERSON DETECTION] ======================================== DONE');
 }
 
 // Show detailed detection information in a modal
