@@ -970,17 +970,36 @@ document.addEventListener('keydown', (e) => {
 
 // Examples Modal
 function showExamplesModal(type) {
-    const modal = document.getElementById('examplesModal');
-    if (modal) {
-        modal.style.display = 'flex';
-        // Lazy load images when modal opens
-        loadSliderImages();
+    if (type === 'garment') {
+        const modal = document.getElementById('garmentExamplesModal');
+        if (modal) {
+            modal.style.display = 'flex';
+            loadGarmentSliderImages();
+        }
+    } else {
+        const modal = document.getElementById('examplesModal');
+        if (modal) {
+            modal.style.display = 'flex';
+            loadSliderImages();
+        }
     }
 }
 
-// Lazy load slider images
+// Lazy load slider images for person
 function loadSliderImages() {
-    const lazyImages = document.querySelectorAll('.slider-image.lazy-load');
+    const lazyImages = document.querySelectorAll('#examplesModal .slider-image.lazy-load');
+
+    lazyImages.forEach(img => {
+        if (img.dataset.src && !img.src) {
+            img.src = img.dataset.src;
+            img.classList.remove('lazy-load');
+        }
+    });
+}
+
+// Lazy load slider images for garment
+function loadGarmentSliderImages() {
+    const lazyImages = document.querySelectorAll('#garmentExamplesModal .slider-image.lazy-load');
 
     lazyImages.forEach(img => {
         if (img.dataset.src && !img.src) {
@@ -997,16 +1016,36 @@ function closeExamplesModal() {
     }
 }
 
+function closeGarmentExamplesModal() {
+    const modal = document.getElementById('garmentExamplesModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
 // Slider functionality
 const sliderState = {
     good: { current: 0, total: 7 },
-    bad: { current: 0, total: 5 }
+    bad: { current: 0, total: 5 },
+    'garment-good': { current: 0, total: 11 },
+    'garment-bad': { current: 0, total: 10 }
 };
 
 function changeSlide(type, direction) {
     const state = sliderState[type];
-    const slider = document.getElementById(`${type}Slider`);
-    const counter = document.getElementById(`${type}Counter`);
+    let slider, counter;
+
+    if (type === 'garment-good') {
+        slider = document.getElementById('garmentGoodSlider');
+        counter = document.getElementById('garmentGoodCounter');
+    } else if (type === 'garment-bad') {
+        slider = document.getElementById('garmentBadSlider');
+        counter = document.getElementById('garmentBadCounter');
+    } else {
+        slider = document.getElementById(`${type}Slider`);
+        counter = document.getElementById(`${type}Counter`);
+    }
+
     const images = slider.querySelectorAll('.slider-image');
 
     // Remove active class from current image
@@ -1024,8 +1063,53 @@ function changeSlide(type, direction) {
 
 // Add touch support for mobile swipe
 function initSliderTouch() {
-    ['good', 'bad'].forEach(type => {
-        const slider = document.getElementById(`${type}Slider`);
+    const sliderTypes = [
+        { type: 'good', id: 'goodSlider' },
+        { type: 'bad', id: 'badSlider' }
+    ];
+
+    sliderTypes.forEach(({ type, id }) => {
+        const slider = document.getElementById(id);
+        if (!slider) return;
+
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        slider.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+
+        slider.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe(type);
+        }, { passive: true });
+
+        function handleSwipe(type) {
+            const swipeThreshold = 50;
+            const diff = touchStartX - touchEndX;
+
+            if (Math.abs(diff) > swipeThreshold) {
+                if (diff > 0) {
+                    changeSlide(type, 1); // Swipe left - next
+                } else {
+                    changeSlide(type, -1); // Swipe right - prev
+                }
+            }
+        }
+    });
+}
+
+// Add touch support for garment sliders
+function initGarmentSliderTouch() {
+    const sliderTypes = [
+        { type: 'garment-good', id: 'garmentGoodSlider' },
+        { type: 'garment-bad', id: 'garmentBadSlider' }
+    ];
+
+    sliderTypes.forEach(({ type, id }) => {
+        const slider = document.getElementById(id);
+        if (!slider) return;
+
         let touchStartX = 0;
         let touchEndX = 0;
 
@@ -1057,7 +1141,11 @@ function initSliderTouch() {
 const originalShowModal = showExamplesModal;
 showExamplesModal = function(type) {
     originalShowModal(type);
-    setTimeout(initSliderTouch, 100);
+    if (type === 'garment') {
+        setTimeout(initGarmentSliderTouch, 100);
+    } else {
+        setTimeout(initSliderTouch, 100);
+    }
 };
 
 // Model switcher removed - using only NanoBanana API
