@@ -2051,6 +2051,7 @@ body::before {
     max-height: 85vh;
     overflow-y: auto;
     animation: modalSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    border-radius: 20px;
 }
 
 @keyframes modalSlideIn {
@@ -2162,10 +2163,12 @@ body::before {
 /* Example Cards */
 .example-card {
     border-radius: 16px;
-    background: #ffffff;
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     box-shadow:
-        0 0 0 1px rgba(0, 0, 0, 0.04),
-        0 2px 8px rgba(0, 0, 0, 0.06);
+        0 0 0 1px rgba(0, 0, 0, 0.06),
+        0 2px 8px rgba(0, 0, 0, 0.08);
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -2173,9 +2176,10 @@ body::before {
 }
 
 .example-card:hover {
+    background: rgba(255, 255, 255, 0.8);
     box-shadow:
-        0 0 0 1px rgba(0, 0, 0, 0.06),
-        0 4px 16px rgba(0, 0, 0, 0.1);
+        0 0 0 1px rgba(0, 0, 0, 0.08),
+        0 4px 16px rgba(0, 0, 0, 0.12);
     transform: translateY(-2px);
 }
 
@@ -2302,11 +2306,11 @@ body::before {
 }
 
 .slider-btn-prev {
-    left: -12px;
+    left: 16px;
 }
 
 .slider-btn-next {
-    right: -12px;
+    right: 16px;
 }
 
 .slider-counter {
