@@ -77,18 +77,16 @@ body {
     padding: 0 10px;
     border-radius: 10px;
     background: linear-gradient(135deg, 
-        rgba(251, 207, 232, 0.7) 0%, 
-        rgba(244, 114, 182, 0.65) 25%,
-        rgba(236, 72, 153, 0.6) 75%,
-        rgba(219, 39, 119, 0.55) 100%);
+        rgba(251, 207, 232, 0.75) 0%, 
+        rgba(244, 114, 182, 0.7) 30%,
+        rgba(236, 72, 153, 0.65) 70%,
+        rgba(219, 39, 119, 0.6) 100%);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.3);
     box-shadow: 
         0 3px 8px rgba(236, 72, 153, 0.2),
-        0 1px 3px rgba(0, 0, 0, 0.1),
-        inset 0 1px 1px rgba(255, 255, 255, 0.4),
-        inset 0 -1px 1px rgba(236, 72, 153, 0.2);
+        0 1px 3px rgba(0, 0, 0, 0.1);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -96,24 +94,6 @@ body {
     overflow: hidden;
 }
 
-.logo-icon::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, 
-        rgba(255, 255, 255, 0.25) 0%, 
-        rgba(255, 255, 255, 0.15) 30%,
-        rgba(255, 255, 255, 0.05) 70%,
-        rgba(251, 207, 232, 0.1) 100%);
-    border-radius: 10px;
-    pointer-events: none;
-    border: 1px solid transparent;
-    border-top: 1px solid rgba(255, 255, 255, 0.6);
-    border-left: 1px solid rgba(255, 255, 255, 0.5);
-}
 
 .logo-tap {
     font-weight: 700;
@@ -131,6 +111,24 @@ body {
     letter-spacing: -0.025em;
     color: var(--slate-800);
     font-size: 1.1em;
+    position: relative;
+}
+
+.logo-smile {
+    position: relative;
+    display: inline-block;
+}
+
+.logo-smile::before {
+    content: ')';
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%) rotate(90deg);
+    font-size: 0.7em;
+    color: var(--slate-800);
+    line-height: 1;
+    font-weight: 400;
 }
 
 .top-bar-badge {
