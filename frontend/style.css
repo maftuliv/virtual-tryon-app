@@ -405,7 +405,7 @@ body {
 .garment-upload-grid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 24px;
+    gap: 20px;
     margin-top: 0;
 }
 
@@ -424,6 +424,36 @@ body {
 /* Upload Zone Wrapper */
 .upload-zone-wrapper {
     position: relative;
+}
+
+#step2Content .upload-zone-wrapper {
+    min-height: 0;
+}
+
+#step2Content .preview-container {
+    margin-top: 12px;
+    max-height: 100px;
+    overflow: hidden;
+    position: relative;
+}
+
+#step2Content .preview-item {
+    max-height: 100px;
+}
+
+#step2Content .preview-item img {
+    max-height: 100px;
+    height: auto;
+}
+
+#step2Content .requirements-list {
+    margin: 6px 0;
+    line-height: 1.5;
+}
+
+#step2Content .requirements-list li {
+    margin: 2px 0;
+    font-size: 0.8125rem;
 }
 
 .upload-zone {
@@ -543,6 +573,7 @@ body {
     font-size: 0.875rem;
     color: var(--slate-600);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    align-self: start;
 }
 
 .requirements-title {
