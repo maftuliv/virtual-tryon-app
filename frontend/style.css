@@ -2066,19 +2066,21 @@ body::before {
 
 .modal-content-wrapper {
     border-radius: 20px;
-    background: linear-gradient(to bottom, #ffffff 0%, #fefefe 100%);
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
     box-shadow:
-        0 0 0 1px rgba(0, 0, 0, 0.05),
+        0 0 0 1px rgba(0, 0, 0, 0.08),
         0 10px 40px rgba(0, 0, 0, 0.15),
         0 25px 60px rgba(0, 0, 0, 0.1);
 }
 
 .modal-header {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     padding: 24px 24px 20px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 @media (min-width: 768px) {
@@ -2087,16 +2089,35 @@ body::before {
     }
 }
 
+.modal-header-text {
+    flex: 1;
+}
+
 .modal-title-new {
     font-size: 1.25rem;
     font-weight: 700;
     letter-spacing: -0.02em;
     color: #0f172a;
+    margin-bottom: 6px;
 }
 
 @media (min-width: 768px) {
     .modal-title-new {
         font-size: 1.75rem;
+        margin-bottom: 8px;
+    }
+}
+
+.modal-subtitle-new {
+    font-size: 0.875rem;
+    color: #64748b;
+    line-height: 1.5;
+    margin: 0;
+}
+
+@media (min-width: 768px) {
+    .modal-subtitle-new {
+        font-size: 0.9375rem;
     }
 }
 
@@ -2201,38 +2222,107 @@ body::before {
     color: #9f1239;
 }
 
-.example-image-container {
+/* Slider Styles */
+.slider-container {
+    position: relative;
     padding: 0 20px;
+    margin-bottom: 16px;
 }
 
-.example-image-box {
+.slider-track {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3/4;
     border-radius: 12px;
     overflow: hidden;
     background: #f8fafc;
-    aspect-ratio: 4/3;
     box-shadow:
         inset 0 0 0 1px rgba(0, 0, 0, 0.06),
         0 1px 3px rgba(0, 0, 0, 0.05);
-    position: relative;
 }
 
-.example-image-box-good {
+.example-card-good .slider-track {
     box-shadow:
         inset 0 0 0 2px rgba(16, 185, 129, 0.15),
         0 1px 3px rgba(16, 185, 129, 0.1);
 }
 
-.example-image-box-bad {
+.example-card-bad .slider-track {
     box-shadow:
         inset 0 0 0 2px rgba(244, 63, 94, 0.15),
         0 1px 3px rgba(244, 63, 94, 0.1);
 }
 
-.example-image {
+.slider-image {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
-    display: block;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+}
+
+.slider-image.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.slider-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #334155;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 2;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.slider-btn:hover {
+    background: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-50%) scale(1.05);
+}
+
+.slider-btn:active {
+    transform: translateY(-50%) scale(0.98);
+}
+
+.slider-btn-prev {
+    left: -12px;
+}
+
+.slider-btn-next {
+    right: -12px;
+}
+
+.slider-counter {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 20px;
+    z-index: 2;
 }
 
 .example-list {

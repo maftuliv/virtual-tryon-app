@@ -983,6 +983,69 @@ function closeExamplesModal() {
     }
 }
 
+// Slider functionality
+const sliderState = {
+    good: { current: 0, total: 7 },
+    bad: { current: 0, total: 5 }
+};
+
+function changeSlide(type, direction) {
+    const state = sliderState[type];
+    const slider = document.getElementById(`${type}Slider`);
+    const counter = document.getElementById(`${type}Counter`);
+    const images = slider.querySelectorAll('.slider-image');
+
+    // Remove active class from current image
+    images[state.current].classList.remove('active');
+
+    // Calculate new index
+    state.current = (state.current + direction + state.total) % state.total;
+
+    // Add active class to new image
+    images[state.current].classList.add('active');
+
+    // Update counter
+    counter.textContent = `${state.current + 1} / ${state.total}`;
+}
+
+// Add touch support for mobile swipe
+function initSliderTouch() {
+    ['good', 'bad'].forEach(type => {
+        const slider = document.getElementById(`${type}Slider`);
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        slider.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+
+        slider.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe(type);
+        }, { passive: true });
+
+        function handleSwipe(type) {
+            const swipeThreshold = 50;
+            const diff = touchStartX - touchEndX;
+
+            if (Math.abs(diff) > swipeThreshold) {
+                if (diff > 0) {
+                    changeSlide(type, 1); // Swipe left - next
+                } else {
+                    changeSlide(type, -1); // Swipe right - prev
+                }
+            }
+        }
+    });
+}
+
+// Initialize touch support when modal opens
+const originalShowModal = showExamplesModal;
+showExamplesModal = function(type) {
+    originalShowModal(type);
+    setTimeout(initSliderTouch, 100);
+};
+
 // Model switcher removed - using only NanoBanana API
 
 // Add notification animations to document

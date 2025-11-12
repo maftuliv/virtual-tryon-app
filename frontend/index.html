@@ -366,7 +366,10 @@
         <div class="modal-dialog" onclick="event.stopPropagation()">
             <div class="modal-content-wrapper">
                 <div class="modal-header">
-                    <h3 class="modal-title-new">Примеры фото человека</h3>
+                    <div class="modal-header-text">
+                        <h3 class="modal-title-new">Примеры фотографий</h3>
+                        <p class="modal-subtitle-new">Чем качественнее будет ваша фотография, тем лучше будет результат</p>
+                    </div>
                     <button class="modal-close-btn" onclick="closeExamplesModal()" aria-label="Закрыть">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M18 6L6 18M6 6l12 12"/>
@@ -375,22 +378,40 @@
                 </div>
 
                 <div class="modal-content-grid">
-                    <!-- Good Example Card -->
+                    <!-- Good Examples Slider -->
                     <div class="example-card example-card-good">
                         <div class="example-card-header">
                             <svg class="example-icon example-icon-good" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                                 <polyline points="22 4 12 14.01 9 11.01"></polyline>
                             </svg>
-                            <div class="example-title example-title-good">Хорошее фото</div>
+                            <div class="example-title example-title-good">Хорошие примеры</div>
                         </div>
 
-                        <div class="example-image-container">
-                            <div class="example-image-box example-image-box-good">
-                                <img src="https://cdn.jsdelivr.net/gh/ilyamft/tapto-assets@main/good-photo-example.jpg"
-                                     alt="Пример хорошего фото"
-                                     class="example-image">
+                        <div class="slider-container">
+                            <button class="slider-btn slider-btn-prev" onclick="changeSlide('good', -1)" aria-label="Предыдущий">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M15 18l-6-6 6-6"/>
+                                </svg>
+                            </button>
+
+                            <div class="slider-track" id="goodSlider">
+                                <img src="examples/good/gd_01.png" alt="Хороший пример 1" class="slider-image active">
+                                <img src="examples/good/gd_02.png" alt="Хороший пример 2" class="slider-image">
+                                <img src="examples/good/gd_03.png" alt="Хороший пример 3" class="slider-image">
+                                <img src="examples/good/gd_04.png" alt="Хороший пример 4" class="slider-image">
+                                <img src="examples/good/gd_05.png" alt="Хороший пример 5" class="slider-image">
+                                <img src="examples/good/gd_06.png" alt="Хороший пример 6" class="slider-image">
+                                <img src="examples/good/gd_07.png" alt="Хороший пример 7" class="slider-image">
                             </div>
+
+                            <button class="slider-btn slider-btn-next" onclick="changeSlide('good', 1)" aria-label="Следующий">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M9 18l6-6-6-6"/>
+                                </svg>
+                            </button>
+
+                            <div class="slider-counter" id="goodCounter">1 / 7</div>
                         </div>
 
                         <ul class="example-list">
@@ -417,7 +438,7 @@
                         </ul>
                     </div>
 
-                    <!-- Bad Example Card -->
+                    <!-- Bad Examples Slider -->
                     <div class="example-card example-card-bad">
                         <div class="example-card-header">
                             <svg class="example-icon example-icon-bad" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -425,15 +446,31 @@
                                 <line x1="15" y1="9" x2="9" y2="15"></line>
                                 <line x1="9" y1="9" x2="15" y2="15"></line>
                             </svg>
-                            <div class="example-title example-title-bad">Плохое фото</div>
+                            <div class="example-title example-title-bad">Плохие примеры</div>
                         </div>
 
-                        <div class="example-image-container">
-                            <div class="example-image-box example-image-box-bad">
-                                <img src="https://cdn.jsdelivr.net/gh/ilyamft/tapto-assets@main/bad-photo-example.jpg"
-                                     alt="Пример плохого фото"
-                                     class="example-image">
+                        <div class="slider-container">
+                            <button class="slider-btn slider-btn-prev" onclick="changeSlide('bad', -1)" aria-label="Предыдущий">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M15 18l-6-6 6-6"/>
+                                </svg>
+                            </button>
+
+                            <div class="slider-track" id="badSlider">
+                                <img src="examples/bad/bd_01.png" alt="Плохой пример 1" class="slider-image active">
+                                <img src="examples/bad/bd_02.png" alt="Плохой пример 2" class="slider-image">
+                                <img src="examples/bad/bd_03.png" alt="Плохой пример 3" class="slider-image">
+                                <img src="examples/bad/bd_04.png" alt="Плохой пример 4" class="slider-image">
+                                <img src="examples/bad/bd_05.png" alt="Плохой пример 5" class="slider-image">
                             </div>
+
+                            <button class="slider-btn slider-btn-next" onclick="changeSlide('bad', 1)" aria-label="Следующий">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M9 18l6-6-6-6"/>
+                                </svg>
+                            </button>
+
+                            <div class="slider-counter" id="badCounter">1 / 5</div>
                         </div>
 
                         <ul class="example-list">
