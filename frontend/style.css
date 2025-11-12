@@ -208,24 +208,48 @@ body {
     display: grid;
     place-content: center;
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    color: #a78bfa;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    background: linear-gradient(135deg, rgba(196, 181, 253, 0.4) 0%, rgba(167, 139, 250, 0.35) 100%);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    box-shadow: 
+        0 4px 12px rgba(167, 139, 250, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3),
+        inset 0 -1px 0 rgba(167, 139, 250, 0.2);
     flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.stepper-icon::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    border-radius: 12px;
+    pointer-events: none;
 }
 
 .stepper-icon svg {
     width: 20px;
     height: 20px;
+    position: relative;
+    z-index: 1;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
 }
 
 .stepper-btn.active .stepper-icon {
-    background: #a78bfa;
+    background: linear-gradient(135deg, rgba(167, 139, 250, 0.6) 0%, rgba(139, 92, 246, 0.55) 100%);
     color: white;
-    border-color: #a78bfa;
+    border-color: rgba(255, 255, 255, 0.6);
+    box-shadow: 
+        0 6px 16px rgba(167, 139, 250, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4),
+        inset 0 -1px 0 rgba(139, 92, 246, 0.3);
 }
 
 .stepper-content {
