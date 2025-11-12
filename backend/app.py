@@ -123,12 +123,14 @@ print()
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def preprocess_image(image_path, max_height=2000, quality=95):
+def preprocess_image(image_path, max_dimension=2000, quality=95):
     """
     Preprocess image for optimal quality:
-    - Resize to max_height if larger (maintaining aspect ratio)
+    - Resize if ANY dimension exceeds max_dimension (maintaining aspect ratio)
     - Convert to JPEG format with quality setting
     - Use LANCZOS resampling for quality preservation
+    
+    Important: API requires BOTH width AND height to be <= 2000 pixels
 
     Returns: path to preprocessed image
     """
@@ -145,24 +147,51 @@ def preprocess_image(image_path, max_height=2000, quality=95):
         elif img.mode != 'RGB':
             img = img.convert('RGB')
 
-        # Resize if height exceeds max_height
+        # Resize if ANY dimension exceeds max_dimension
         width, height = img.size
-        if height > max_height:
-            ratio = max_height / height
+        original_size = (width, height)
+        
+        if width > max_dimension or height > max_dimension:
+            # Calculate ratio to fit within max_dimension
+            ratio = min(max_dimension / width, max_dimension / height)
             new_width = int(width * ratio)
-            img = img.resize((new_width, max_height), Image.Resampling.LANCZOS)
-            print(f"[PREPROCESS] Resized from {width}x{height} to {new_width}x{max_height}")
+            new_height = int(height * ratio)
+            
+            # Ensure both dimensions are within limit
+            if new_width > max_dimension:
+                new_width = max_dimension
+            if new_height > max_dimension:
+                new_height = max_dimension
+            
+            img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+            print(f"[PREPROCESS] Resized from {original_size[0]}x{original_size[1]} to {new_width}x{new_height}")
+            
+            # Double-check dimensions after resize
+            final_width, final_height = img.size
+            if final_width > max_dimension or final_height > max_dimension:
+                print(f"[PREPROCESS] ⚠️ WARNING: Final size {final_width}x{final_height} still exceeds {max_dimension}!")
+        else:
+            print(f"[PREPROCESS] Image size {width}x{height} is within limits (max: {max_dimension})")
 
         # Save as optimized JPEG
         output_path = image_path.rsplit('.', 1)[0] + '_optimized.jpg'
         img.save(output_path, 'JPEG', quality=quality, optimize=True)
-
-        print(f"[PREPROCESS] Optimized image saved to {output_path}")
+        
+        # Verify final dimensions
+        final_img = Image.open(output_path)
+        final_width, final_height = final_img.size
+        print(f"[PREPROCESS] ✅ Optimized image saved: {output_path} (final size: {final_width}x{final_height})")
+        
+        if final_width > max_dimension or final_height > max_dimension:
+            raise ValueError(f"Final image dimensions {final_width}x{final_height} exceed maximum {max_dimension} pixels!")
+        
         return output_path
 
     except Exception as e:
-        print(f"[PREPROCESS WARNING] Failed to preprocess {image_path}: {e}")
-        # Return original path if preprocessing fails
+        print(f"[PREPROCESS ERROR] Failed to preprocess {image_path}: {e}")
+        import traceback
+        traceback.print_exc()
+        # Return original path if preprocessing fails (but this might cause API errors)
         return image_path
 
 def image_to_base64(image_path):
@@ -297,10 +326,10 @@ def process_with_nanobanana(person_image_path, garment_image_path, category='aut
                 "Get your API key from: https://nanobananaapi.ai/api-key"
             )
 
-        # Preprocess images
+        # Preprocess images - ensure BOTH width and height are <= 2000 pixels
         print(f"[NANOBANANA] Preprocessing images...")
-        person_image_optimized = preprocess_image(person_image_path, max_height=2000, quality=95)
-        garment_image_optimized = preprocess_image(garment_image_path, max_height=2000, quality=95)
+        person_image_optimized = preprocess_image(person_image_path, max_dimension=2000, quality=95)
+        garment_image_optimized = preprocess_image(garment_image_path, max_dimension=2000, quality=95)
 
         # NanoBananaAPI requires image URLs, not base64
         # Generate public URLs for uploaded images (served via Railway)
