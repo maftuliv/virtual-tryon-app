@@ -1028,7 +1028,7 @@ const sliderState = {
     good: { current: 0, total: 7 },
     bad: { current: 0, total: 5 },
     'garment-good': { current: 0, total: 11 },
-    'garment-bad': { current: 0, total: 10 }
+    'garment-bad': { current: 0, total: 11 }
 };
 
 function changeSlide(type, direction) {
