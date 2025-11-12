@@ -1422,6 +1422,43 @@ body::before {
     border-radius: 20px;
     border: 2px solid rgba(255, 255, 255, 0.5);
     box-shadow: 0 8px 32px rgba(168, 85, 247, 0.15);
+    position: relative;
+}
+
+.feedback-close-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    color: #64748b;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+}
+
+.feedback-close-btn:hover {
+    background: rgba(255, 255, 255, 0.95);
+    color: #1e293b;
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.feedback-close-btn:active {
+    transform: scale(0.95);
+}
+
+.feedback-close-btn svg {
+    width: 20px;
+    height: 20px;
 }
 
 .feedback-section h3,

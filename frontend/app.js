@@ -733,6 +733,16 @@ function displayResults(results) {
         `;
     }
 
+    // Show results title and action buttons when there are actual results
+    const resultsTitle = document.querySelector('.results-title');
+    const actionButtons = document.querySelector('.action-buttons');
+    if (resultsTitle && successCount > 0) {
+        resultsTitle.style.display = 'block';
+    }
+    if (actionButtons && successCount > 0) {
+        actionButtons.style.display = 'flex';
+    }
+    
     // Show feedback form after results are displayed
     const feedbackSection = document.getElementById('feedbackSection');
     if (feedbackSection && successCount > 0) {
@@ -1277,6 +1287,29 @@ async function handleFeedbackSubmit() {
     }
 }
 
+// Close feedback form
+function closeFeedbackForm() {
+    const feedbackSection = document.getElementById('feedbackSection');
+    const resultsSection = document.getElementById('resultsSection');
+    const resultsGrid = document.getElementById('resultsGrid');
+    const resultsTitle = document.querySelector('.results-title');
+    const actionButtons = document.querySelector('.action-buttons');
+    
+    // Hide feedback form
+    if (feedbackSection) {
+        feedbackSection.style.display = 'none';
+    }
+    
+    // Check if there are actual results - if not, hide the entire results section
+    if (resultsGrid && resultsGrid.children.length === 0) {
+        if (resultsSection) {
+            resultsSection.style.display = 'none';
+        }
+    }
+    
+    console.log('[FEEDBACK] Feedback form closed');
+}
+
 // Show feedback form for testing (without generation)
 function showTestFeedbackForm() {
     console.log('[FEEDBACK] showTestFeedbackForm called');
@@ -1285,6 +1318,16 @@ function showTestFeedbackForm() {
     const resultsSection = document.getElementById('resultsSection');
     if (resultsSection) {
         resultsSection.style.display = 'block';
+    }
+    
+    // Hide results title and action buttons when showing form without results
+    const resultsTitle = document.querySelector('.results-title');
+    const actionButtons = document.querySelector('.action-buttons');
+    if (resultsTitle) {
+        resultsTitle.style.display = 'none';
+    }
+    if (actionButtons) {
+        actionButtons.style.display = 'none';
     }
     
     // Hide results grid (no actual results needed)
