@@ -935,8 +935,10 @@ body::before {
 .examples-link {
     margin-top: 10px;
     padding: 12px 20px;
-    background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
-    border: none;
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.6) 0%, rgba(236, 72, 153, 0.6) 100%);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.3);
     color: white;
     border-radius: 50px;
     font-size: 0.875rem;
@@ -946,7 +948,9 @@ body::before {
     width: 100%;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
+    box-shadow: 
+        0 4px 12px rgba(168, 85, 247, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -955,13 +959,18 @@ body::before {
 
 .examples-link:hover {
     transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(168, 85, 247, 0.4);
-    background: linear-gradient(135deg, #9333ea 0%, #db2777 100%);
+    box-shadow: 
+        0 6px 16px rgba(168, 85, 247, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.7) 0%, rgba(236, 72, 153, 0.7) 100%);
+    border-color: rgba(255, 255, 255, 0.4);
 }
 
 .examples-link:active {
     transform: translateY(0);
-    box-shadow: 0 2px 8px rgba(168, 85, 247, 0.3);
+    box-shadow: 
+        0 2px 8px rgba(168, 85, 247, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .examples-link svg {
