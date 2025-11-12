@@ -131,9 +131,9 @@ body {
 
 /* Hero Section - New Design */
 .hero-section {
-    max-width: 1152px;
+    max-width: 1400px;
     margin: 0 auto;
-    padding: 32px 16px 8px;
+    padding: 32px 24px 8px;
 }
 
 .hero-title {
@@ -160,9 +160,9 @@ body {
 
 /* Stepper Navigation - New Design */
 .stepper-nav {
-    max-width: 1152px;
+    max-width: 1400px;
     margin: 0 auto;
-    padding: 16px;
+    padding: 16px 24px;
 }
 
 .stepper-grid {
