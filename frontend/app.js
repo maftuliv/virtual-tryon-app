@@ -31,7 +31,7 @@ const ratingValue = document.getElementById('ratingValue');
 const feedbackComment = document.getElementById('feedbackComment');
 const submitFeedbackBtn = document.getElementById('submitFeedbackBtn');
 const feedbackSuccess = document.getElementById('feedbackSuccess');
-const testFeedbackBtn = document.getElementById('testFeedbackBtn');
+// testFeedbackBtn removed - using direct function call from footer button
 
 // Step Management
 let currentStep = 1;
@@ -225,10 +225,7 @@ function setupEventListeners() {
     // Ensure feedback button handler is attached
     attachFeedbackHandler();
 
-    // Test feedback button - shows feedback form without generation
-    if (testFeedbackBtn) {
-        testFeedbackBtn.addEventListener('click', showTestFeedbackForm);
-    }
+    // Test feedback button removed - now using direct function call from footer button
 
     // Tips toggle button
     const tipsToggle = document.getElementById('tipsToggle');
@@ -1282,40 +1279,56 @@ async function handleFeedbackSubmit() {
 
 // Show feedback form for testing (without generation)
 function showTestFeedbackForm() {
-    // Hide results section if it's showing
+    console.log('[FEEDBACK] showTestFeedbackForm called');
+    
+    // Show results section to contain the feedback form
     const resultsSection = document.getElementById('resultsSection');
     if (resultsSection) {
         resultsSection.style.display = 'block';
     }
     
-    // Hide results grid (no actual results)
+    // Hide results grid (no actual results needed)
     const resultsGrid = document.getElementById('resultsGrid');
     if (resultsGrid) {
-        resultsGrid.innerHTML = `
-            <div class="no-results" style="text-align: center; padding: 40px;">
-                <span style="font-size: 3em;">🧪</span>
-                <h3>Тестовый режим</h3>
-                <p>Форма обратной связи показана для тестирования</p>
-                <p style="color: #64748b; font-size: 0.9em;">Генерация не выполнялась</p>
-            </div>
-        `;
+        resultsGrid.style.display = 'none';
     }
     
     // Show feedback form
     const feedbackSection = document.getElementById('feedbackSection');
     if (feedbackSection) {
         feedbackSection.style.display = 'block';
+        console.log('[FEEDBACK] Feedback section shown');
+        
         // Re-attach handler when section is shown
         attachFeedbackHandler();
-        // Reset form
-        if (ratingSlider) ratingSlider.value = 3;
-        if (ratingValue) ratingValue.textContent = '3';
-        if (feedbackComment) feedbackComment.value = '';
-        if (feedbackSuccess) feedbackSuccess.style.display = 'none';
+        
+        // Reset form to default values
+        const ratingSlider = document.getElementById('ratingSlider');
+        const ratingValue = document.getElementById('ratingValue');
+        const feedbackComment = document.getElementById('feedbackComment');
+        const feedbackSuccess = document.getElementById('feedbackSuccess');
+        
+        if (ratingSlider) {
+            ratingSlider.value = 3;
+            console.log('[FEEDBACK] Rating slider reset to 3');
+        }
+        if (ratingValue) {
+            ratingValue.textContent = '3';
+        }
+        if (feedbackComment) {
+            feedbackComment.value = '';
+        }
+        if (feedbackSuccess) {
+            feedbackSuccess.style.display = 'none';
+        }
+    } else {
+        console.error('[FEEDBACK] Feedback section not found!');
     }
     
-    // Scroll to feedback form
-    if (feedbackSection) {
-        feedbackSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    // Scroll to feedback form smoothly
+    setTimeout(() => {
+        if (feedbackSection) {
+            feedbackSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }, 100);
 }
