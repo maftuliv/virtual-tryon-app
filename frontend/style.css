@@ -352,6 +352,8 @@ body {
 /* Upload Section Main */
 .upload-section-main {
     position: relative;
+    overflow: hidden;
+    min-height: 400px;
 }
 
 .upload-card-step {
@@ -364,6 +366,11 @@ body {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     will-change: transform, opacity;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
 }
 
 .upload-card-step.step-slide-out-left {

@@ -61,10 +61,20 @@ function setupStepper() {
     // Initialize with step 1 - set initial state
     if (step1Content) {
         step1Content.style.display = 'block';
+        step1Content.style.position = 'absolute';
+        step1Content.style.top = '0';
+        step1Content.style.left = '0';
+        step1Content.style.right = '0';
+        step1Content.style.width = '100%';
         step1Content.classList.add('step-active');
     }
     if (step2Content) {
         step2Content.style.display = 'none';
+        step2Content.style.position = 'absolute';
+        step2Content.style.top = '0';
+        step2Content.style.left = '0';
+        step2Content.style.right = '0';
+        step2Content.style.width = '100%';
     }
     
     // Initialize with step 1
@@ -101,7 +111,13 @@ function switchStep(step) {
             step2Content.classList.remove('step-active');
             step2Content.classList.add('step-slide-out-left');
             
+            // Ensure step1 is positioned correctly before making it visible
             step1Content.style.display = 'block';
+            step1Content.style.position = 'absolute';
+            step1Content.style.top = '0';
+            step1Content.style.left = '0';
+            step1Content.style.right = '0';
+            step1Content.style.width = '100%';
             step1Content.classList.remove('step-slide-out-left');
             step1Content.classList.add('step-slide-in-right');
             
@@ -122,8 +138,13 @@ function switchStep(step) {
             step1Content.classList.remove('step-active');
             step1Content.classList.add('step-slide-out-left');
             
-            // Ensure step2 is visible and positioned correctly before animation
+            // Ensure step2 is positioned correctly before making it visible
             step2Content.style.display = 'block';
+            step2Content.style.position = 'absolute';
+            step2Content.style.top = '0';
+            step2Content.style.left = '0';
+            step2Content.style.right = '0';
+            step2Content.style.width = '100%';
             step2Content.style.visibility = 'hidden';
             step2Content.classList.remove('step-slide-out-left', 'step-active');
             step2Content.classList.add('step-slide-in-right');
