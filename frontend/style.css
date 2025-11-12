@@ -2023,33 +2023,39 @@ body::before {
     position: fixed;
     inset: 0;
     z-index: 100;
-    background: rgba(15, 23, 42, 0.5);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    padding: 16px;
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 20px;
     overflow-y: auto;
     display: flex;
     align-items: center;
     justify-content: center;
-    animation: modalFadeIn 0.18s ease;
+    animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes modalFadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+        backdrop-filter: blur(0px);
+    }
+    to {
+        opacity: 1;
+        backdrop-filter: blur(8px);
+    }
 }
 
 .modal-dialog {
-    max-width: 64rem;
+    max-width: 56rem;
     width: 100%;
-    max-height: 90vh;
+    max-height: 85vh;
     overflow-y: auto;
-    animation: modalSlideIn 0.18s ease;
+    animation: modalSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes modalSlideIn {
     from {
-        transform: scale(0.985) translateY(14px);
+        transform: scale(0.95) translateY(20px);
         opacity: 0;
     }
     to {
@@ -2059,99 +2065,118 @@ body::before {
 }
 
 .modal-content-wrapper {
-    border-radius: 24px;
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    background: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(40px);
-    -webkit-backdrop-filter: blur(40px);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    border-radius: 20px;
+    background: linear-gradient(to bottom, #ffffff 0%, #fefefe 100%);
+    box-shadow:
+        0 0 0 1px rgba(0, 0, 0, 0.05),
+        0 10px 40px rgba(0, 0, 0, 0.15),
+        0 25px 60px rgba(0, 0, 0, 0.1);
 }
 
 .modal-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px 24px;
+    padding: 24px 24px 20px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 @media (min-width: 768px) {
     .modal-header {
-        padding: 20px 24px;
+        padding: 32px 32px 24px;
     }
 }
 
 .modal-title-new {
-    font-size: 1.125rem;
-    font-weight: 600;
-    letter-spacing: -0.025em;
-    color: rgb(15, 23, 42);
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #0f172a;
 }
 
 @media (min-width: 768px) {
     .modal-title-new {
-        font-size: 1.5rem;
+        font-size: 1.75rem;
     }
 }
 
 .modal-close-btn {
-    border-radius: 12px;
-    padding: 8px;
-    background: transparent;
+    border-radius: 10px;
+    padding: 10px;
+    background: #f1f5f9;
     border: none;
     cursor: pointer;
-    transition: all 0.2s;
-    color: var(--slate-700);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    color: #475569;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .modal-close-btn:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: #e2e8f0;
+    color: #1e293b;
+    transform: scale(1.05);
+}
+
+.modal-close-btn:active {
+    transform: scale(0.98);
 }
 
 .modal-content-grid {
     display: grid;
     grid-template-columns: repeat(1, 1fr);
-    gap: 16px;
-    padding: 0 16px 20px;
+    gap: 20px;
+    padding: 24px;
 }
 
 @media (min-width: 768px) {
     .modal-content-grid {
         grid-template-columns: repeat(2, 1fr);
-        gap: 24px;
-        padding: 0 24px 24px;
+        gap: 28px;
+        padding: 28px 32px 32px;
     }
 }
 
 /* Example Cards */
 .example-card {
     border-radius: 16px;
-    background: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(40px);
-    -webkit-backdrop-filter: blur(40px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    background: #ffffff;
+    box-shadow:
+        0 0 0 1px rgba(0, 0, 0, 0.04),
+        0 2px 8px rgba(0, 0, 0, 0.06);
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.example-card:hover {
+    box-shadow:
+        0 0 0 1px rgba(0, 0, 0, 0.06),
+        0 4px 16px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
 }
 
 .example-card-good {
-    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-top: 3px solid #10b981;
 }
 
 .example-card-bad {
-    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-top: 3px solid #f43f5e;
 }
 
 .example-card-header {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 16px 16px 0;
+    gap: 10px;
+    padding: 20px 20px 12px;
+    background: linear-gradient(to bottom, #fafafa 0%, #ffffff 100%);
 }
 
 .example-icon {
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
     flex-shrink: 0;
 }
 
@@ -2164,38 +2189,43 @@ body::before {
 }
 
 .example-title {
-    font-weight: 500;
-    font-size: 0.875rem;
+    font-weight: 600;
+    font-size: 1rem;
 }
 
 .example-title-good {
-    color: #047857;
+    color: #065f46;
 }
 
 .example-title-bad {
-    color: #be123c;
+    color: #9f1239;
 }
 
 .example-image-container {
-    padding: 12px 16px 0;
+    padding: 0 20px;
 }
 
 .example-image-box {
     border-radius: 12px;
     overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    background: rgba(255, 255, 255, 0.3);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
+    background: #f8fafc;
     aspect-ratio: 4/3;
+    box-shadow:
+        inset 0 0 0 1px rgba(0, 0, 0, 0.06),
+        0 1px 3px rgba(0, 0, 0, 0.05);
+    position: relative;
 }
 
 .example-image-box-good {
-    box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.3);
+    box-shadow:
+        inset 0 0 0 2px rgba(16, 185, 129, 0.15),
+        0 1px 3px rgba(16, 185, 129, 0.1);
 }
 
 .example-image-box-bad {
-    box-shadow: 0 0 0 1px rgba(244, 63, 94, 0.3);
+    box-shadow:
+        inset 0 0 0 2px rgba(244, 63, 94, 0.15),
+        0 1px 3px rgba(244, 63, 94, 0.1);
 }
 
 .example-image {
@@ -2207,19 +2237,20 @@ body::before {
 
 .example-list {
     list-style: none;
-    padding: 16px 20px;
+    padding: 20px;
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
 }
 
 .example-list-item {
     display: flex;
     align-items: flex-start;
-    gap: 8px;
-    font-size: 0.875rem;
-    color: var(--slate-700);
+    gap: 12px;
+    font-size: 0.9375rem;
+    color: #334155;
+    line-height: 1.5;
 }
 
 .example-bullet {
@@ -2228,8 +2259,8 @@ body::before {
     height: 6px;
     min-width: 6px;
     border-radius: 50%;
-    background: rgba(100, 116, 139, 0.7);
-    margin-top: 7px;
+    background: #94a3b8;
+    margin-top: 8px;
 }
 
 .example-card.good {
