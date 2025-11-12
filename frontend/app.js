@@ -58,23 +58,30 @@ function setupStepper() {
         step2Btn.addEventListener('click', () => switchStep(2));
     }
 
+    // Check if mobile device
+    const isMobile = window.innerWidth <= 768;
+    
     // Initialize with step 1 - set initial state
     if (step1Content) {
         step1Content.style.display = 'block';
-        step1Content.style.position = 'absolute';
-        step1Content.style.top = '0';
-        step1Content.style.left = '0';
-        step1Content.style.right = '0';
-        step1Content.style.width = '100%';
+        if (!isMobile) {
+            step1Content.style.position = 'absolute';
+            step1Content.style.top = '0';
+            step1Content.style.left = '0';
+            step1Content.style.right = '0';
+            step1Content.style.width = '100%';
+        }
         step1Content.classList.add('step-active');
     }
     if (step2Content) {
         step2Content.style.display = 'none';
-        step2Content.style.position = 'absolute';
-        step2Content.style.top = '0';
-        step2Content.style.left = '0';
-        step2Content.style.right = '0';
-        step2Content.style.width = '100%';
+        if (!isMobile) {
+            step2Content.style.position = 'absolute';
+            step2Content.style.top = '0';
+            step2Content.style.left = '0';
+            step2Content.style.right = '0';
+            step2Content.style.width = '100%';
+        }
     }
     
     // Initialize with step 1
@@ -104,8 +111,11 @@ function switchStep(step) {
         }
     }
 
-    // Smooth slide animation
-    if (step1Content && step2Content) {
+    // Check if mobile device
+    const isMobile = window.innerWidth <= 768;
+    
+    // Smooth slide animation (desktop only)
+    if (step1Content && step2Content && !isMobile) {
         if (step === 1) {
             // Switching to step 1: step2 slides out right, step1 slides in from left
             step2Content.classList.remove('step-active');
@@ -164,6 +174,15 @@ function switchStep(step) {
                     step1Content.classList.remove('step-slide-out-left');
                 }, 500);
             }, 10);
+        }
+    } else if (step1Content && step2Content && isMobile) {
+        // Simple show/hide for mobile devices
+        if (step === 1) {
+            step1Content.style.display = 'block';
+            step2Content.style.display = 'none';
+        } else {
+            step1Content.style.display = 'none';
+            step2Content.style.display = 'block';
         }
     }
 }
