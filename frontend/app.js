@@ -107,9 +107,9 @@ function switchStep(step) {
     // Smooth slide animation
     if (step1Content && step2Content) {
         if (step === 1) {
-            // Switching to step 1: step2 slides out left, step1 slides in from right
+            // Switching to step 1: step2 slides out right, step1 slides in from left
             step2Content.classList.remove('step-active');
-            step2Content.classList.add('step-slide-out-left');
+            step2Content.classList.add('step-slide-out-right');
             
             // Ensure step1 is positioned correctly before making it visible
             step1Content.style.display = 'block';
@@ -118,19 +118,19 @@ function switchStep(step) {
             step1Content.style.left = '0';
             step1Content.style.right = '0';
             step1Content.style.width = '100%';
-            step1Content.classList.remove('step-slide-out-left');
-            step1Content.classList.add('step-slide-in-right');
+            step1Content.classList.remove('step-slide-out-right', 'step-slide-out-left');
+            step1Content.classList.add('step-slide-in-left');
             
             // Trigger reflow
             step1Content.offsetHeight;
             
             setTimeout(() => {
-                step1Content.classList.remove('step-slide-in-right');
+                step1Content.classList.remove('step-slide-in-left');
                 step1Content.classList.add('step-active');
                 
                 setTimeout(() => {
                     step2Content.style.display = 'none';
-                    step2Content.classList.remove('step-slide-out-left');
+                    step2Content.classList.remove('step-slide-out-right');
                 }, 500);
             }, 10);
         } else {

@@ -352,8 +352,9 @@ body {
 /* Upload Section Main */
 .upload-section-main {
     position: relative;
-    overflow: hidden;
+    overflow: visible;
     min-height: 400px;
+    padding: 20px;
 }
 
 .upload-card-step {
@@ -378,8 +379,18 @@ body {
     opacity: 0;
 }
 
+.upload-card-step.step-slide-out-right {
+    transform: translateX(100%);
+    opacity: 0;
+}
+
 .upload-card-step.step-slide-in-right {
     transform: translateX(100%);
+    opacity: 0;
+}
+
+.upload-card-step.step-slide-in-left {
+    transform: translateX(-100%);
     opacity: 0;
 }
 
