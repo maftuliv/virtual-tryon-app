@@ -122,13 +122,15 @@ body {
 .logo-smile::before {
     content: ')';
     position: absolute;
-    top: -8px;
+    top: 12px;
     left: 50%;
     transform: translateX(-50%) rotate(90deg);
-    font-size: 0.7em;
+    font-size: 0.75em;
     color: var(--slate-800);
     line-height: 1;
-    font-weight: 400;
+    font-weight: 700;
+    -webkit-text-stroke: 0.5px var(--slate-800);
+    text-stroke: 0.5px var(--slate-800);
 }
 
 .top-bar-badge {
