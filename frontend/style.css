@@ -1106,7 +1106,8 @@ body::before {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.preview-status-badge.status-ok {
+.preview-status-badge.status-ok,
+.preview-status-badge.status-success {
     color: #10b981;
     border: 1px solid #10b981;
 }
@@ -1120,6 +1121,12 @@ body::before {
     color: #ef4444;
     border: 1px solid #ef4444;
     font-weight: 700;
+}
+
+.preview-status-badge:hover {
+    transform: scale(1.05);
+    transition: transform 0.2s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .preview-status-badge .status-icon {

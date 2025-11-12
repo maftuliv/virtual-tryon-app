@@ -886,6 +886,7 @@ function displayPersonDetectionResults(detectionResults) {
             // Create new badge based on detection result
             const badge = document.createElement('div');
             badge.className = 'preview-status-badge';
+            badge.style.cursor = 'pointer';
 
             if (result.error || !result.person_detected) {
                 // Critical error - person not detected
@@ -909,9 +910,172 @@ function displayPersonDetectionResults(detectionResults) {
                 previewItem.classList.add('has-success');
             }
 
+            // Add click handler to show detailed info
+            badge.addEventListener('click', (e) => {
+                e.stopPropagation();
+                showDetectionDetails(result, result.image_index + 1);
+            });
+
             previewItem.appendChild(badge);
         }
     });
+}
+
+// Show detailed detection information in a modal
+function showDetectionDetails(result, imageNumber) {
+    const modal = document.createElement('div');
+    modal.className = 'validation-detail-modal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        padding: 20px;
+    `;
+
+    const content = document.createElement('div');
+    content.style.cssText = `
+        background: white;
+        border-radius: 16px;
+        padding: 24px;
+        max-width: 500px;
+        width: 100%;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    `;
+
+    let statusIcon = '❌';
+    let statusText = 'Ошибка';
+    let statusColor = '#ef4444';
+
+    if (result.person_detected) {
+        if (result.confidence >= 0.7 && result.is_full_body) {
+            statusIcon = '✅';
+            statusText = 'Отлично';
+            statusColor = '#10b981';
+        } else {
+            statusIcon = '⚠️';
+            statusText = 'Требует внимания';
+            statusColor = '#f59e0b';
+        }
+    }
+
+    let detailsHTML = `
+        <div style="text-align: center; margin-bottom: 20px;">
+            <div style="font-size: 48px; margin-bottom: 12px;">${statusIcon}</div>
+            <h3 style="margin: 0 0 8px 0; color: #1f2937; font-size: 20px;">Фото ${imageNumber}</h3>
+            <p style="margin: 0; color: ${statusColor}; font-weight: 600; font-size: 16px;">${statusText}</p>
+        </div>
+
+        <div style="background: #f3f4f6; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+            <h4 style="margin: 0 0 12px 0; color: #1f2937; font-size: 14px; font-weight: 600;">Результаты анализа:</h4>
+    `;
+
+    if (result.person_detected) {
+        detailsHTML += `
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span style="color: #6b7280;">Человек обнаружен:</span>
+                <span style="color: #10b981; font-weight: 600;">✓ Да</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span style="color: #6b7280;">Уверенность AI:</span>
+                <span style="font-weight: 600;">${Math.round(result.confidence * 100)}%</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span style="color: #6b7280;">Фото в полный рост:</span>
+                <span style="font-weight: 600; color: ${result.is_full_body ? '#10b981' : '#f59e0b'}">
+                    ${result.is_full_body ? '✓ Да' : '⚠ Возможно нет'}
+                </span>
+            </div>
+            ${result.height_ratio ? `
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span style="color: #6b7280;">Охват кадра по высоте:</span>
+                <span style="font-weight: 600;">${Math.round(result.height_ratio * 100)}%</span>
+            </div>
+            ` : ''}
+        `;
+    } else {
+        detailsHTML += `
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span style="color: #6b7280;">Человек обнаружен:</span>
+                <span style="color: #ef4444; font-weight: 600;">✗ Нет</span>
+            </div>
+        `;
+    }
+
+    detailsHTML += `</div>`;
+
+    // Add warnings section
+    if (result.warnings && result.warnings.length > 0) {
+        detailsHTML += `
+            <div style="background: #fef3c7; border: 1px solid #fbbf24; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+                <h4 style="margin: 0 0 12px 0; color: #92400e; font-size: 14px; font-weight: 600;">Рекомендации:</h4>
+        `;
+
+        result.warnings.forEach(warning => {
+            detailsHTML += `
+                <div style="display: flex; align-items: start; margin-bottom: 8px; color: #92400e;">
+                    <span style="margin-right: 8px;">•</span>
+                    <span style="font-size: 14px;">${warning}</span>
+                </div>
+            `;
+        });
+
+        detailsHTML += `</div>`;
+    }
+
+    // Add recommendations for improvement
+    if (result.critical || !result.person_detected) {
+        detailsHTML += `
+            <div style="background: #fee2e2; border: 1px solid #ef4444; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+                <h4 style="margin: 0 0 12px 0; color: #991b1b; font-size: 14px; font-weight: 600;">Как исправить:</h4>
+                <div style="color: #991b1b; font-size: 14px; line-height: 1.6;">
+                    • Загрузите фото человека в полный рост<br>
+                    • Убедитесь, что человек хорошо виден<br>
+                    • Используйте хорошее освещение<br>
+                    • Избегайте сильного размытия
+                </div>
+            </div>
+        `;
+    } else if (!result.is_full_body || result.confidence < 0.7) {
+        detailsHTML += `
+            <div style="background: #fef3c7; border: 1px solid #fbbf24; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
+                <h4 style="margin: 0 0 12px 0; color: #92400e; font-size: 14px; font-weight: 600;">Для лучшего результата:</h4>
+                <div style="color: #92400e; font-size: 14px; line-height: 1.6;">
+                    • Сфотографируйте человека в полный рост<br>
+                    • Расположите камеру на уровне груди<br>
+                    • Убедитесь что видны ноги до стоп<br>
+                    • Человек должен занимать большую часть кадра
+                </div>
+            </div>
+        `;
+    }
+
+    detailsHTML += `
+        <button onclick="this.closest('.validation-detail-modal').remove()"
+                style="width: 100%; padding: 12px; background: #3b82f6; color: white;
+                       border: none; border-radius: 8px; font-size: 16px; font-weight: 600;
+                       cursor: pointer;">
+            Понятно
+        </button>
+    `;
+
+    content.innerHTML = detailsHTML;
+    modal.appendChild(content);
+
+    // Close on background click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
+
+    document.body.appendChild(modal);
 }
 
 // Validation Warnings Display

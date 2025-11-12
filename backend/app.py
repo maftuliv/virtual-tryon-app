@@ -358,6 +358,132 @@ def validate_image(image_path):
         print(f"[VALIDATION ERROR] Failed to validate {image_path}: {e}")
         return False, ["Не удалось проанализировать изображение"]
 
+def detect_person_with_huggingface(image_path):
+    """
+    Detect if there is a person in the image using Hugging Face Inference API
+    Uses DETR (DEtection TRansformer) model trained on COCO dataset
+    Returns: dict with detection results
+    """
+    try:
+        print(f"[PERSON DETECTION] 🔍 Analyzing image: {image_path}")
+
+        # Read and encode image to base64
+        with open(image_path, 'rb') as img_file:
+            img_data = img_file.read()
+
+        # Hugging Face Inference API endpoint
+        API_URL = "https://api-inference.huggingface.co/models/facebook/detr-resnet-50"
+
+        # Make request to Hugging Face API
+        headers = {
+            "Content-Type": "application/octet-stream"
+        }
+
+        print(f"[PERSON DETECTION] Sending request to Hugging Face API...")
+        response = requests.post(API_URL, headers=headers, data=img_data, timeout=30)
+
+        if response.status_code != 200:
+            print(f"[PERSON DETECTION ERROR] API returned status {response.status_code}: {response.text}")
+            return {
+                "person_detected": False,
+                "confidence": 0.0,
+                "error": f"API error: {response.status_code}",
+                "warnings": ["⚠️ Не удалось проверить наличие человека на фото"]
+            }
+
+        detections = response.json()
+        print(f"[PERSON DETECTION] Received {len(detections)} detections")
+
+        # Find all "person" detections
+        person_detections = [d for d in detections if d['label'] == 'person']
+
+        if not person_detections:
+            print(f"[PERSON DETECTION] ❌ No person detected")
+            return {
+                "person_detected": False,
+                "confidence": 0.0,
+                "total_objects": len(detections),
+                "warnings": ["❌ Человек не обнаружен на фото"],
+                "critical": True
+            }
+
+        # Get best person detection (highest confidence)
+        best_person = max(person_detections, key=lambda x: x['score'])
+        confidence = best_person['score']
+
+        print(f"[PERSON DETECTION] ✅ Person detected with confidence: {confidence:.2%}")
+
+        # Analyze detection quality
+        warnings = []
+        is_full_body = False
+
+        # Check bounding box to estimate if it's full body
+        box = best_person['box']
+        box_height = box['ymax'] - box['ymin']
+        box_width = box['xmax'] - box['xmin']
+
+        # Get image dimensions
+        img = Image.open(image_path)
+        img_width, img_height = img.size
+
+        # Calculate what percentage of image height the person occupies
+        height_ratio = box_height / img_height
+        width_ratio = box_width / img_width
+
+        # If person occupies >60% of image height, likely full body
+        if height_ratio > 0.6:
+            is_full_body = True
+            print(f"[PERSON DETECTION] ✅ Detected as full-body photo (height ratio: {height_ratio:.2%})")
+        else:
+            warnings.append("⚠️ Возможно, это не фото в полный рост")
+            print(f"[PERSON DETECTION] ⚠️ May not be full-body (height ratio: {height_ratio:.2%})")
+
+        # Check confidence thresholds
+        if confidence < 0.5:
+            warnings.append("⚠️ Низкая уверенность в детекции человека")
+        elif confidence < 0.7:
+            warnings.append("⚠️ Средняя уверенность детекции")
+
+        # Check if person is too small in frame
+        if width_ratio < 0.2 or height_ratio < 0.3:
+            warnings.append("⚠️ Человек занимает слишком мало места в кадре")
+
+        result = {
+            "person_detected": True,
+            "confidence": round(confidence, 3),
+            "is_full_body": is_full_body,
+            "box": box,
+            "height_ratio": round(height_ratio, 3),
+            "width_ratio": round(width_ratio, 3),
+            "warnings": warnings,
+            "critical": False,
+            "total_persons": len(person_detections)
+        }
+
+        print(f"[PERSON DETECTION] Result: {result}")
+        return result
+
+    except requests.exceptions.Timeout:
+        print(f"[PERSON DETECTION ERROR] Request timeout")
+        return {
+            "person_detected": False,
+            "confidence": 0.0,
+            "error": "Timeout",
+            "warnings": ["⚠️ Время ожидания истекло при проверке фото"],
+            "critical": False
+        }
+    except Exception as e:
+        print(f"[PERSON DETECTION ERROR] {e}")
+        import traceback
+        traceback.print_exc()
+        return {
+            "person_detected": False,
+            "confidence": 0.0,
+            "error": str(e),
+            "warnings": ["⚠️ Ошибка при проверке фото"],
+            "critical": False
+        }
+
 def save_base64_image(base64_string, output_path):
     """Save base64 image to file"""
     # Remove data URL prefix if present
@@ -805,6 +931,7 @@ def upload_files():
         # Validate and save files
         person_paths = []
         person_warnings = []
+        person_detection_results = []
         timestamp = int(time.time())
 
         for idx, person_file in enumerate(person_files):
@@ -814,13 +941,25 @@ def upload_files():
                 person_file.save(filepath)
                 person_paths.append(filepath)
 
-                # Validate each person image
+                # Validate image quality
                 is_valid, warnings = validate_image(filepath)
-                if warnings:
+
+                # Detect person using Hugging Face API
+                detection_result = detect_person_with_huggingface(filepath)
+                detection_result['image_index'] = idx
+
+                # Combine quality warnings with detection warnings
+                all_warnings = warnings + detection_result.get('warnings', [])
+
+                if all_warnings:
                     person_warnings.append({
                         'image_index': idx,
-                        'warnings': warnings
+                        'warnings': all_warnings
                     })
+
+                # Store detection result for response
+                person_detection_results.append(detection_result)
+
             else:
                 return jsonify({'error': f'Invalid person image file: {person_file.filename}'}), 400
 
@@ -838,7 +977,8 @@ def upload_files():
             'success': True,
             'person_images': person_paths,
             'garment_image': garment_path,
-            'session_id': timestamp
+            'session_id': timestamp,
+            'person_detection': person_detection_results
         }
 
         # Add warnings if any
@@ -847,6 +987,13 @@ def upload_files():
                 'person_images': person_warnings,
                 'garment_image': garment_warnings
             }
+
+        # Check if any person image has critical errors (no person detected)
+        has_critical_error = any(result.get('critical', False) for result in person_detection_results)
+        response_data['can_proceed'] = not has_critical_error
+
+        if has_critical_error:
+            print(f"[UPLOAD] ❌ Critical validation error - person not detected in one or more images")
 
         return jsonify(response_data), 200
 
