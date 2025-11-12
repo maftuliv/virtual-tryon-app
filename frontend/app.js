@@ -971,90 +971,17 @@ document.addEventListener('keydown', (e) => {
 // Examples Modal
 function showExamplesModal(type) {
     const modal = document.getElementById('examplesModal');
-    const title = document.getElementById('modalTitle');
-    const body = document.getElementById('modalBody');
-
-    if (type === 'person') {
-        title.textContent = 'Примеры фото человека';
-        body.innerHTML = `
-            <div class="example-card good">
-                <div class="example-header good">
-                    <span>✅</span>
-                    <span>Хорошее фото</span>
-                </div>
-                <div class="example-image">🧍</div>
-                <div class="example-description">
-                    • Человек в полный рост<br>
-                    • Четкое изображение<br>
-                    • Хорошее освещение<br>
-                    • Простой однотонный фон<br>
-                    • Видно все тело целиком
-                </div>
-            </div>
-            <div class="example-card bad">
-                <div class="example-header bad">
-                    <span>❌</span>
-                    <span>Плохое фото</span>
-                </div>
-                <div class="example-image">🙍</div>
-                <div class="example-description">
-                    • Обрезанное тело<br>
-                    • Размытое изображение<br>
-                    • Плохое освещение<br>
-                    • Сложный фон<br>
-                    • Человек сидит или лежит
-                </div>
-            </div>
-        `;
-    } else {
-        title.textContent = 'Примеры фото одежды';
-        body.innerHTML = `
-            <div class="example-card good">
-                <div class="example-header good">
-                    <span>✅</span>
-                    <span>Хорошее фото</span>
-                </div>
-                <div class="example-image">👕</div>
-                <div class="example-description">
-                    • Flat-lay (одежда разложена)<br>
-                    • Или на манекене<br>
-                    • Четкое изображение<br>
-                    • Контрастный фон<br>
-                    • Видна вся одежда целиком
-                </div>
-            </div>
-            <div class="example-card bad">
-                <div class="example-header bad">
-                    <span>❌</span>
-                    <span>Плохое фото</span>
-                </div>
-                <div class="example-image">👔</div>
-                <div class="example-description">
-                    • Сложный фон<br>
-                    • Одежда помята<br>
-                    • Размытое фото<br>
-                    • Часть одежды обрезана<br>
-                    • Плохое освещение
-                </div>
-            </div>
-        `;
+    if (modal) {
+        modal.style.display = 'flex';
     }
-
-    modal.style.display = 'block';
 }
 
 function closeExamplesModal() {
     const modal = document.getElementById('examplesModal');
-    modal.style.display = 'none';
-}
-
-// Close modal on outside click
-window.onclick = function(event) {
-    const modal = document.getElementById('examplesModal');
-    if (event.target === modal) {
-        closeExamplesModal();
+    if (modal) {
+        modal.style.display = 'none';
     }
-};
+}
 
 // Model switcher removed - using only NanoBanana API
 
