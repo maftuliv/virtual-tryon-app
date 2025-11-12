@@ -809,8 +809,12 @@ body {
 }
 
 .tips-example-image-last {
-    object-position: center top;
-    object-fit: cover;
+    object-fit: contain;
+    object-position: center;
+    background: rgba(255, 255, 255, 0.5);
+    aspect-ratio: auto;
+    min-height: 200px;
+    max-height: 400px;
 }
 
 /* CTA Card */
