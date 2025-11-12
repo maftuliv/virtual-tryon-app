@@ -1,6 +1,15 @@
 # Railway configuration
 [phases.setup]
-nixPkgs = ["python311", "gcc", "g++"]
+nixPkgs = [
+    "python311",
+    "gcc",
+    "g++",
+    "libGL",
+    "glib",
+    "libSM",
+    "libXrender",
+    "libXext"
+]
 
 [phases.install]
 cmds = ["pip install -r requirements.txt"]
