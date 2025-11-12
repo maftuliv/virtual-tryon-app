@@ -931,6 +931,50 @@ def virtual_tryon():
                     'result_path': result_path,
                     'result_image': f'data:image/png;base64,{img_data}'
                 })
+                
+                # Send result to Telegram if configured
+                try:
+                    telegram_bot_token = (
+                        os.environ.get('TELEGRAM_BOT_TOKEN', '').strip() or
+                        os.environ.get('TELEGRAM_BOT_TOKEN'.lower(), '').strip() or
+                        os.environ.get('telegram_bot_token', '').strip()
+                    )
+                    telegram_chat_id = (
+                        os.environ.get('TELEGRAM_CHAT_ID', '').strip() or
+                        os.environ.get('TELEGRAM_CHAT_ID'.lower(), '').strip() or
+                        os.environ.get('telegram_chat_id', '').strip()
+                    )
+                    
+                    if telegram_bot_token and telegram_chat_id:
+                        # Get IP address for caption
+                        from flask import has_request_context, request as flask_request
+                        ip_address = 'Unknown'
+                        if has_request_context():
+                            ip_address = flask_request.remote_addr or flask_request.headers.get('X-Forwarded-For', 'Unknown')
+                        
+                        # Create caption with result info
+                        caption = f"🎨 <b>Новый результат примерки</b>\n\n"
+                        caption += f"📸 Оригинал: {os.path.basename(person_image)}\n"
+                        caption += f"👕 Категория: {garment_category}\n"
+                        caption += f"🌐 IP: {ip_address}\n"
+                        caption += f"⏰ {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                        
+                        # Send photo to Telegram
+                        success, error = send_telegram_photo_with_retry(
+                            telegram_bot_token,
+                            telegram_chat_id,
+                            result_path,
+                            caption
+                        )
+                        if success:
+                            print(f"[TELEGRAM] ✅ Result photo sent successfully")
+                        else:
+                            print(f"[TELEGRAM] ⚠️ Failed to send result photo: {error}")
+                    else:
+                        print(f"[TELEGRAM] ⚠️ Telegram not configured (missing token or chat_id)")
+                except Exception as e:
+                    print(f"[TELEGRAM] ⚠️ Error sending result to Telegram: {e}")
+                    # Don't fail the whole request if Telegram send fails
             except Exception as e:
                 print(f"Error processing {person_image}: {e}")
                 import traceback
@@ -1081,6 +1125,111 @@ def send_telegram_notification_with_retry(bot_token, chat_id, message, max_retri
     print(f"[TELEGRAM] ❌ FAILED after {max_retries} attempts. Last error: {last_error}")
     return False, last_error
 
+# ==================== SEND TELEGRAM PHOTO WITH RETRY ====================
+def send_telegram_photo_with_retry(bot_token, chat_id, photo_path, caption=None, max_retries=3):
+    """
+    Send photo to Telegram with retry mechanism
+
+    Args:
+        bot_token: Telegram bot API token
+        chat_id: Telegram chat ID to send to
+        photo_path: Path to photo file
+        caption: Optional caption text
+        max_retries: Maximum number of retry attempts (default: 3)
+
+    Returns:
+        tuple: (success: bool, error_message: str or None)
+    """
+    telegram_url = f"https://api.telegram.org/bot{bot_token}/sendPhoto"
+
+    # Chat ID should be integer or string - try integer first
+    try:
+        chat_id_int = int(chat_id)
+    except (ValueError, TypeError):
+        chat_id_int = chat_id
+
+    last_error = None
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            print(f"[TELEGRAM PHOTO] Attempt {attempt}/{max_retries}: Sending photo to chat_id={chat_id_int}")
+
+            # Check if file exists
+            if not os.path.exists(photo_path):
+                last_error = f"Photo file not found: {photo_path}"
+                print(f"[TELEGRAM PHOTO] ❌ {last_error}")
+                return False, last_error
+
+            # Prepare files and data for multipart/form-data
+            with open(photo_path, 'rb') as photo_file:
+                files = {'photo': (os.path.basename(photo_path), photo_file, 'image/png')}
+                data = {'chat_id': chat_id_int}
+                if caption:
+                    data['caption'] = caption
+                    data['parse_mode'] = 'HTML'
+
+                # Use timeout for each request
+                response = requests.post(telegram_url, files=files, data=data, timeout=30)
+
+            if response.status_code == 200:
+                response_data = response.json()
+                if response_data.get('ok'):
+                    message_id = response_data.get('result', {}).get('message_id', 'N/A')
+                    print(f"[TELEGRAM PHOTO] ✅ SUCCESS on attempt {attempt}: Message ID {message_id}")
+                    return True, None
+                else:
+                    error_desc = response_data.get('description', 'Unknown API error')
+                    print(f"[TELEGRAM PHOTO] ❌ API error on attempt {attempt}: {error_desc}")
+                    last_error = f"Telegram API error: {error_desc}"
+            else:
+                print(f"[TELEGRAM PHOTO] ❌ HTTP {response.status_code} on attempt {attempt}")
+                try:
+                    error_data = response.json()
+                    error_desc = error_data.get('description', 'Unknown')
+                    print(f"[TELEGRAM PHOTO] Error details: {error_desc}")
+                    last_error = f"HTTP {response.status_code}: {error_desc}"
+                except:
+                    print(f"[TELEGRAM PHOTO] Response: {response.text[:200]}")
+                    last_error = f"HTTP {response.status_code}: {response.text[:100]}"
+
+            # If this wasn't the last attempt, wait before retrying
+            if attempt < max_retries:
+                # Exponential backoff: 1s, 2s, 4s
+                delay = 2 ** (attempt - 1)
+                print(f"[TELEGRAM PHOTO] ⏳ Retrying in {delay} seconds...")
+                time.sleep(delay)
+
+        except requests.exceptions.Timeout:
+            print(f"[TELEGRAM PHOTO] ⏰ Timeout on attempt {attempt}")
+            last_error = "Request timeout"
+            if attempt < max_retries:
+                delay = 2 ** (attempt - 1)
+                print(f"[TELEGRAM PHOTO] ⏳ Retrying in {delay} seconds...")
+                time.sleep(delay)
+
+        except requests.exceptions.ConnectionError as e:
+            print(f"[TELEGRAM PHOTO] 🔌 Connection error on attempt {attempt}: {e}")
+            last_error = f"Connection error: {str(e)[:100]}"
+            if attempt < max_retries:
+                delay = 2 ** (attempt - 1)
+                print(f"[TELEGRAM PHOTO] ⏳ Retrying in {delay} seconds...")
+                time.sleep(delay)
+
+        except Exception as e:
+            print(f"[TELEGRAM PHOTO] ❌ Unexpected error on attempt {attempt}: {e}")
+            import traceback
+            traceback.print_exc()
+            last_error = f"Unexpected error: {str(e)[:100]}"
+            if attempt < max_retries:
+                delay = 2 ** (attempt - 1)
+                print(f"[TELEGRAM PHOTO] ⏳ Retrying in {delay} seconds...")
+                time.sleep(delay)
+
+    # All retries failed
+    print(f"[TELEGRAM PHOTO] ❌ FAILED after {max_retries} attempts. Last error: {last_error}")
+    return False, last_error
+
+# ==================== END TELEGRAM PHOTO RETRY ====================
 # ==================== END TELEGRAM RETRY ====================
 
 @app.route('/api/feedback', methods=['POST'])
