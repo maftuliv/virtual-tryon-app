@@ -22,9 +22,9 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-    background: linear-gradient(135deg, #e8d4f8 0%, #edd9f7 25%, #f2def9 50%, #f7d9f0 75%, #ead4f5 100%);
+    background: linear-gradient(135deg, #fef3f8 0%, #fae8f5 25%, #f8e5f2 50%, #ffe9f7 75%, #fdeef9 100%);
     background-size: 400% 400%;
-    animation: gradientShift 15s ease infinite;
+    animation: gradientShift 20s ease infinite;
     color: var(--text-primary);
     min-height: 100vh;
     line-height: 1.6;
@@ -32,7 +32,7 @@ body {
     overflow-x: hidden;
 }
 
-/* Cute Icons Pattern Background - Cats, Dogs, Hearts & More */
+/* Modern 2025 Abstract Gradient Shapes */
 body::before {
     content: '';
     position: fixed;
@@ -42,20 +42,27 @@ body::before {
     height: 100%;
     pointer-events: none;
     z-index: 0;
-    opacity: 0.18;
+    opacity: 0.6;
     background-image:
-        url("data:image/svg+xml,%3Csvg width='500' height='500' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cstyle%3E.icon%7Bfill:%23a855f7;%7D%3C/style%3E%3C/defs%3E%3Cg%3E%3C!-- Cat sitting 1 --%3E%3Cg transform='translate(68,42) rotate(-15) scale(1.3)'%3E%3Cpath class='icon' d='M-8,-15 L-5,-20 L-3,-15 M5,-15 L8,-20 L10,-15 M-8,-5 Q-10,0 -8,8 L-8,18 Q-8,20 0,20 Q8,20 8,18 L8,8 Q10,0 8,-5 Q8,-10 0,-10 Q-8,-10 -8,-5 M-4,-6 Q-4,-8 -5,-8 Q-6,-8 -6,-6 Q-6,-4 -5,-4 Q-4,-4 -4,-6 M6,-6 Q6,-8 5,-8 Q4,-8 4,-6 Q4,-4 5,-4 Q6,-4 6,-6 M0,-4 L0,-2 M-2,-1 Q0,0 2,-1'/%3E%3C/g%3E%3C!-- Dog 1 --%3E%3Cg transform='translate(385,78) rotate(22) scale(1.2)'%3E%3Cpath class='icon' d='M-12,-8 Q-15,-12 -12,-15 L-10,-12 M8,-8 Q11,-12 8,-15 L6,-12 M-10,-5 Q-12,0 -10,10 L-10,18 Q-10,20 0,20 Q10,20 10,18 L10,10 Q12,0 10,-5 Q10,-10 0,-10 Q-10,-10 -10,-5 M-5,-6 Q-5,-7 -6,-7 Q-7,-7 -7,-6 Q-7,-5 -6,-5 Q-5,-5 -5,-6 M7,-6 Q7,-7 6,-7 Q5,-7 5,-6 Q5,-5 6,-5 Q7,-5 7,-6 M0,-2 L0,2 Q-2,3 0,4 Q2,3 0,2'/%3E%3C/g%3E%3C!-- Heart 1 --%3E%3Cg transform='translate(125,295) rotate(-18) scale(1.4)'%3E%3Cpath class='icon' d='M0,5 Q-8,-3 -12,-8 Q-14,-12 -10,-15 Q-6,-18 -3,-14 L0,-10 L3,-14 Q6,-18 10,-15 Q14,-12 12,-8 Q8,-3 0,5 Z'/%3E%3C/g%3E%3C!-- Lips 1 --%3E%3Cg transform='translate(432,412) rotate(28) scale(1.3)'%3E%3Cpath class='icon' d='M0,-5 Q-5,-8 -10,-5 Q-12,-3 -10,0 Q-8,3 -5,4 Q-3,5 0,5 Q3,5 5,4 Q8,3 10,0 Q12,-3 10,-5 Q5,-8 0,-5 M-6,-3 Q-3,-4 0,-3 Q3,-4 6,-3'/%3E%3C/g%3E%3C!-- Sun 1 --%3E%3Cg transform='translate(245,65) rotate(-8) scale(1.25)'%3E%3Cpath class='icon' d='M0,-15 L0,-12 M0,12 L0,15 M-15,0 L-12,0 M12,0 L15,0 M-11,-11 L-9,-9 M9,9 L11,11 M11,-11 L9,-9 M-9,9 L-11,11 M0,0 Q-6,0 -6,-6 Q0,-12 6,-6 Q6,0 0,0 Z'/%3E%3C/g%3E%3C!-- Lipstick 1 --%3E%3Cg transform='translate(288,268) rotate(18) scale(1.35)'%3E%3Cpath class='icon' d='M-3,0 L3,0 L3,12 L-3,12 Z M-1,12 L4,12 L4,20 Q1.5,22 -1,20 Z M-2,-2 L2,-2 L2,0 L-2,0 Z'/%3E%3C/g%3E%3C!-- Handbag 1 --%3E%3Cg transform='translate(82,358) rotate(-25) scale(1.2)'%3E%3Cpath class='icon' d='M-12,0 Q-15,-3 -18,0 L-18,8 Q-18,16 -10,16 L10,16 Q18,16 18,8 L18,0 Q15,-3 12,0 Z M-8,2 L-8,-3 L8,-3 L8,2 M-6,-3 Q-6,-7 0,-7 Q6,-7 6,-3'/%3E%3C/g%3E%3C!-- Ring 1 --%3E%3Cg transform='translate(405,235) rotate(14) scale(1.4)'%3E%3Cpath class='icon' d='M-10,5 Q-10,-5 0,-5 Q10,-5 10,5 Q10,15 0,15 Q-10,15 -10,5 M-3,0 L0,-6 L3,0 Z'/%3E%3C/g%3E%3C!-- Cat laying 2 --%3E%3Cg transform='translate(168,445) rotate(-12) scale(1.25)'%3E%3Cpath class='icon' d='M-18,0 L-15,-5 L-13,0 M13,0 L16,-5 L18,0 M-15,5 Q-18,8 -18,12 L-18,15 L18,15 L18,12 Q18,8 15,5 Q12,0 0,0 Q-12,0 -15,5 M-8,8 Q-8,7 -9,7 Q-10,7 -10,8 Q-10,9 -9,9 Q-8,9 -8,8 M10,8 Q10,7 9,7 Q8,7 8,8 Q8,9 9,9 Q10,9 10,8 M0,10 Q-2,12 0,13 Q2,12 0,10'/%3E%3C/g%3E%3C!-- Shopping Bag 1 --%3E%3Cg transform='translate(342,428) rotate(8) scale(1.3)'%3E%3Cpath class='icon' d='M-12,0 L12,0 L14,22 L-14,22 Z M-8,0 Q-8,-6 0,-6 Q8,-6 8,0'/%3E%3C/g%3E%3C!-- Cat face 3 --%3E%3Cg transform='translate(358,152) rotate(25) scale(1.2)'%3E%3Cpath class='icon' d='M-12,-8 L-8,-14 L-6,-8 M6,-8 L8,-14 L12,-8 M-10,0 Q-12,8 -8,12 Q-4,14 0,14 Q4,14 8,12 Q12,8 10,0 Q10,-8 0,-8 Q-10,-8 -10,0 M-5,2 Q-5,1 -6,1 Q-7,1 -7,2 Q-7,3 -6,3 Q-5,3 -5,2 M7,2 Q7,1 6,1 Q5,1 5,2 Q5,3 6,3 Q7,3 7,2 M0,4 L0,6 M-3,7 Q0,8 3,7'/%3E%3C/g%3E%3C!-- Dog 2 --%3E%3Cg transform='translate(182,125) rotate(-22) scale(1.15)'%3E%3Cpath class='icon' d='M-10,-10 Q-14,-14 -10,-18 L-8,-14 M6,-10 Q10,-14 6,-18 L4,-14 M-8,-6 Q-10,0 -8,8 L-8,16 Q-8,18 0,18 Q8,18 8,16 L8,8 Q10,0 8,-6 Q8,-10 0,-10 Q-8,-10 -8,-6 M-4,-5 Q-4,-6 -5,-6 Q-6,-6 -6,-5 Q-6,-4 -5,-4 Q-4,-4 -4,-5 M6,-5 Q6,-6 5,-6 Q4,-6 4,-5 Q4,-4 5,-4 Q6,-4 6,-5 M0,-1 L0,2 Q-2,3 0,4 Q2,3 0,2'/%3E%3C/g%3E%3C!-- Heart 2 --%3E%3Cg transform='translate(445,335) rotate(32) scale(1.3)'%3E%3Cpath class='icon' d='M0,4 Q-6,-2 -9,-6 Q-11,-9 -8,-12 Q-5,-14 -2,-11 L0,-8 L2,-11 Q5,-14 8,-12 Q11,-9 9,-6 Q6,-2 0,4 Z'/%3E%3C/g%3E%3C!-- Lips 2 --%3E%3Cg transform='translate(75,168) rotate(-28) scale(1.25)'%3E%3Cpath class='icon' d='M0,-4 Q-4,-6 -8,-4 Q-10,-2 -8,0 Q-6,2 -4,3 Q-2,4 0,4 Q2,4 4,3 Q6,2 8,0 Q10,-2 8,-4 Q4,-6 0,-4 M-5,-2 Q-2,-3 0,-2 Q2,-3 5,-2'/%3E%3C/g%3E%3C!-- Sun 2 --%3E%3Cg transform='translate(285,385) rotate(-15) scale(1.15)'%3E%3Cpath class='icon' d='M0,-12 L0,-10 M0,10 L0,12 M-12,0 L-10,0 M10,0 L12,0 M-9,-9 L-7,-7 M7,7 L9,9 M9,-9 L7,-7 M-7,7 L-9,9 M0,0 Q-5,0 -5,-5 Q0,-10 5,-5 Q5,0 0,0 Z'/%3E%3C/g%3E%3C!-- Ring 2 --%3E%3Cg transform='translate(382,122) rotate(38) scale(1.3)'%3E%3Cpath class='icon' d='M-8,4 Q-8,-4 0,-4 Q8,-4 8,4 Q8,12 0,12 Q-8,12 -8,4 M-2,0 L0,-5 L2,0 Z'/%3E%3C/g%3E%3C!-- Cat playing 4 --%3E%3Cg transform='translate(195,395) rotate(20) scale(1.2)'%3E%3Cpath class='icon' d='M-10,-12 L-6,-16 L-5,-11 M4,-11 L6,-16 L10,-12 M-8,-8 Q-10,-4 -10,2 L-10,10 Q-10,12 -2,12 Q-2,14 0,16 Q2,14 2,12 Q10,12 10,10 L10,2 Q10,-4 8,-8 Q8,-12 0,-12 Q-8,-12 -8,-8 M-4,-6 Q-4,-7 -5,-7 Q-6,-7 -6,-6 Q-6,-5 -5,-5 Q-4,-5 -4,-6 M6,-6 Q6,-7 5,-7 Q4,-7 4,-6 Q4,-5 5,-5 Q6,-5 6,-6'/%3E%3C/g%3E%3C!-- Handbag 2 --%3E%3Cg transform='translate(468,195) rotate(-35) scale(1.15)'%3E%3Cpath class='icon' d='M-10,0 Q-12,-2 -14,0 L-14,6 Q-14,12 -8,12 L8,12 Q14,12 14,6 L14,0 Q12,-2 10,0 Z M-6,1 L-6,-2 L6,-2 L6,1 M-5,-2 Q-5,-5 0,-5 Q5,-5 5,-2'/%3E%3C/g%3E%3C!-- Shopping Bag 2 --%3E%3Cg transform='translate(48,468) rotate(5) scale(1.25)'%3E%3Cpath class='icon' d='M-10,0 L10,0 L12,18 L-12,18 Z M-7,0 Q-7,-5 0,-5 Q7,-5 7,0'/%3E%3C/g%3E%3C!-- Lipstick 2 --%3E%3Cg transform='translate(152,225) rotate(22) scale(1.2)'%3E%3Cpath class='icon' d='M-2,0 L2,0 L2,10 L-2,10 Z M-1,10 L3,10 L3,16 Q1,18 -1,16 Z M-1.5,-1.5 L1.5,-1.5 L1.5,0 L-1.5,0 Z'/%3E%3C/g%3E%3C!-- Cat sleeping 5 --%3E%3Cg transform='translate(265,175) rotate(-10) scale(1.1)'%3E%3Cpath class='icon' d='M-14,8 L-10,4 L-8,8 M8,8 L10,4 L14,8 M-12,12 Q-14,14 -14,18 Q-14,20 -8,20 L8,20 Q14,20 14,18 Q14,14 12,12 Q10,8 0,8 Q-10,8 -12,12 M-6,14 Q-7,14 -7,15 Q-7,16 -6,16 M6,14 Q5,14 5,15 Q5,16 6,16'/%3E%3C/g%3E%3C!-- Heart 3 --%3E%3Cg transform='translate(138,58) rotate(16) scale(1.15)'%3E%3Cpath class='icon' d='M0,3 Q-5,-2 -7,-5 Q-9,-8 -6,-10 Q-4,-12 -2,-9 L0,-7 L2,-9 Q4,-12 6,-10 Q9,-8 7,-5 Q5,-2 0,3 Z'/%3E%3C/g%3E%3C!-- Dog 3 --%3E%3Cg transform='translate(485,78) rotate(-20) scale(1.1)'%3E%3Cpath class='icon' d='M-8,-8 Q-11,-11 -8,-14 L-6,-11 M6,-8 Q9,-11 6,-14 L4,-11 M-7,-5 Q-9,0 -7,7 L-7,13 Q-7,15 0,15 Q7,15 7,13 L7,7 Q9,0 7,-5 Q7,-9 0,-9 Q-7,-9 -7,-5 M-4,-4 Q-4,-5 -5,-5 Q-6,-5 -6,-4 Q-6,-3 -5,-3 Q-4,-3 -4,-4 M6,-4 Q6,-5 5,-5 Q4,-5 4,-4 Q4,-3 5,-3 Q6,-3 6,-4 M0,-1 L0,2 Q-1.5,2.5 0,3 Q1.5,2.5 0,2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        url("data:image/svg+xml,%3Csvg width='800' height='800' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3CradialGradient id='g1' cx='30%25' cy='30%25'%3E%3Cstop offset='0%25' style='stop-color:%23ff9ed8;stop-opacity:0.6'/%3E%3Cstop offset='100%25' style='stop-color:%23ffc9e8;stop-opacity:0.1'/%3E%3C/radialGradient%3E%3CradialGradient id='g2' cx='70%25' cy='40%25'%3E%3Cstop offset='0%25' style='stop-color:%23ffb3e6;stop-opacity:0.5'/%3E%3Cstop offset='100%25' style='stop-color:%23ffd9f2;stop-opacity:0.1'/%3E%3C/radialGradient%3E%3CradialGradient id='g3' cx='50%25' cy='50%25'%3E%3Cstop offset='0%25' style='stop-color:%23ff85c8;stop-opacity:0.4'/%3E%3Cstop offset='100%25' style='stop-color:%23ffb8e0;stop-opacity:0.05'/%3E%3C/radialGradient%3E%3CradialGradient id='g4' cx='60%25' cy='60%25'%3E%3Cstop offset='0%25' style='stop-color:%23ffa3d9;stop-opacity:0.5'/%3E%3Cstop offset='100%25' style='stop-color:%23ffe0f3;stop-opacity:0.1'/%3E%3C/radialGradient%3E%3CradialGradient id='g5' cx='40%25' cy='70%25'%3E%3Cstop offset='0%25' style='stop-color:%23ff78bf;stop-opacity:0.45'/%3E%3Cstop offset='100%25' style='stop-color:%23ffcce8;stop-opacity:0.08'/%3E%3C/radialGradient%3E%3Cfilter id='blur1'%3E%3CfeGaussianBlur stdDeviation='35'/%3E%3C/filter%3E%3Cfilter id='blur2'%3E%3CfeGaussianBlur stdDeviation='45'/%3E%3C/filter%3E%3Cfilter id='blur3'%3E%3CfeGaussianBlur stdDeviation='55'/%3E%3C/filter%3E%3C/defs%3E%3Cg%3E%3C!-- Organic blob shapes with pink gradients --%3E%3Cpath d='M120,180 Q80,120 140,90 T220,140 Q240,180 200,220 T120,180 Z' fill='url(%23g1)' filter='url(%23blur1)'/%3E%3Cpath d='M580,120 Q520,80 560,40 T680,100 Q720,150 660,180 T580,120 Z' fill='url(%23g2)' filter='url(%23blur2)'/%3E%3Cellipse cx='350' cy='250' rx='140' ry='100' fill='url(%23g3)' filter='url(%23blur3)' transform='rotate(-25 350 250)'/%3E%3Cpath d='M150,520 Q100,460 160,430 T280,490 Q310,540 250,580 T150,520 Z' fill='url(%23g4)' filter='url(%23blur1)'/%3E%3Cpath d='M600,580 Q540,520 600,480 T720,550 Q760,600 700,640 T600,580 Z' fill='url(%23g5)' filter='url(%23blur2)'/%3E%3Cellipse cx='420' cy='580' rx='110' ry='85' fill='url(%23g1)' filter='url(%23blur3)' transform='rotate(35 420 580)'/%3E%3Cpath d='M250,350 Q200,300 260,270 T360,330 Q390,370 340,410 T250,350 Z' fill='url(%23g2)' filter='url(%23blur1)'/%3E%3Cellipse cx='650' cy='380' rx='95' ry='120' fill='url(%23g3)' filter='url(%23blur2)' transform='rotate(-45 650 380)'/%3E%3Cpath d='M80,650 Q40,600 90,570 T180,620 Q210,660 160,700 T80,650 Z' fill='url(%23g4)' filter='url(%23blur3)'/%3E%3Cellipse cx='720' cy='720' rx='100' ry='90' fill='url(%23g5)' filter='url(%23blur1)' transform='rotate(15 720 720)'/%3E%3C/g%3E%3C/svg%3E");
     background-repeat: repeat;
-    background-size: 500px 500px;
-    animation: patternFloat 90s linear infinite;
+    background-size: 800px 800px;
+    filter: blur(20px);
+    animation: abstractFloat 120s linear infinite;
 }
 
-@keyframes patternFloat {
+@keyframes abstractFloat {
     0% {
         background-position: 0 0;
+        transform: scale(1);
+    }
+    50% {
+        background-position: 400px 400px;
+        transform: scale(1.05);
     }
     100% {
-        background-position: 500px 500px;
+        background-position: 800px 800px;
+        transform: scale(1);
     }
 }
 
