@@ -128,9 +128,9 @@ body {
     font-size: 0.8em;
     color: var(--slate-800);
     line-height: 1;
-    font-weight: 700;
-    -webkit-text-stroke: 0.8px var(--slate-800);
-    text-stroke: 0.8px var(--slate-800);
+    font-weight: 500;
+    -webkit-text-stroke: 0.5px var(--slate-800);
+    text-stroke: 0.5px var(--slate-800);
     display: block;
 }
 
