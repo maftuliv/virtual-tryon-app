@@ -222,9 +222,8 @@ function setupEventListeners() {
         });
     }
 
-    if (submitFeedbackBtn) {
-        submitFeedbackBtn.addEventListener('click', handleFeedbackSubmit);
-    }
+    // Ensure feedback button handler is attached
+    attachFeedbackHandler();
 
     // Test feedback button - shows feedback form without generation
     if (testFeedbackBtn) {
@@ -742,10 +741,18 @@ function displayResults(results) {
     if (feedbackSection && successCount > 0) {
         feedbackSection.style.display = 'block';
         // Reset form
+        const ratingSlider = document.getElementById('ratingSlider');
+        const ratingValue = document.getElementById('ratingValue');
+        const feedbackComment = document.getElementById('feedbackComment');
+        const feedbackSuccess = document.getElementById('feedbackSuccess');
+        
         if (ratingSlider) ratingSlider.value = 3;
         if (ratingValue) ratingValue.textContent = '3';
         if (feedbackComment) feedbackComment.value = '';
         if (feedbackSuccess) feedbackSuccess.style.display = 'none';
+        
+        // Re-attach handler when section is shown
+        attachFeedbackHandler();
     }
 }
 
@@ -1174,12 +1181,52 @@ if (!document.getElementById('notification-styles')) {
     document.head.appendChild(style);
 }
 
+// Attach feedback button handler
+function attachFeedbackHandler() {
+    const btn = document.getElementById('submitFeedbackBtn');
+    if (btn) {
+        // Remove existing listeners by cloning
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+        // Attach handler to new button
+        const refreshedBtn = document.getElementById('submitFeedbackBtn');
+        if (refreshedBtn) {
+            refreshedBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleFeedbackSubmit();
+            });
+            console.log('[FEEDBACK] Button handler attached');
+        }
+    } else {
+        console.warn('[FEEDBACK] submitFeedbackBtn not found');
+    }
+}
+
 // Handle Feedback Submission
 async function handleFeedbackSubmit() {
-    if (!ratingSlider || !submitFeedbackBtn) return;
+    const ratingSlider = document.getElementById('ratingSlider');
+    const submitFeedbackBtn = document.getElementById('submitFeedbackBtn');
+    const feedbackComment = document.getElementById('feedbackComment');
+    const feedbackSuccess = document.getElementById('feedbackSuccess');
+    const ratingValue = document.getElementById('ratingValue');
+    
+    if (!ratingSlider || !submitFeedbackBtn) {
+        console.error('[FEEDBACK] Missing required elements');
+        showError('Не удалось найти элементы формы отзыва');
+        return;
+    }
 
     const rating = parseInt(ratingSlider.value);
     const comment = feedbackComment ? feedbackComment.value.trim() : '';
+
+    console.log('[FEEDBACK] Submitting feedback:', { rating, comment, sessionId: state.sessionId });
+
+    // Validate rating
+    if (!rating || rating < 1 || rating > 5) {
+        showError('Пожалуйста, выберите оценку от 1 до 5');
+        return;
+    }
 
     // Disable button during submission
     submitFeedbackBtn.disabled = true;
@@ -1199,14 +1246,16 @@ async function handleFeedbackSubmit() {
             })
         });
 
+        console.log('[FEEDBACK] Response status:', response.status);
+
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
-            console.error('Feedback error:', errorData);
-            throw new Error(errorData.error || 'Ошибка отправки отзыва');
+            console.error('[FEEDBACK] Error response:', errorData);
+            throw new Error(errorData.error || `Ошибка отправки отзыва (${response.status})`);
         }
 
         const result = await response.json();
-        console.log('Feedback submitted successfully:', result);
+        console.log('[FEEDBACK] Success:', result);
 
         // Show success message
         if (feedbackSuccess) {
@@ -1222,8 +1271,8 @@ async function handleFeedbackSubmit() {
         }, 2000);
 
     } catch (error) {
-        console.error('Error submitting feedback:', error);
-        showError('Не удалось отправить отзыв. Попробуйте позже.');
+        console.error('[FEEDBACK] Error:', error);
+        showError(error.message || 'Не удалось отправить отзыв. Попробуйте позже.');
     } finally {
         // Re-enable button
         submitFeedbackBtn.disabled = false;
@@ -1256,6 +1305,8 @@ function showTestFeedbackForm() {
     const feedbackSection = document.getElementById('feedbackSection');
     if (feedbackSection) {
         feedbackSection.style.display = 'block';
+        // Re-attach handler when section is shown
+        attachFeedbackHandler();
         // Reset form
         if (ratingSlider) ratingSlider.value = 3;
         if (ratingValue) ratingValue.textContent = '3';
