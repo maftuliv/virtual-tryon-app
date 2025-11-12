@@ -16,7 +16,9 @@
                     <span class="logo-text">Tap to look</span>
                 </div>
                 <div class="top-bar-badge">
-                    <span class="sparkles-icon">✨</span>
+                    <svg class="sparkles-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L13.09 8.26L19 9L13.09 9.74L12 16L10.91 9.74L5 9L10.91 8.26L12 2Z"/>
+                    </svg>
                     <span class="badge-text">AI примерка за 10 сек</span>
                 </div>
             </div>
@@ -32,20 +34,33 @@
         <nav class="stepper-nav">
             <div class="stepper-grid">
                 <button class="stepper-btn" id="step1Btn" data-step="1">
-                    <div class="stepper-icon step-icon-active">📸</div>
+                    <div class="stepper-icon step-icon-active">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                            <circle cx="12" cy="13" r="4"/>
+                        </svg>
+                    </div>
                     <div class="stepper-content">
                         <div class="stepper-title">Шаг 1</div>
                         <div class="stepper-subtitle">Загрузите своё фото</div>
                     </div>
-                    <span class="stepper-arrow">→</span>
+                    <svg class="stepper-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                    </svg>
                 </button>
                 <button class="stepper-btn" id="step2Btn" data-step="2">
-                    <div class="stepper-icon">👕</div>
+                    <div class="stepper-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 7h16M4 12h16M4 17h16"/>
+                        </svg>
+                    </div>
                     <div class="stepper-content">
                         <div class="stepper-title">Шаг 2</div>
                         <div class="stepper-subtitle">Добавьте одежду</div>
                     </div>
-                    <span class="stepper-arrow">→</span>
+                    <svg class="stepper-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                    </svg>
                 </button>
             </div>
         </nav>
@@ -57,7 +72,10 @@
                 <!-- Step 1: Person Photo Upload -->
                 <div class="upload-card-step" id="step1Content" data-step="1">
                     <div class="step-header">
-                        <span class="step-icon-large">📸</span>
+                        <svg class="step-icon-large" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                            <circle cx="12" cy="13" r="4"/>
+                        </svg>
                         <h2 class="step-title-large">Шаг 1 — Ваше фото</h2>
                     </div>
 
@@ -65,11 +83,15 @@
                         <div class="upload-zone-wrapper">
                             <input type="file" id="personImages" accept="image/*" multiple class="file-input">
                             <div class="upload-zone upload-zone-person" id="personUploadZone">
-                                <div class="upload-icon-large">☁️</div>
+                                <svg class="upload-icon-large" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                    <polyline points="17 8 12 3 7 8"/>
+                                    <line x1="12" y1="3" x2="12" y2="15"/>
+                                </svg>
                                 <p class="upload-title">Перетащите фото или выберите</p>
                                 <p class="upload-subtitle">JPG/PNG, минимум 512px</p>
                                 <div class="upload-buttons">
-                                    <button class="btn-upload-primary" onclick="document.getElementById('personImages').click()">Выбрать файл</button>
+                                    <button class="btn-upload-primary" id="personFileBtn">Выбрать файл</button>
                                     <button class="btn-upload-secondary">Вставить ссылку</button>
                                 </div>
                             </div>
@@ -84,7 +106,14 @@
                                 <li>Однотонный фон желателен</li>
                                 <li class="requirement-error">Не подойдут: селфи и обрезанные фото</li>
                             </ul>
-                            <button class="examples-link" onclick="showExamplesModal('person')">🖼️ Посмотреть примеры</button>
+                            <button class="examples-link" onclick="showExamplesModal('person')">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 4px;">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                                    <polyline points="21 15 16 10 5 21"/>
+                                </svg>
+                                Посмотреть примеры
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -92,7 +121,9 @@
                 <!-- Step 2: Garment Upload -->
                 <div class="upload-card-step" id="step2Content" data-step="2" style="display: none;">
                     <div class="step-header">
-                        <span class="step-icon-large">👕</span>
+                        <svg class="step-icon-large" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 7h16M4 12h16M4 17h16"/>
+                        </svg>
                         <h2 class="step-title-large">Шаг 2 — Одежда</h2>
                     </div>
 
@@ -136,11 +167,15 @@
                             <div class="upload-zone-wrapper">
                                 <input type="file" id="garmentImage" accept="image/*" class="file-input">
                                 <div class="upload-zone upload-zone-garment" id="garmentUploadZone">
-                                    <div class="upload-icon-large">☁️</div>
+                                    <svg class="upload-icon-large" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                        <polyline points="17 8 12 3 7 8"/>
+                                        <line x1="12" y1="3" x2="12" y2="15"/>
+                                    </svg>
                                     <p class="upload-title">Перетащите одежду или выберите</p>
                                     <p class="upload-subtitle">Лучше flat‑lay / манекен, 512–2000px</p>
                                     <div class="upload-buttons">
-                                        <button class="btn-upload-primary" onclick="document.getElementById('garmentImage').click()">Выбрать файл</button>
+                                        <button class="btn-upload-primary" id="garmentFileBtn">Выбрать файл</button>
                                         <button class="btn-upload-secondary">Вставить ссылку</button>
                                     </div>
                                 </div>
@@ -165,29 +200,43 @@
                 <!-- Tips Card -->
                 <div class="tips-card">
                     <div class="tips-header">
-                        <span class="info-icon">ℹ️</span>
+                        <svg class="info-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="16" x2="12" y2="12"/>
+                            <line x1="12" y1="8" x2="12.01" y2="8"/>
+                        </svg>
                         <h3 class="tips-title">Советы для идеального результата</h3>
                     </div>
                     <div class="tips-list">
                         <div class="tip-item">
-                            <span class="tip-check">✅</span>
+                            <svg class="tip-check" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
                             <span>Нейтральный фон и хорошее освещение.</span>
                         </div>
                         <div class="tip-item">
-                            <span class="tip-check">✅</span>
+                            <svg class="tip-check" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
                             <span>Фото в полный рост, вертикальная ориентация.</span>
                         </div>
                         <div class="tip-item">
-                            <span class="tip-check">✅</span>
+                            <svg class="tip-check" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
                             <span>Для одежды — фото спереди, лучше flat‑lay или на манекене.</span>
                         </div>
                         <div class="tip-item">
-                            <span class="tip-check">✅</span>
+                            <svg class="tip-check" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
                             <span>Поддерживаем PNG/JPG, от 512px.</span>
                         </div>
                     </div>
                     <button class="tips-toggle" id="tipsToggle">
-                        <span class="chevron-down">▼</span>
+                        <svg class="chevron-down" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
                         Показать примеры
                     </button>
                     <div class="tips-examples" id="tipsExamples" style="display: none;">
@@ -216,7 +265,10 @@
                     </div>
 
                     <button id="testFeedbackBtn" class="btn-test-feedback">
-                        <span>✨ Оставить отзыв</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                        </svg>
+                        <span>Оставить отзыв</span>
                     </button>
                     <p class="cta-hint">Никаких селфи и обрезанных фото — только полный рост.</p>
 

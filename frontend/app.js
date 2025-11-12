@@ -85,39 +85,62 @@ function switchStep(step) {
         }
     }
 
-    // Update content visibility
+    // Update content visibility with smooth transition
     if (step1Content) {
-        step1Content.style.display = step === 1 ? 'block' : 'none';
+        if (step === 1) {
+            step1Content.style.opacity = '0';
+            step1Content.style.display = 'block';
+            setTimeout(() => {
+                step1Content.style.transition = 'opacity 0.3s ease';
+                step1Content.style.opacity = '1';
+            }, 10);
+        } else {
+            step1Content.style.transition = 'opacity 0.3s ease';
+            step1Content.style.opacity = '0';
+            setTimeout(() => {
+                step1Content.style.display = 'none';
+            }, 300);
+        }
     }
     if (step2Content) {
-        step2Content.style.display = step === 2 ? 'block' : 'none';
-    }
-
-    // Auto-advance to step 2 when person images are uploaded
-    if (step === 1 && state.personImages.length > 0) {
-        setTimeout(() => {
-            if (currentStep === 1) {
-                switchStep(2);
-            }
-        }, 500);
+        if (step === 2) {
+            step2Content.style.opacity = '0';
+            step2Content.style.display = 'block';
+            setTimeout(() => {
+                step2Content.style.transition = 'opacity 0.3s ease';
+                step2Content.style.opacity = '1';
+            }, 10);
+        } else {
+            step2Content.style.transition = 'opacity 0.3s ease';
+            step2Content.style.opacity = '0';
+            setTimeout(() => {
+                step2Content.style.display = 'none';
+            }, 300);
+        }
     }
 }
 
 function setupUploadZones() {
-    // Person images upload - only trigger if clicking on upload zone itself, not previews
+    // Person images upload - only trigger if clicking on upload zone itself, not previews or buttons
     personUploadZone.addEventListener('click', (e) => {
-        // Don't trigger if clicking on preview items or remove buttons
-        if (e.target.closest('.preview-item') || e.target.closest('.preview-remove')) {
+        // Don't trigger if clicking on preview items, remove buttons, or file selection button
+        if (e.target.closest('.preview-item') || 
+            e.target.closest('.preview-remove') || 
+            e.target.closest('#personFileBtn') ||
+            e.target.id === 'personFileBtn') {
             return;
         }
         personImagesInput.click();
     });
     personImagesInput.addEventListener('change', handlePersonImagesSelect);
 
-    // Garment image upload - only trigger if clicking on upload zone itself, not previews
+    // Garment image upload - only trigger if clicking on upload zone itself, not previews or buttons
     garmentUploadZone.addEventListener('click', (e) => {
-        // Don't trigger if clicking on preview items or remove buttons
-        if (e.target.closest('.preview-item') || e.target.closest('.preview-remove')) {
+        // Don't trigger if clicking on preview items, remove buttons, or file selection button
+        if (e.target.closest('.preview-item') || 
+            e.target.closest('.preview-remove') || 
+            e.target.closest('#garmentFileBtn') ||
+            e.target.id === 'garmentFileBtn') {
             return;
         }
         garmentImageInput.click();
@@ -149,6 +172,26 @@ function setupDragAndDrop(zone, dropHandler) {
 }
 
 function setupEventListeners() {
+    // File selection buttons
+    const personFileBtn = document.getElementById('personFileBtn');
+    const garmentFileBtn = document.getElementById('garmentFileBtn');
+    
+    if (personFileBtn && personImagesInput) {
+        personFileBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            personImagesInput.click();
+        });
+    }
+    
+    if (garmentFileBtn && garmentImageInput) {
+        garmentFileBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            garmentImageInput.click();
+        });
+    }
+
     // Generate switch - triggers generation when toggled ON
     if (generateSwitch) {
         generateSwitch.addEventListener('change', (e) => {
@@ -224,9 +267,14 @@ function handlePersonImagesSelect(e) {
     console.log('handlePersonImagesSelect triggered');
     const files = Array.from(e.target.files);
     console.log('Files selected:', files.length);
-    processPersonImages(files);
+    if (files.length > 0) {
+        processPersonImages(files);
+    }
     // Clear input value to allow selecting the same file again
-    e.target.value = '';
+    // But do it after a small delay to prevent immediate re-trigger
+    setTimeout(() => {
+        e.target.value = '';
+    }, 100);
 }
 
 function handlePersonImagesDrop(files) {
@@ -261,11 +309,9 @@ function processPersonImages(files) {
     displayPersonPreviews();
     updateGenerateSwitch();
     
-    // Auto-advance to step 2 after successful upload
+    // Show notification and suggest moving to step 2
     if (validFiles.length > 0 && currentStep === 1) {
-        setTimeout(() => {
-            switchStep(2);
-        }, 500);
+        showInfo('Фото загружено! Теперь перейдите к шагу 2, чтобы добавить одежду.');
     }
 }
 
@@ -302,9 +348,14 @@ function handleGarmentImageSelect(e) {
     console.log('handleGarmentImageSelect triggered');
     const file = e.target.files[0];
     console.log('File selected:', file ? file.name : 'none');
-    processGarmentImage(file);
+    if (file) {
+        processGarmentImage(file);
+    }
     // Clear input value to allow selecting the same file again
-    e.target.value = '';
+    // But do it after a small delay to prevent immediate re-trigger
+    setTimeout(() => {
+        e.target.value = '';
+    }, 100);
 }
 
 function handleGarmentImageDrop(files) {
@@ -324,11 +375,6 @@ function processGarmentImage(file) {
     state.garmentImage = file;
     displayGarmentPreview();
     updateGenerateSwitch();
-    
-    // Ensure we're on step 2 when garment is uploaded
-    if (currentStep !== 2) {
-        switchStep(2);
-    }
 }
 
 function displayGarmentPreview() {
