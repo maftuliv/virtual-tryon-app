@@ -679,7 +679,9 @@ def process_with_nanobanana(person_image_path, garment_image_path, category='aut
 # Serve frontend
 @app.route('/')
 def serve_frontend():
-    return send_from_directory(FRONTEND_FOLDER, 'index.html')
+    response = send_from_directory(FRONTEND_FOLDER, 'index.html')
+    response.headers['Cache-Control'] = 'no-cache, must-revalidate'
+    return response
 
 @app.route('/<path:path>')
 def serve_static(path):
@@ -687,10 +689,18 @@ def serve_static(path):
     if path.startswith('api/'):
         return jsonify({"error": "Not found"}), 404
     try:
-        return send_from_directory(FRONTEND_FOLDER, path)
+        response = send_from_directory(FRONTEND_FOLDER, path)
+        # Add caching headers for static assets
+        if path.endswith(('.js', '.css', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.woff', '.woff2', '.ttf', '.eot')):
+            response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+        else:
+            response.headers['Cache-Control'] = 'no-cache, must-revalidate'
+        return response
     except:
         # If file not found, serve index.html (SPA fallback)
-        return send_from_directory(FRONTEND_FOLDER, 'index.html')
+        response = send_from_directory(FRONTEND_FOLDER, 'index.html')
+        response.headers['Cache-Control'] = 'no-cache, must-revalidate'
+        return response
 
 @app.route('/api/health', methods=['GET'])
 def health_check():

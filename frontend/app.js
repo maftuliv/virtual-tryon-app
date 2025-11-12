@@ -973,7 +973,21 @@ function showExamplesModal(type) {
     const modal = document.getElementById('examplesModal');
     if (modal) {
         modal.style.display = 'flex';
+        // Lazy load images when modal opens
+        loadSliderImages();
     }
+}
+
+// Lazy load slider images
+function loadSliderImages() {
+    const lazyImages = document.querySelectorAll('.slider-image.lazy-load');
+
+    lazyImages.forEach(img => {
+        if (img.dataset.src && !img.src) {
+            img.src = img.dataset.src;
+            img.classList.remove('lazy-load');
+        }
+    });
 }
 
 function closeExamplesModal() {
