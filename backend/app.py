@@ -1249,27 +1249,41 @@ def submit_feedback():
                 import traceback
                 traceback.print_exc()
         
+        # Always try to send to Telegram if credentials are available
+        telegram_success = False
+        telegram_error = None
+        telegram_message = None
+        
         if telegram_bot_token and telegram_chat_id:
             # Format message for Telegram (using HTML format - simpler and more reliable)
             stars = '⭐' * rating + '☆' * (5 - rating)
-            message = f"📊 <b>Новый отзыв</b>\n\n"
-            message += f"⭐ Оценка: {stars} ({rating}/5)\n"
+            telegram_message = f"📊 <b>Новый отзыв</b>\n\n"
+            telegram_message += f"⭐ Оценка: {stars} ({rating}/5)\n"
             if comment:
                 # Escape HTML special characters in comment
                 safe_comment = comment.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
-                message += f"💬 Комментарий: {safe_comment}\n"
-            message += f"🕐 Время: {timestamp}\n"
+                telegram_message += f"💬 Комментарий: {safe_comment}\n"
+            else:
+                telegram_message += f"💬 Комментарий: <i>нет комментария</i>\n"
+            telegram_message += f"🕐 Время: {timestamp}\n"
             if session_id:
-                message += f"🆔 Session: {session_id[:8]}...\n"
+                telegram_message += f"🆔 Session: {session_id[:8]}...\n"
+            telegram_message += f"🌐 IP: {request.remote_addr}\n"
 
             # Use retry mechanism for reliable delivery
             print(f"[FEEDBACK] 📤 Sending to Telegram with retry mechanism...")
+            print(f"[FEEDBACK] Message preview: {telegram_message[:100]}...")
             telegram_success, telegram_error = send_telegram_notification_with_retry(
                 bot_token=telegram_bot_token,
                 chat_id=telegram_chat_id,
-                message=message,
+                message=telegram_message,
                 max_retries=3
             )
+            
+            if telegram_success:
+                print(f"[FEEDBACK] ✅ Telegram notification sent successfully!")
+            else:
+                print(f"[FEEDBACK] ❌ Telegram notification failed: {telegram_error}")
 
             # Update database with Telegram delivery status
             if db_available and feedback_id:
@@ -1299,12 +1313,21 @@ def submit_feedback():
                     error="Telegram credentials not configured"
                 )
 
-        return jsonify({
+        # Prepare response
+        response_data = {
             'success': True,
             'message': 'Feedback saved successfully',
             'saved_to': 'database' if db_saved else 'file',
             'feedback_id': feedback_id if db_saved else None
-        }), 200
+        }
+        
+        # Add Telegram status to response
+        if telegram_bot_token and telegram_chat_id:
+            response_data['telegram_sent'] = telegram_success
+            if not telegram_success:
+                response_data['telegram_error'] = telegram_error
+        
+        return jsonify(response_data), 200
         
     except Exception as e:
         print(f"[FEEDBACK ERROR] {e}")
