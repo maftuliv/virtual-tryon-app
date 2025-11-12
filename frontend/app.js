@@ -425,73 +425,7 @@ function createPreviewItem(src, index, type) {
 // Validate preview image and add status badge
 async function validatePreviewImage(previewDiv, imageSrc, type, index) {
     try {
-        console.log(`[VALIDATE] Starting validation for ${type} image at index ${index}`);
-
-        // For person images, use AI validation via API
-        if (type === 'person') {
-            // Show loading badge
-            const loadingBadge = document.createElement('div');
-            loadingBadge.className = 'preview-status-badge status-warning';
-            loadingBadge.innerHTML = '<span class="status-icon">⏳</span><span>Проверка...</span>';
-            previewDiv.appendChild(loadingBadge);
-
-            // Get the file from state
-            const file = state.personImages[index];
-            if (!file) {
-                console.error('[VALIDATE] File not found in state');
-                return;
-            }
-
-            // Send to server for AI validation
-            const formData = new FormData();
-            formData.append('image', file);
-
-            try {
-                console.log('[VALIDATE] Sending to /api/validate-person...');
-                const response = await fetch(`${API_URL}/api/validate-person`, {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const validationData = await response.json();
-                console.log('[VALIDATE] Validation response:', validationData);
-
-                // Remove loading badge
-                loadingBadge.remove();
-
-                // Create result badge with detection data
-                const result = {
-                    image_index: index,
-                    person_detected: validationData.person_detected,
-                    confidence: validationData.confidence,
-                    is_full_body: validationData.is_full_body,
-                    height_ratio: validationData.height_ratio,
-                    width_ratio: validationData.width_ratio,
-                    warnings: validationData.warnings || [],
-                    critical: validationData.critical,
-                    ai_validated: validationData.ai_validated,
-                    validation_method: validationData.validation_method
-                };
-
-                // Use the same display function as before
-                displaySinglePersonDetectionResult(previewDiv, result);
-
-            } catch (error) {
-                console.error('[VALIDATE] API error:', error);
-                // Remove loading badge
-                loadingBadge.remove();
-
-                // Show error badge
-                const errorBadge = document.createElement('div');
-                errorBadge.className = 'preview-status-badge status-warning';
-                errorBadge.innerHTML = '<span class="status-icon">⚠️</span><span>Проверка недоступна</span>';
-                previewDiv.appendChild(errorBadge);
-            }
-
-            return; // Exit early for person images
-        }
-
-        // For garment images, use simple client-side validation
+        // Load image to get dimensions
         const tempImg = new Image();
         tempImg.src = imageSrc;
 
@@ -503,40 +437,43 @@ async function validatePreviewImage(previewDiv, imageSrc, type, index) {
         const height = tempImg.height;
         const aspectRatio = width / height;
 
-        const warnings = [];
-        const errors = [];
-
-        // Resolution checks
-        if (width < 512 && height < 512) {
-            errors.push('Разрешение слишком низкое');
-        }
-
-        // Garments can be landscape or portrait, but not too extreme
-        if (aspectRatio > 2.0 || aspectRatio < 0.5) {
-            warnings.push('Необычные пропорции - убедитесь, что одежда видна полностью');
-        }
-
         // Create status badge
         const badge = document.createElement('div');
         badge.className = 'preview-status-badge';
 
-        if (errors.length > 0) {
-            badge.classList.add('status-error');
-            badge.innerHTML = '<span class="status-icon">❌</span><span>' + errors[0] + '</span>';
-            previewDiv.classList.add('has-errors');
-        } else if (warnings.length > 0) {
-            badge.classList.add('status-warning');
-            badge.innerHTML = '<span class="status-icon">⚠️</span><span>' + warnings[0] + '</span>';
-            previewDiv.classList.add('has-warnings');
-        } else {
-            badge.classList.add('status-ok');
-            badge.innerHTML = '<span class="status-icon">✅</span><span>OK</span>';
-            previewDiv.classList.add('validated-ok');
+        if (type === 'person') {
+            // For person images: check orientation only
+            if (height > width) {
+                // Vertical photo - good for full body
+                badge.classList.add('status-ok');
+                badge.innerHTML = '<span class="status-icon">✅</span><span>OK</span>';
+                previewDiv.classList.add('validated-ok');
+            } else {
+                // Horizontal photo - warning
+                badge.classList.add('status-warning');
+                badge.innerHTML = '<span class="status-icon">⚠️</span><span>Рекомендуется вертикальное фото</span>';
+                previewDiv.classList.add('has-warnings');
+            }
+        } else if (type === 'garment') {
+            // For garment images: basic checks
+            if (width < 512 && height < 512) {
+                badge.classList.add('status-error');
+                badge.innerHTML = '<span class="status-icon">❌</span><span>Разрешение слишком низкое</span>';
+                previewDiv.classList.add('has-errors');
+            } else if (aspectRatio > 2.0 || aspectRatio < 0.5) {
+                badge.classList.add('status-warning');
+                badge.innerHTML = '<span class="status-icon">⚠️</span><span>Необычные пропорции</span>';
+                previewDiv.classList.add('has-warnings');
+            } else {
+                badge.classList.add('status-ok');
+                badge.innerHTML = '<span class="status-icon">✅</span><span>OK</span>';
+                previewDiv.classList.add('validated-ok');
+            }
         }
 
         previewDiv.appendChild(badge);
 
-        console.log(`[VALIDATION] ${type} - ${width}x${height}, ratio: ${aspectRatio.toFixed(2)}, errors: ${errors.length}, warnings: ${warnings.length}`);
+        console.log(`[VALIDATION] ${type} - ${width}x${height}, ratio: ${aspectRatio.toFixed(2)}, orientation: ${height > width ? 'vertical' : 'horizontal'}`);
 
         // Update button state after validation
         setTimeout(() => {
@@ -614,23 +551,7 @@ async function handleTryOn() {
             throw new Error(uploadData.error || 'Загрузка не удалась');
         }
 
-        // Check person detection results
         console.log('[UPLOAD] Upload data received:', uploadData);
-        console.log('[UPLOAD] Person detection data:', uploadData.person_detection);
-        console.log('[UPLOAD] Can proceed:', uploadData.can_proceed);
-
-        if (uploadData.person_detection) {
-            console.log('[UPLOAD] Calling displayPersonDetectionResults...');
-            displayPersonDetectionResults(uploadData.person_detection);
-        } else {
-            console.warn('[UPLOAD] ⚠️ No person_detection data in upload response');
-        }
-
-        // Block proceeding if person not detected
-        if (uploadData.can_proceed === false) {
-            console.error('[UPLOAD] ❌ Cannot proceed - person not detected');
-            throw new Error('❌ Человек не обнаружен на фото. Пожалуйста, загрузите фото человека в полный рост.');
-        }
 
         // Display validation warnings if any
         if (uploadData.validation_warnings) {
@@ -897,275 +818,6 @@ function resetApplication() {
 
     // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-// Display single person detection result (for immediate validation)
-function displaySinglePersonDetectionResult(previewDiv, result) {
-    console.log(`[SINGLE DETECTION] Displaying result for preview:`, result);
-
-    // Create new badge based on detection result
-    const badge = document.createElement('div');
-    badge.className = 'preview-status-badge';
-    badge.style.cursor = 'pointer';
-
-    if (result.error || !result.person_detected) {
-        // Critical error - person not detected
-        badge.classList.add('status-error');
-        badge.innerHTML = '<span class="status-icon">❌</span><span>Человек не обнаружен</span>';
-        previewDiv.classList.add('has-errors');
-    } else if (result.confidence < 0.5) {
-        // Low confidence warning
-        badge.classList.add('status-warning');
-        badge.innerHTML = '<span class="status-icon">⚠️</span><span>Низкая уверенность</span>';
-        previewDiv.classList.add('has-warnings');
-    } else if (!result.is_full_body) {
-        // Not full body warning
-        badge.classList.add('status-warning');
-        badge.innerHTML = '<span class="status-icon">⚠️</span><span>Не полный рост</span>';
-        previewDiv.classList.add('has-warnings');
-    } else {
-        // Success
-        badge.classList.add('status-success');
-        badge.innerHTML = `<span class="status-icon">✅</span><span>Человек обнаружен (${Math.round(result.confidence * 100)}%)</span>`;
-        previewDiv.classList.add('has-success');
-    }
-
-    // Add click handler to show detailed info
-    badge.addEventListener('click', (e) => {
-        e.stopPropagation();
-        console.log(`[SINGLE DETECTION] Badge clicked`);
-        showDetectionDetails(result, result.image_index + 1);
-    });
-
-    console.log(`[SINGLE DETECTION] Appending clickable badge`);
-    previewDiv.appendChild(badge);
-}
-
-// Person Detection Results Display
-function displayPersonDetectionResults(detectionResults) {
-    console.log('[PERSON DETECTION] ========================================');
-    console.log('[PERSON DETECTION] Results received:', detectionResults);
-    console.log('[PERSON DETECTION] Number of results:', detectionResults.length);
-
-    // Update preview badges with detection results
-    detectionResults.forEach(result => {
-        console.log(`[PERSON DETECTION] Processing result for image ${result.image_index}:`, result);
-
-        const previewItems = document.querySelectorAll('.preview-item');
-        console.log(`[PERSON DETECTION] Found ${previewItems.length} preview items`);
-
-        if (previewItems[result.image_index]) {
-            const previewItem = previewItems[result.image_index];
-            console.log(`[PERSON DETECTION] Found preview item for index ${result.image_index}`);
-
-            // Remove old badge if exists
-            const oldBadge = previewItem.querySelector('.preview-status-badge');
-            if (oldBadge) {
-                console.log(`[PERSON DETECTION] Removing old badge`);
-                oldBadge.remove();
-            } else {
-                console.log(`[PERSON DETECTION] No old badge found`);
-            }
-
-            // Create new badge based on detection result
-            const badge = document.createElement('div');
-            badge.className = 'preview-status-badge';
-            badge.style.cursor = 'pointer';
-
-            if (result.error || !result.person_detected) {
-                // Critical error - person not detected
-                badge.classList.add('status-error');
-                badge.innerHTML = '<span class="status-icon">❌</span><span>Человек не обнаружен</span>';
-                previewItem.classList.add('has-errors');
-            } else if (result.confidence < 0.5) {
-                // Low confidence warning
-                badge.classList.add('status-warning');
-                badge.innerHTML = '<span class="status-icon">⚠️</span><span>Низкая уверенность</span>';
-                previewItem.classList.add('has-warnings');
-            } else if (!result.is_full_body) {
-                // Not full body warning
-                badge.classList.add('status-warning');
-                badge.innerHTML = '<span class="status-icon">⚠️</span><span>Не полный рост</span>';
-                previewItem.classList.add('has-warnings');
-            } else {
-                // Success
-                badge.classList.add('status-success');
-                badge.innerHTML = `<span class="status-icon">✅</span><span>Человек обнаружен (${Math.round(result.confidence * 100)}%)</span>`;
-                previewItem.classList.add('has-success');
-            }
-
-            // Add click handler to show detailed info
-            badge.addEventListener('click', (e) => {
-                e.stopPropagation();
-                console.log(`[PERSON DETECTION] Badge clicked for image ${result.image_index + 1}`);
-                showDetectionDetails(result, result.image_index + 1);
-            });
-
-            console.log(`[PERSON DETECTION] Appending new clickable badge to preview item`);
-            previewItem.appendChild(badge);
-            console.log(`[PERSON DETECTION] Badge successfully added`);
-        } else {
-            console.error(`[PERSON DETECTION] ❌ Preview item not found for index ${result.image_index}`);
-        }
-    });
-    console.log('[PERSON DETECTION] ======================================== DONE');
-}
-
-// Show detailed detection information in a modal
-function showDetectionDetails(result, imageNumber) {
-    const modal = document.createElement('div');
-    modal.className = 'validation-detail-modal';
-    modal.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.7);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 10000;
-        padding: 20px;
-    `;
-
-    const content = document.createElement('div');
-    content.style.cssText = `
-        background: white;
-        border-radius: 16px;
-        padding: 24px;
-        max-width: 500px;
-        width: 100%;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    `;
-
-    let statusIcon = '❌';
-    let statusText = 'Ошибка';
-    let statusColor = '#ef4444';
-
-    if (result.person_detected) {
-        if (result.confidence >= 0.7 && result.is_full_body) {
-            statusIcon = '✅';
-            statusText = 'Отлично';
-            statusColor = '#10b981';
-        } else {
-            statusIcon = '⚠️';
-            statusText = 'Требует внимания';
-            statusColor = '#f59e0b';
-        }
-    }
-
-    let detailsHTML = `
-        <div style="text-align: center; margin-bottom: 20px;">
-            <div style="font-size: 48px; margin-bottom: 12px;">${statusIcon}</div>
-            <h3 style="margin: 0 0 8px 0; color: #1f2937; font-size: 20px;">Фото ${imageNumber}</h3>
-            <p style="margin: 0; color: ${statusColor}; font-weight: 600; font-size: 16px;">${statusText}</p>
-        </div>
-
-        <div style="background: #f3f4f6; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
-            <h4 style="margin: 0 0 12px 0; color: #1f2937; font-size: 14px; font-weight: 600;">Результаты анализа:</h4>
-    `;
-
-    if (result.person_detected) {
-        detailsHTML += `
-            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                <span style="color: #6b7280;">Человек обнаружен:</span>
-                <span style="color: #10b981; font-weight: 600;">✓ Да</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                <span style="color: #6b7280;">Уверенность AI:</span>
-                <span style="font-weight: 600;">${Math.round(result.confidence * 100)}%</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                <span style="color: #6b7280;">Фото в полный рост:</span>
-                <span style="font-weight: 600; color: ${result.is_full_body ? '#10b981' : '#f59e0b'}">
-                    ${result.is_full_body ? '✓ Да' : '⚠ Возможно нет'}
-                </span>
-            </div>
-            ${result.height_ratio ? `
-            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                <span style="color: #6b7280;">Охват кадра по высоте:</span>
-                <span style="font-weight: 600;">${Math.round(result.height_ratio * 100)}%</span>
-            </div>
-            ` : ''}
-        `;
-    } else {
-        detailsHTML += `
-            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                <span style="color: #6b7280;">Человек обнаружен:</span>
-                <span style="color: #ef4444; font-weight: 600;">✗ Нет</span>
-            </div>
-        `;
-    }
-
-    detailsHTML += `</div>`;
-
-    // Add warnings section
-    if (result.warnings && result.warnings.length > 0) {
-        detailsHTML += `
-            <div style="background: #fef3c7; border: 1px solid #fbbf24; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
-                <h4 style="margin: 0 0 12px 0; color: #92400e; font-size: 14px; font-weight: 600;">Рекомендации:</h4>
-        `;
-
-        result.warnings.forEach(warning => {
-            detailsHTML += `
-                <div style="display: flex; align-items: start; margin-bottom: 8px; color: #92400e;">
-                    <span style="margin-right: 8px;">•</span>
-                    <span style="font-size: 14px;">${warning}</span>
-                </div>
-            `;
-        });
-
-        detailsHTML += `</div>`;
-    }
-
-    // Add recommendations for improvement
-    if (result.critical || !result.person_detected) {
-        detailsHTML += `
-            <div style="background: #fee2e2; border: 1px solid #ef4444; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
-                <h4 style="margin: 0 0 12px 0; color: #991b1b; font-size: 14px; font-weight: 600;">Как исправить:</h4>
-                <div style="color: #991b1b; font-size: 14px; line-height: 1.6;">
-                    • Загрузите фото человека в полный рост<br>
-                    • Убедитесь, что человек хорошо виден<br>
-                    • Используйте хорошее освещение<br>
-                    • Избегайте сильного размытия
-                </div>
-            </div>
-        `;
-    } else if (!result.is_full_body || result.confidence < 0.7) {
-        detailsHTML += `
-            <div style="background: #fef3c7; border: 1px solid #fbbf24; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
-                <h4 style="margin: 0 0 12px 0; color: #92400e; font-size: 14px; font-weight: 600;">Для лучшего результата:</h4>
-                <div style="color: #92400e; font-size: 14px; line-height: 1.6;">
-                    • Сфотографируйте человека в полный рост<br>
-                    • Расположите камеру на уровне груди<br>
-                    • Убедитесь что видны ноги до стоп<br>
-                    • Человек должен занимать большую часть кадра
-                </div>
-            </div>
-        `;
-    }
-
-    detailsHTML += `
-        <button onclick="this.closest('.validation-detail-modal').remove()"
-                style="width: 100%; padding: 12px; background: #3b82f6; color: white;
-                       border: none; border-radius: 8px; font-size: 16px; font-weight: 600;
-                       cursor: pointer;">
-            Понятно
-        </button>
-    `;
-
-    content.innerHTML = detailsHTML;
-    modal.appendChild(content);
-
-    // Close on background click
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            modal.remove();
-        }
-    });
-
-    document.body.appendChild(modal);
 }
 
 // Validation Warnings Display
