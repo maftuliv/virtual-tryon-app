@@ -97,7 +97,7 @@ body {
 
 .logo-tap {
     font-weight: 700;
-    font-size: 0.9625rem;
+    font-size: 1.05875rem;
     color: white;
     letter-spacing: 0.02em;
     position: relative;
@@ -110,7 +110,7 @@ body {
     font-weight: 600;
     letter-spacing: -0.025em;
     color: var(--slate-800);
-    font-size: 1.1em;
+    font-size: 1.21em;
     position: relative;
 }
 
