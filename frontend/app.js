@@ -122,12 +122,17 @@ function switchStep(step) {
             step1Content.classList.remove('step-active');
             step1Content.classList.add('step-slide-out-left');
             
+            // Ensure step2 is visible and positioned correctly before animation
             step2Content.style.display = 'block';
-            step2Content.classList.remove('step-slide-out-left');
+            step2Content.style.visibility = 'hidden';
+            step2Content.classList.remove('step-slide-out-left', 'step-active');
             step2Content.classList.add('step-slide-in-right');
             
-            // Trigger reflow
+            // Force reflow to ensure initial state is applied
             step2Content.offsetHeight;
+            
+            // Make visible and start animation
+            step2Content.style.visibility = 'visible';
             
             setTimeout(() => {
                 step2Content.classList.remove('step-slide-in-right');
