@@ -4,6 +4,3 @@ requests==2.31.0
 Pillow==10.1.0
 psycopg2-binary==2.9.9
 sqlalchemy==2.0.23
-opencv-python-headless==4.8.1.78
-mediapipe==0.10.9
-numpy==1.24.3
