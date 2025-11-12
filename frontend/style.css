@@ -119,18 +119,19 @@ body {
     display: inline-block;
 }
 
-.logo-smile::before {
+.logo-smile::after {
     content: ')';
     position: absolute;
-    top: 12px;
+    bottom: -6px;
     left: 50%;
     transform: translateX(-50%) rotate(90deg);
-    font-size: 0.75em;
+    font-size: 0.8em;
     color: var(--slate-800);
     line-height: 1;
     font-weight: 700;
-    -webkit-text-stroke: 0.5px var(--slate-800);
-    text-stroke: 0.5px var(--slate-800);
+    -webkit-text-stroke: 0.8px var(--slate-800);
+    text-stroke: 0.8px var(--slate-800);
+    display: block;
 }
 
 .top-bar-badge {
