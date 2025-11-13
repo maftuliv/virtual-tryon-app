@@ -685,8 +685,12 @@ async function handleTryOn() {
         state.sessionId = uploadData.session_id;
 
         // Step 2: Perform virtual try-on
+        const isMobileForMessage = window.innerWidth <= 768;
+        const messageText = isMobileForMessage 
+            ? '✨ Создается магия твоего стиля ✨'
+            : '<span class="sparkle-emoji">✨</span> Создается магия твоего стиля <span class="sparkle-emoji">✨</span>';
         updateLoadingOverlay(
-            '<span class="sparkle-emoji">✨</span> Создается магия твоего стиля <span class="sparkle-emoji">✨</span>',
+            messageText,
             '💡 Это может занять 10-30 секунд. Пока подумайте, где примените этот образ!'
         );
 
@@ -728,9 +732,8 @@ async function handleTryOn() {
         progressBar.style.display = 'none';
         resultsSection.style.display = 'block';
         
-        // Auto-scroll to results section (desktop only)
-        const isMobile = window.innerWidth <= 768;
-        if (!isMobile && resultsSection) {
+        // Auto-scroll to results section (both desktop and mobile)
+        if (resultsSection) {
             setTimeout(() => {
                 resultsSection.scrollIntoView({ 
                     behavior: 'smooth', 
@@ -939,8 +942,7 @@ function displayResults(results) {
         rightSide.innerHTML = `
             <div class="promo-content">
                 <div class="promo-header">
-                    <h3 class="promo-title">Полноценный образ</h3>
-                    <span class="promo-badge">Скоро</span>
+                    <h3 class="promo-title">Полноценный образ <span class="promo-badge">Скоро</span></h3>
                 </div>
                 <p class="promo-description">
                     Скоро вы сможете собирать целостные образы: официальный, уличный,

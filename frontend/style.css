@@ -3407,9 +3407,6 @@ body::before {
 }
 
 .promo-header {
-    display: flex;
-    align-items: center;
-    gap: 16px;
     margin-bottom: 20px;
 }
 
@@ -3418,6 +3415,10 @@ body::before {
     font-weight: 700;
     color: var(--slate-800);
     letter-spacing: -0.02em;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
 }
 
 .promo-badge {
@@ -3431,6 +3432,8 @@ body::before {
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     color: white;
+    font-size: 0.75em;
+    font-weight: 600;
     font-size: 0.875rem;
     font-weight: 600;
     border-radius: 50px;
@@ -3523,13 +3526,17 @@ body::before {
     }
 
     .promo-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
+        margin-bottom: 16px;
     }
 
     .promo-title {
         font-size: 1.25rem;
+        gap: 8px;
+    }
+    
+    .promo-badge {
+        padding: 4px 12px;
+        font-size: 0.7em;
     }
 
     .promo-description {
