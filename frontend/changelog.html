@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>История проекта - Tap to look</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="changelog.css">
+</head>
+<body>
+    <div class="app-wrapper">
+        <!-- Top Bar -->
+        <header class="top-bar">
+            <div class="top-bar-content">
+                <a href="index.html" class="logo-container">
+                    <div class="logo-icon">
+                        <span class="logo-tap">Tap</span>
+                    </div>
+                    <span class="logo-text">to l<span class="logo-smile">oo</span>k</span>
+                </a>
+                <div class="top-bar-badge">
+                    <span class="badge-text badge-text-responsive">📜 История развития проекта</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Changelog Hero -->
+        <section class="changelog-hero">
+            <h1 class="changelog-title">Ретроспектива проекта</h1>
+            <p class="changelog-subtitle">Путешествие от идеи до реальности — каждое обновление делает сервис лучше</p>
+        </section>
+
+        <!-- Timeline Container -->
+        <div class="timeline-container">
+            <!-- Timeline Navigation -->
+            <div class="timeline-nav">
+                <button class="timeline-nav-btn" id="prevBtn">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M15 18l-6-6 6-6"/>
+                    </svg>
+                </button>
+                <div class="timeline-progress">
+                    <div class="timeline-progress-bar" id="progressBar"></div>
+                </div>
+                <button class="timeline-nav-btn" id="nextBtn">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 18l6-6-6-6"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Timeline Slider -->
+            <div class="timeline-slider" id="timelineSlider">
+                <!-- Update 1: Launch -->
+                <div class="timeline-item" data-version="v1.0.0" data-date="Ноябрь 2024">
+                    <div class="timeline-card">
+                        <div class="timeline-badge">🚀</div>
+                        <div class="timeline-header">
+                            <h2 class="timeline-version">v1.0.0</h2>
+                            <span class="timeline-date">Ноябрь 2024</span>
+                        </div>
+                        <h3 class="timeline-update-title">Первый запуск</h3>
+                        <p class="timeline-description">
+                            Запуск базовой версии виртуальной примерочной. Пользователи могут загружать своё фото
+                            и примерять одежду с помощью AI технологий.
+                        </p>
+                        <div class="timeline-features">
+                            <div class="feature-item">
+                                <span class="feature-icon">✨</span>
+                                <span class="feature-text">Загрузка фото человека и одежды</span>
+                            </div>
+                            <div class="feature-item">
+                                <span class="feature-icon">🎨</span>
+                                <span class="feature-text">Генерация результата примерки</span>
+                            </div>
+                            <div class="feature-item">
+                                <span class="feature-icon">📥</span>
+                                <span class="feature-text">Скачивание результатов</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Update 2: UI Enhancement -->
+                <div class="timeline-item" data-version="v1.1.0" data-date="Ноябрь 2024">
+                    <div class="timeline-card">
+                        <div class="timeline-badge">🎨</div>
+                        <div class="timeline-header">
+                            <h2 class="timeline-version">v1.1.0</h2>
+                            <span class="timeline-date">Ноябрь 2024</span>
+                        </div>
+                        <h3 class="timeline-update-title">Улучшение дизайна</h3>
+                        <p class="timeline-description">
+                            Полное обновление визуального стиля. Добавлен эффект матового стекла,
+                            градиенты и плавные анимации для лучшего пользовательского опыта.
+                        </p>
+                        <div class="timeline-features">
+                            <div class="feature-item">
+                                <span class="feature-icon">💎</span>
+                                <span class="feature-text">Эффект матового стекла (glassmorphism)</span>
+                            </div>
+                            <div class="feature-item">
+                                <span class="feature-icon">🌈</span>
+                                <span class="feature-text">Розово-фиолетовые градиенты</span>
+                            </div>
+                            <div class="feature-item">
+                                <span class="feature-icon">✨</span>
+                                <span class="feature-text">Плавные анимации переходов</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Update 3: User Experience -->
+                <div class="timeline-item" data-version="v1.2.0" data-date="Ноябрь 2024">
+                    <div class="timeline-card">
+                        <div class="timeline-badge">👥</div>
+                        <div class="timeline-header">
+                            <h2 class="timeline-version">v1.2.0</h2>
+                            <span class="timeline-date">Ноябрь 2024</span>
+                        </div>
+                        <h3 class="timeline-update-title">Улучшение UX</h3>
+                        <p class="timeline-description">
+                            Добавлены подсказки, примеры хороших фотографий и система обратной связи
+                            для улучшения качества результатов.
+                        </p>
+                        <div class="timeline-features">
+                            <div class="feature-item">
+                                <span class="feature-icon">💡</span>
+                                <span class="feature-text">Интерактивные подсказки</span>
+                            </div>
+                            <div class="feature-item">
+                                <span class="feature-icon">🖼️</span>
+                                <span class="feature-text">Галерея примеров фото</span>
+                            </div>
+                            <div class="feature-item">
+                                <span class="feature-icon">⭐</span>
+                                <span class="feature-text">Форма обратной связи с рейтингом</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Update 4: Advanced Features -->
+                <div class="timeline-item" data-version="v1.3.0" data-date="Ноябрь 2024">
+                    <div class="timeline-card">
+                        <div class="timeline-badge">⚡</div>
+                        <div class="timeline-header">
+                            <h2 class="timeline-version">v1.3.0</h2>
+                            <span class="timeline-date">Ноябрь 2024</span>
+                        </div>
+                        <h3 class="timeline-update-title">Расширенные возможности</h3>
+                        <p class="timeline-description">
+                            Добавлена поддержка множественных фотографий, улучшена валидация
+                            и оптимизирована скорость обработки.
+                        </p>
+                        <div class="timeline-features">
+                            <div class="feature-item">
+                                <span class="feature-icon">📸</span>
+                                <span class="feature-text">Пакетная обработка фотографий</span>
+                            </div>
+                            <div class="feature-item">
+                                <span class="feature-icon">🎯</span>
+                                <span class="feature-text">Умная валидация изображений</span>
+                            </div>
+                            <div class="feature-item">
+                                <span class="feature-icon">⚡</span>
+                                <span class="feature-text">Оптимизация производительности</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Update 5: Results Redesign -->
+                <div class="timeline-item" data-version="v1.4.0" data-date="Ноябрь 2024">
+                    <div class="timeline-card">
+                        <div class="timeline-badge">🎉</div>
+                        <div class="timeline-header">
+                            <h2 class="timeline-version">v1.4.0</h2>
+                            <span class="timeline-date">Ноябрь 2024</span>
+                        </div>
+                        <h3 class="timeline-update-title">Новый дизайн результатов</h3>
+                        <p class="timeline-description">
+                            Полностью переработан блок результатов с красивым градиентом и анонсом
+                            будущего функционала "Полноценный образ".
+                        </p>
+                        <div class="timeline-features">
+                            <div class="feature-item">
+                                <span class="feature-icon">🌸</span>
+                                <span class="feature-text">Элегантный градиент фон</span>
+                            </div>
+                            <div class="feature-item">
+                                <span class="feature-icon">🔄</span>
+                                <span class="feature-text">Кнопка "Повторить" для новой примерки</span>
+                            </div>
+                            <div class="feature-item">
+                                <span class="feature-icon">🎯</span>
+                                <span class="feature-text">Кликабельный логотип</span>
+                            </div>
+                            <div class="feature-item">
+                                <span class="feature-icon">👔</span>
+                                <span class="feature-text">Анонс "Полноценный образ"</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Update 6: Coming Soon -->
+                <div class="timeline-item timeline-item-future" data-version="v2.0.0" data-date="Скоро">
+                    <div class="timeline-card">
+                        <div class="timeline-badge">🔮</div>
+                        <div class="timeline-header">
+                            <h2 class="timeline-version">v2.0.0</h2>
+                            <span class="timeline-date">Скоро</span>
+                        </div>
+                        <h3 class="timeline-update-title">Полноценный образ</h3>
+                        <p class="timeline-description">
+                            Скоро вы сможете собирать целостные образы: официальный, уличный,
+                            вечерний — подбирайте одежду, обувь и аксессуары одним нажатием!
+                        </p>
+                        <div class="timeline-features">
+                            <div class="feature-item feature-item-future">
+                                <span class="feature-icon">✨</span>
+                                <span class="feature-text">Полный образ за один клик</span>
+                            </div>
+                            <div class="feature-item feature-item-future">
+                                <span class="feature-icon">👔</span>
+                                <span class="feature-text">Все стили мероприятий</span>
+                            </div>
+                            <div class="feature-item feature-item-future">
+                                <span class="feature-icon">👟</span>
+                                <span class="feature-text">Одежда + обувь + аксессуары</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timeline Dots -->
+            <div class="timeline-dots" id="timelineDots"></div>
+        </div>
+
+        <!-- Back to Home -->
+        <div class="changelog-footer">
+            <a href="index.html" class="back-to-home-btn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                Вернуться на главную
+            </a>
+        </div>
+    </div>
+
+    <script src="changelog.js"></script>
+</body>
+</html>

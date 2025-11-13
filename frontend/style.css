@@ -1011,6 +1011,36 @@ body {
     padding: 0 16px 40px;
 }
 
+.footer-links {
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+.footer-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 50px;
+    color: var(--slate-700);
+    text-decoration: none;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.footer-link:hover {
+    background: linear-gradient(135deg,
+        rgba(251, 207, 232, 0.5) 0%,
+        rgba(233, 213, 255, 0.5) 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.15);
+}
+
 .footer-text {
     font-size: 0.75rem;
     color: var(--slate-500);
