@@ -2755,6 +2755,23 @@ body::before {
     }
 }
 
+/* Helper message above button */
+.cta-helper-message {
+    text-align: center;
+    margin-bottom: 16px;
+    padding: 12px 20px;
+    background: rgba(168, 85, 247, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(168, 85, 247, 0.25);
+    border-radius: 12px;
+    color: #a855f7;
+    font-size: 0.95em;
+    font-weight: 600;
+    animation: slideInDown 0.3s ease;
+    line-height: 1.5;
+}
+
 /* Stylized features text under button */
 .cta-features-text {
     text-align: center;
@@ -2805,6 +2822,12 @@ body::before {
 
 /* Mobile: ensure features text stays on one line */
 @media (max-width: 768px) {
+    .cta-helper-message {
+        font-size: 0.9em;
+        padding: 10px 16px;
+        margin-bottom: 12px;
+    }
+    
     .cta-features-text {
         font-size: 0.85em;
         letter-spacing: 0.5px;

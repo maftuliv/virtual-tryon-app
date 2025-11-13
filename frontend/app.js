@@ -653,6 +653,37 @@ function updateGenerateSwitch() {
             generateSwitch.classList.add('disabled');
         }
     }
+    
+    // Update helper message above button
+    updateCtaHelperMessage(hasPersonImages, hasGarmentImage, canGenerate);
+}
+
+function updateCtaHelperMessage(hasPersonImages, hasGarmentImage, canGenerate) {
+    const helperMessage = document.getElementById('ctaHelperMessage');
+    if (!helperMessage) return;
+    
+    // Если все готово, скрываем сообщение
+    if (canGenerate) {
+        helperMessage.style.display = 'none';
+        return;
+    }
+    
+    // Если загружено фото пользователя, но нет фото одежды
+    if (hasPersonImages && !hasGarmentImage) {
+        helperMessage.textContent = '👍 Отлично! Теперь загрузите фото желаемой одежды';
+        helperMessage.style.display = 'block';
+        return;
+    }
+    
+    // Если загружено фото одежды, но нет фото пользователя
+    if (!hasPersonImages && hasGarmentImage) {
+        helperMessage.textContent = '👍 Отлично! Теперь загрузите своё фото';
+        helperMessage.style.display = 'block';
+        return;
+    }
+    
+    // Если ничего не загружено
+    helperMessage.style.display = 'none';
 }
 
 // Handle Try-On Process
