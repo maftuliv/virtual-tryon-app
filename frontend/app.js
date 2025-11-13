@@ -42,6 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupStepper();
     checkServerHealth();
     setupAdminAccess();
+    checkOnboarding();
 });
 
 // Setup admin access with keyboard shortcut
@@ -2045,12 +2046,79 @@ window.testMixed = function() {
     console.log('✅ Test mixed results displayed successfully');
 };
 
+// ===================================
+// ONBOARDING FUNCTIONS
+// ===================================
+
+function checkOnboarding() {
+    const hasVisited = localStorage.getItem('onboarding_completed');
+
+    if (!hasVisited) {
+        // Show onboarding after a short delay for better UX
+        setTimeout(() => {
+            showOnboarding();
+        }, 500);
+    }
+}
+
+function showOnboarding() {
+    const modal = document.getElementById('onboardingModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden'; // Prevent scrolling
+    }
+}
+
+function closeOnboarding() {
+    const modal = document.getElementById('onboardingModal');
+    const dontShowAgain = document.getElementById('dontShowAgain');
+
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = ''; // Restore scrolling
+    }
+
+    // Save preference if checkbox is checked
+    if (dontShowAgain && dontShowAgain.checked) {
+        localStorage.setItem('onboarding_completed', 'true');
+    }
+}
+
+function startTryOn() {
+    const dontShowAgain = document.getElementById('dontShowAgain');
+
+    // Always mark as completed when user clicks "Start"
+    localStorage.setItem('onboarding_completed', 'true');
+
+    closeOnboarding();
+
+    // Scroll to step 1 (upload section)
+    setTimeout(() => {
+        const step1 = document.getElementById('step1Btn');
+        if (step1) {
+            step1.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }, 300);
+}
+
+// Add button to reopen onboarding (can be called from console or help menu)
+window.showOnboardingHelp = function() {
+    showOnboarding();
+};
+
 // Secret keyboard shortcut: Ctrl + Shift + T
 document.addEventListener('keydown', (e) => {
     if (e.ctrlKey && e.shiftKey && e.key === 'T') {
         e.preventDefault();
         console.log('🔐 Secret shortcut activated!');
         window.testResults();
+    }
+
+    // Secret shortcut to reopen onboarding: Ctrl + Shift + H (Help)
+    if (e.ctrlKey && e.shiftKey && e.key === 'H') {
+        e.preventDefault();
+        console.log('📖 Onboarding help opened');
+        showOnboarding();
     }
 });
 
