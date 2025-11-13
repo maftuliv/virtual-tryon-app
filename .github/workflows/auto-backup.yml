@@ -8,6 +8,10 @@ on:
   # Можно запустить вручную
   workflow_dispatch:
 
+# Дать права на запись в репозиторий
+permissions:
+  contents: write
+
 jobs:
   backup:
     runs-on: ubuntu-latest
