@@ -22,8 +22,7 @@ const generateSwitch = document.getElementById('generateSwitch');
 const progressBar = document.getElementById('progressBar');
 const resultsSection = document.getElementById('resultsSection');
 const resultsGrid = document.getElementById('resultsGrid');
-const resetBtn = document.getElementById('resetBtn');
-const downloadAllBtn = document.getElementById('downloadAllBtn');
+// resetBtn is now created dynamically in each result card
 const errorMessage = document.getElementById('errorMessage');
 const errorText = document.getElementById('errorText');
 const ratingSlider = document.getElementById('ratingSlider');
@@ -271,8 +270,8 @@ function setupEventListeners() {
         });
     }
 
-    resetBtn.addEventListener('click', resetApplication);
-    downloadAllBtn.addEventListener('click', downloadAllResults);
+    // Reset button is now in each result card, no need for global handler
+    // downloadAllBtn removed - functionality removed
 
     // Category selector
     document.querySelectorAll('input[name="garmentCategory"]').forEach(radio => {
@@ -777,13 +776,24 @@ function displayResults(results) {
         const title = document.createElement('h3');
         title.textContent = `Результат ${index + 1}`;
 
+        const buttonsContainer = document.createElement('div');
+        buttonsContainer.className = 'result-buttons-container';
+
         const downloadBtn = document.createElement('button');
         downloadBtn.className = 'download-btn';
         downloadBtn.innerHTML = '💾 Скачать';
         downloadBtn.onclick = () => downloadResult(result.result_image, index);
 
+        const resetBtn = document.createElement('button');
+        resetBtn.className = 'reset-btn';
+        resetBtn.innerHTML = '🔄 Начать заново';
+        resetBtn.onclick = () => resetApplication();
+
+        buttonsContainer.appendChild(downloadBtn);
+        buttonsContainer.appendChild(resetBtn);
+
         info.appendChild(title);
-        info.appendChild(downloadBtn);
+        info.appendChild(buttonsContainer);
 
         card.appendChild(img);
         card.appendChild(info);
@@ -846,16 +856,7 @@ function downloadResult(imageData, index) {
     link.click();
 }
 
-// Download All Results
-function downloadAllResults() {
-    const resultImages = resultsGrid.querySelectorAll('img');
-
-    resultImages.forEach((img, index) => {
-        setTimeout(() => {
-            downloadResult(img.src, index);
-        }, index * 200); // Delay to avoid blocking
-    });
-}
+// downloadAllResults function removed - functionality no longer needed
 
 // Reset Application
 function resetApplication() {

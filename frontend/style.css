@@ -1490,21 +1490,40 @@ body::before {
     color: var(--text-primary);
 }
 
-.download-btn {
-    background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
-    color: white;
-    border: none;
-    padding: 12px 28px;
-    border-radius: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    font-size: 0.95em;
-    transition: all 0.2s ease;
+.result-buttons-container {
+    display: flex;
+    gap: 12px;
+    margin-top: 12px;
 }
 
-.download-btn:hover {
-    background: #059669;
-    transform: scale(1.05);
+.download-btn,
+.reset-btn {
+    background: rgba(236, 72, 153, 0.4);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    color: var(--text-primary);
+    border: 2px solid rgba(236, 72, 153, 0.5);
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.download-btn:hover,
+.reset-btn:hover {
+    background: rgba(236, 72, 153, 0.5);
+    border-color: rgba(236, 72, 153, 0.7);
+    box-shadow: 0 4px 12px rgba(236, 72, 153, 0.2);
+    transform: translateY(-2px);
+}
+
+.download-btn:active,
+.reset-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(236, 72, 153, 0.15);
 }
 
 .action-buttons {
@@ -1763,26 +1782,31 @@ body::before {
 .btn-feedback {
     width: 100%;
     padding: 15px 30px;
-    background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
-    color: white;
-    border: none;
+    background: rgba(236, 72, 153, 0.4);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    color: var(--text-primary);
+    border: 2px solid rgba(236, 72, 153, 0.5);
     border-radius: 50px;
     font-size: 1.1em;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 8px 25px rgba(168, 85, 247, 0.3);
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     position: relative;
     overflow: hidden;
 }
 
 .btn-feedback:hover:not(:disabled) {
+    background: rgba(236, 72, 153, 0.5);
+    border-color: rgba(236, 72, 153, 0.7);
+    box-shadow: 0 4px 12px rgba(236, 72, 153, 0.2);
     transform: translateY(-2px);
-    box-shadow: 0 12px 35px rgba(168, 85, 247, 0.4);
 }
 
 .btn-feedback:active:not(:disabled) {
     transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(236, 72, 153, 0.15);
 }
 
 .btn-feedback:disabled {
