@@ -660,30 +660,46 @@ function updateGenerateSwitch() {
 
 function updateCtaHelperMessage(hasPersonImages, hasGarmentImage, canGenerate) {
     const helperMessage = document.getElementById('ctaHelperMessage');
-    if (!helperMessage) return;
+    const helperMessageMobile = document.getElementById('ctaHelperMessageMobile');
+    
+    let messageText = '';
+    let shouldShow = false;
     
     // Если все готово, скрываем сообщение
     if (canGenerate) {
-        helperMessage.style.display = 'none';
-        return;
+        shouldShow = false;
+    } else if (hasPersonImages && !hasGarmentImage) {
+        // Если загружено фото пользователя, но нет фото одежды
+        messageText = '👍 Отлично! Теперь загрузите фото желаемой одежды <em>(шаг 2)</em>';
+        shouldShow = true;
+    } else if (!hasPersonImages && hasGarmentImage) {
+        // Если загружено фото одежды, но нет фото пользователя
+        messageText = '👍 Отлично! Теперь загрузите своё фото <em>(шаг 1)</em>';
+        shouldShow = true;
+    } else {
+        // Если ничего не загружено
+        shouldShow = false;
     }
     
-    // Если загружено фото пользователя, но нет фото одежды
-    if (hasPersonImages && !hasGarmentImage) {
-        helperMessage.innerHTML = '👍 Отлично! Теперь загрузите фото желаемой одежды <em>(шаг 2)</em>';
-        helperMessage.style.display = 'block';
-        return;
+    // Обновляем десктопную версию (в sidebar)
+    if (helperMessage) {
+        if (shouldShow) {
+            helperMessage.innerHTML = messageText;
+            helperMessage.style.display = 'block';
+        } else {
+            helperMessage.style.display = 'none';
+        }
     }
     
-    // Если загружено фото одежды, но нет фото пользователя
-    if (!hasPersonImages && hasGarmentImage) {
-        helperMessage.innerHTML = '👍 Отлично! Теперь загрузите своё фото <em>(шаг 1)</em>';
-        helperMessage.style.display = 'block';
-        return;
+    // Обновляем мобильную версию (между stepper и main content)
+    if (helperMessageMobile) {
+        if (shouldShow) {
+            helperMessageMobile.innerHTML = messageText;
+            helperMessageMobile.style.display = 'block';
+        } else {
+            helperMessageMobile.style.display = 'none';
+        }
     }
-    
-    // Если ничего не загружено
-    helperMessage.style.display = 'none';
 }
 
 // Handle Try-On Process

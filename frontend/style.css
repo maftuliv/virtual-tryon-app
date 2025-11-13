@@ -2755,7 +2755,7 @@ body::before {
     }
 }
 
-/* Helper message above button */
+/* Helper message above button (desktop version) */
 .cta-helper-message {
     text-align: center;
     margin-bottom: 16px;
@@ -2776,6 +2776,53 @@ body::before {
     font-style: italic;
     opacity: 0.85;
     font-weight: 500;
+}
+
+/* Helper message for mobile (between stepper and main content) */
+.cta-helper-message-mobile {
+    display: none; /* Hidden by default, controlled by JS */
+    max-width: 1400px;
+    margin: 16px auto;
+    padding: 12px 20px;
+    text-align: center;
+    background: rgba(168, 85, 247, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(168, 85, 247, 0.25);
+    border-radius: 12px;
+    color: #a855f7;
+    font-size: 0.95em;
+    font-weight: 600;
+    animation: slideInDown 0.3s ease;
+    line-height: 1.5;
+}
+
+.cta-helper-message-mobile em {
+    font-style: italic;
+    opacity: 0.85;
+    font-weight: 500;
+}
+
+@media (max-width: 768px) {
+    .cta-helper-message-mobile {
+        margin: 16px 16px;
+        padding: 12px 16px;
+        font-size: 0.9em;
+    }
+}
+
+/* Hide desktop version on mobile */
+@media (max-width: 768px) {
+    .cta-helper-message {
+        display: none !important; /* Скрываем десктопную версию на мобильных */
+    }
+}
+
+/* Hide mobile version on desktop */
+@media (min-width: 769px) {
+    .cta-helper-message-mobile {
+        display: none !important; /* Скрываем мобильную версию на десктопе */
+    }
 }
 
 /* Stylized features text under button */
