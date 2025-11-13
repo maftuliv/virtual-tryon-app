@@ -939,75 +939,112 @@ function displayResults(results) {
     }
 }
 
-// Download Single Result from URL - Best for mobile devices
-async function downloadResultFromUrl(imageUrl, filename, index) {
+// Universal function to save image to gallery on mobile devices
+// Uses Web Share API for iOS/Android, or shows fullscreen modal for long-press save
+async function saveImageToGallery(imageSource, filename, index) {
     try {
-        // Detect mobile devices
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-        const isTelegram = /Telegram/i.test(navigator.userAgent) || 
-                         window.Telegram || 
-                         window.TelegramWebApp;
         
-        if (isMobile) {
-            // For mobile devices, especially iOS and Telegram browser
-            if (isIOS && isTelegram) {
-                // For iOS in Telegram browser - open URL directly
-                // The server sends proper Content-Disposition headers
-                const link = document.createElement('a');
-                link.href = imageUrl;
-                link.download = filename;
-                link.target = '_blank';
-                link.rel = 'noopener noreferrer';
-                link.style.cssText = 'position: fixed; left: -9999px; opacity: 0; pointer-events: none;';
-                
-                document.body.appendChild(link);
-                link.click();
-                
-                // Clean up
-                setTimeout(() => {
-                    if (link.parentNode) {
-                        document.body.removeChild(link);
-                    }
-                }, 1000);
-                
-                // Also show message for iOS Telegram
-                showInfo('Если изображение не скачалось автоматически, сделайте длительное нажатие на ссылку и выберите "Сохранить в Фото".');
-            } else if (isIOS) {
-                // For iOS Safari - use download link
-                const link = document.createElement('a');
-                link.href = imageUrl;
-                link.download = filename;
-                link.style.cssText = 'position: fixed; left: -9999px; opacity: 0; pointer-events: none;';
-                
-                document.body.appendChild(link);
-                link.click();
-                
-                setTimeout(() => {
-                    if (link.parentNode) {
-                        document.body.removeChild(link);
-                    }
-                }, 1000);
+        // Step 1: Convert image source to Blob
+        let blob;
+        let blobUrl;
+        
+        if (typeof imageSource === 'string') {
+            if (imageSource.startsWith('data:')) {
+                // Base64 data URL
+                const base64Data = imageSource.split(',')[1];
+                const byteCharacters = atob(base64Data);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                blob = new Blob([byteArray], { type: 'image/png' });
+                blobUrl = URL.createObjectURL(blob);
             } else {
-                // Android and other mobile devices
-                const link = document.createElement('a');
-                link.href = imageUrl;
-                link.download = filename;
-                link.style.cssText = 'position: fixed; left: -9999px; opacity: 0;';
-                
-                document.body.appendChild(link);
-                link.click();
-                
-                setTimeout(() => {
-                    if (link.parentNode) {
-                        document.body.removeChild(link);
+                // URL - fetch and convert to Blob
+                try {
+                    // Use fetch with credentials for CORS
+                    const response = await fetch(imageSource, {
+                        method: 'GET',
+                        mode: 'cors',
+                        credentials: 'omit',
+                        cache: 'no-cache'
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
                     }
-                }, 1000);
+                    
+                    blob = await response.blob();
+                    
+                    // Verify it's an image
+                    if (!blob.type.startsWith('image/')) {
+                        throw new Error('Response is not an image');
+                    }
+                    
+                    blobUrl = URL.createObjectURL(blob);
+                } catch (fetchError) {
+                    console.error('Error fetching image:', fetchError);
+                    
+                    // Fallback: show fullscreen modal with direct URL
+                    // User can long-press to save
+                    showFullscreenImageModal(imageSource, filename);
+                    return;
+                }
             }
+        } else if (imageSource instanceof Blob) {
+            blob = imageSource;
+            blobUrl = URL.createObjectURL(blob);
         } else {
-            // Desktop browsers - standard download
+            throw new Error('Invalid image source');
+        }
+        
+        // Step 2: For mobile devices, use Web Share API or show fullscreen modal
+        if (isMobile) {
+            // Try Web Share API first (iOS 12.2+, Android Chrome 89+)
+            if (navigator.share && navigator.canShare) {
+                try {
+                    // Create File object from Blob
+                    const file = new File([blob], filename, {
+                        type: 'image/png',
+                        lastModified: Date.now()
+                    });
+                    
+                    const shareData = {
+                        files: [file],
+                        title: 'Tap to Look - Результат примерки',
+                        text: 'Мой результат виртуальной примерки'
+                    };
+                    
+                    // Check if we can share files
+                    if (navigator.canShare && navigator.canShare(shareData)) {
+                        await navigator.share(shareData);
+                        // Clean up
+                        setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+                        return; // Success - user chose where to save (Photos, Files, etc.)
+                    }
+                } catch (shareError) {
+                    // Web Share API failed or user cancelled
+                    // Error code 20 = user cancelled (AbortError)
+                    if (shareError.name === 'AbortError' || shareError.code === 20) {
+                        console.log('User cancelled share');
+                        URL.revokeObjectURL(blobUrl);
+                        return;
+                    }
+                    console.log('Web Share API error:', shareError);
+                    // Fall through to fullscreen modal
+                }
+            }
+            
+            // Step 3: Fallback - Show fullscreen modal with image
+            // User can long-press to save to gallery
+            showFullscreenImageModal(blobUrl, filename);
+        } else {
+            // Desktop - standard download
             const link = document.createElement('a');
-            link.href = imageUrl;
+            link.href = blobUrl;
             link.download = filename;
             link.style.cssText = 'position: fixed; left: -9999px; opacity: 0;';
             
@@ -1018,228 +1055,217 @@ async function downloadResultFromUrl(imageUrl, filename, index) {
                 if (link.parentNode) {
                     document.body.removeChild(link);
                 }
+                URL.revokeObjectURL(blobUrl);
             }, 1000);
         }
     } catch (error) {
-        console.error('Error downloading image from URL:', error);
-        // Fallback: open URL in new tab
-        window.open(imageUrl, '_blank');
-        showInfo('Не удалось скачать изображение автоматически. Изображение открыто в новой вкладке - используйте "Сохранить изображение".');
+        console.error('Error saving image to gallery:', error);
+        showError('Не удалось сохранить изображение. Попробуйте сделать длительное нажатие на изображение.');
     }
 }
 
-// Download Single Result - Mobile-friendly implementation (for base64 images)
-async function downloadResult(imageData, index) {
-    try {
-        // Generate filename with timestamp for uniqueness
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-        const filename = `tap-to-look-${timestamp}-${index + 1}.png`;
-        
-        // Detect mobile devices
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-        
-        // Extract base64 data from data URL if present
-        let base64Data = imageData;
-        if (imageData.startsWith('data:')) {
-            base64Data = imageData.split(',')[1];
-        }
-        
-        // Convert base64 to Blob
-        const byteCharacters = atob(base64Data);
-        const byteNumbers = new Array(byteCharacters.length);
-        for (let i = 0; i < byteCharacters.length; i++) {
-            byteNumbers[i] = byteCharacters.charCodeAt(i);
-        }
-        const byteArray = new Uint8Array(byteNumbers);
-        const blob = new Blob([byteArray], { type: 'image/png' });
-        
-        // Create object URL from blob
-        const blobUrl = URL.createObjectURL(blob);
-        
-        if (isMobile) {
-            // For mobile devices, especially iOS
-            if (isIOS) {
-                // iOS-specific handling
-                // Method 1: Try using the Web Share API (iOS 12.2+)
-                // This allows saving directly to Photos app
-                if (navigator.share && navigator.canShare) {
-                    try {
-                        const file = new File([blob], filename, { 
-                            type: 'image/png',
-                            lastModified: Date.now()
-                        });
-                        const shareData = {
-                            files: [file],
-                            title: 'Tap to Look - Результат примерки',
-                            text: 'Мой результат виртуальной примерки'
-                        };
-                        
-                        if (navigator.canShare(shareData)) {
-                            await navigator.share(shareData);
-                            URL.revokeObjectURL(blobUrl);
-                            return;
-                        }
-                    } catch (shareError) {
-                        // Share API failed, cancelled, or not supported
-                        // Fall through to download method
-                        console.log('Share API not available or cancelled:', shareError);
-                    }
-                }
-                
-                // Method 2: Detect if we're in Telegram browser
-                const isTelegramBrowser = /Telegram/i.test(navigator.userAgent) || 
-                                         window.Telegram || 
-                                         window.TelegramWebApp;
-                
-                let telegramWindowOpened = false;
-                
-                if (isTelegramBrowser) {
-                    // For Telegram browser on iOS - show image in new window
-                    // User can long-press and save to Photos
-                    try {
-                        const newWindow = window.open('', '_blank');
-                        if (newWindow) {
-                            newWindow.document.write(`
-                                <!DOCTYPE html>
-                                <html>
-                                <head>
-                                    <meta charset="UTF-8">
-                                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                                    <title>${filename}</title>
-                                    <style>
-                                        * { margin: 0; padding: 0; box-sizing: border-box; }
-                                        body {
-                                            display: flex;
-                                            justify-content: center;
-                                            align-items: center;
-                                            min-height: 100vh;
-                                            background: #000;
-                                            padding: 20px;
-                                        }
-                                        img {
-                                            max-width: 100%;
-                                            max-height: 100vh;
-                                            height: auto;
-                                            width: auto;
-                                            object-fit: contain;
-                                        }
-                                    </style>
-                                </head>
-                                <body>
-                                    <img src="${blobUrl}" alt="${filename}" />
-                                </body>
-                                </html>
-                            `);
-                            newWindow.document.close();
-                            telegramWindowOpened = true;
-                            
-                            // Show message to user
-                            showInfo('Изображение открыто в новой вкладке. Сделайте длительное нажатие на изображение и выберите "Сохранить в Фото".');
-                            
-                            // Don't revoke URL immediately - user needs it to save
-                            setTimeout(() => {
-                                URL.revokeObjectURL(blobUrl);
-                            }, 60000); // Revoke after 60 seconds
-                        }
-                    } catch (e) {
-                        console.log('Error opening Telegram window:', e);
-                        telegramWindowOpened = false;
-                    }
-                }
-                
-                // Method 3: Standard download for iOS (if Telegram window method didn't work)
-                if (!telegramWindowOpened) {
-                    const link = document.createElement('a');
-                    link.href = blobUrl;
-                    link.download = filename;
-                    link.style.cssText = 'position: fixed; left: -9999px; opacity: 0; pointer-events: none;';
-                    
-                    // Add to DOM
-                    document.body.appendChild(link);
-                    
-                    // Trigger download with proper event
-                    const clickEvent = new MouseEvent('click', {
-                        view: window,
-                        bubbles: true,
-                        cancelable: true,
-                        buttons: 1
-                    });
-                    
-                    // Dispatch event and also try direct click
-                    link.dispatchEvent(clickEvent);
-                    link.click();
-                    
-                    // Clean up after delay
-                    setTimeout(() => {
-                        if (link.parentNode) {
-                            document.body.removeChild(link);
-                        }
-                        // Don't revoke URL immediately - iOS may need time to process
-                        setTimeout(() => {
-                            URL.revokeObjectURL(blobUrl);
-                        }, 3000);
-                    }, 1000);
-                }
-                
-            } else {
-                // Android and other mobile devices
-                const link = document.createElement('a');
-                link.href = blobUrl;
-                link.download = filename;
-                link.style.cssText = 'position: fixed; left: -9999px; opacity: 0;';
-                
-                // Set attributes explicitly for better mobile support
-                link.setAttribute('download', filename);
-                link.setAttribute('type', 'image/png');
-                
-                document.body.appendChild(link);
-                
-                // Trigger download
-                link.click();
-                
-                setTimeout(() => {
-                    if (link.parentNode) {
-                        document.body.removeChild(link);
-                    }
-                    URL.revokeObjectURL(blobUrl);
-                }, 500);
-            }
-        } else {
-            // Desktop browsers - standard download
-            const link = document.createElement('a');
-            link.href = blobUrl;
-            link.download = filename;
-            link.style.display = 'none';
-            
-            document.body.appendChild(link);
-            link.click();
-            
-            setTimeout(() => {
-                document.body.removeChild(link);
-                URL.revokeObjectURL(blobUrl);
-            }, 100);
-        }
-    } catch (error) {
-        console.error('Error downloading image:', error);
-        
-        // Fallback: Try simple download method
-        try {
-            const link = document.createElement('a');
-            link.href = imageData;
-            link.download = `virtual-tryon-result-${index + 1}.png`;
-            link.style.display = 'none';
-            document.body.appendChild(link);
-            link.click();
-            setTimeout(() => {
-                document.body.removeChild(link);
-            }, 100);
-        } catch (fallbackError) {
-            console.error('Fallback download also failed:', fallbackError);
-            // Show error message to user
-            showError('Не удалось скачать изображение. Попробуйте длительное нажатие на изображение и выберите "Сохранить изображение".');
-        }
+// Show fullscreen modal with image for long-press save
+function showFullscreenImageModal(imageUrl, filename) {
+    // Remove existing modal if present
+    const existingModal = document.getElementById('fullscreenImageModal');
+    if (existingModal) {
+        existingModal.remove();
     }
+    
+    // Check if URL is a blob URL (needs cleanup) or regular URL
+    const isBlobUrl = imageUrl.startsWith('blob:');
+    
+    // Create modal
+    const modal = document.createElement('div');
+    modal.id = 'fullscreenImageModal';
+    modal.className = 'fullscreen-image-modal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.98);
+        z-index: 10000;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        box-sizing: border-box;
+        animation: fadeIn 0.3s ease;
+    `;
+    
+    // Add fade-in animation
+    if (!document.getElementById('fullscreenModalStyles')) {
+        const style = document.createElement('style');
+        style.id = 'fullscreenModalStyles';
+        style.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    // Create close button
+    const closeBtn = document.createElement('button');
+    closeBtn.innerHTML = '✕';
+    closeBtn.setAttribute('aria-label', 'Закрыть');
+    closeBtn.style.cssText = `
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: rgba(255, 255, 255, 0.25);
+        border: 2px solid rgba(255, 255, 255, 0.5);
+        color: white;
+        font-size: 28px;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        cursor: pointer;
+        z-index: 10001;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s;
+    `;
+    closeBtn.onmouseover = () => {
+        closeBtn.style.background = 'rgba(255, 255, 255, 0.4)';
+    };
+    closeBtn.onmouseout = () => {
+        closeBtn.style.background = 'rgba(255, 255, 255, 0.25)';
+    };
+    closeBtn.onclick = () => {
+        modal.remove();
+        if (isBlobUrl) {
+            URL.revokeObjectURL(imageUrl);
+        }
+    };
+    
+    // Create instruction text
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const instruction = document.createElement('div');
+    instruction.innerHTML = isIOS ? 
+        '<strong>💾 Сохранить в Фото:</strong><br>Сделайте длительное нажатие на изображение и выберите "Сохранить в Фото"' :
+        '<strong>💾 Сохранить изображение:</strong><br>Сделайте длительное нажатие на изображение и выберите "Сохранить изображение"';
+    instruction.style.cssText = `
+        color: white;
+        font-size: 14px;
+        text-align: center;
+        margin-bottom: 15px;
+        padding: 12px 20px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        line-height: 1.5;
+    `;
+    
+    // Create image container
+    const imgContainer = document.createElement('div');
+    imgContainer.style.cssText = `
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        max-width: 100%;
+        max-height: calc(100% - 120px);
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+    `;
+    
+    // Create image
+    const img = document.createElement('img');
+    img.src = imageUrl;
+    img.alt = filename;
+    img.style.cssText = `
+        max-width: 100%;
+        max-height: 100%;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+        -webkit-user-select: none;
+        -webkit-touch-callout: default;
+        touch-action: manipulation;
+        display: block;
+    `;
+    
+    // Handle image load error
+    img.onerror = () => {
+        instruction.textContent = 'Ошибка загрузки изображения';
+        instruction.style.color = '#ff6b6b';
+    };
+    
+    // Make image downloadable via long press
+    // Don't prevent default context menu - let browser handle it
+    // This allows users to long-press and save image
+    
+    // Add image to container
+    imgContainer.appendChild(img);
+    
+    // Assemble modal
+    modal.appendChild(closeBtn);
+    modal.appendChild(instruction);
+    modal.appendChild(imgContainer);
+    
+    // Add to document
+    document.body.appendChild(modal);
+    
+    // Prevent body scroll when modal is open
+    document.body.style.overflow = 'hidden';
+    
+    // Close function
+    const closeModal = () => {
+        modal.remove();
+        document.body.style.overflow = '';
+        if (isBlobUrl) {
+            URL.revokeObjectURL(imageUrl);
+        }
+    };
+    
+    // Close on background click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal || e.target === imgContainer) {
+            closeModal();
+        }
+    });
+    
+    // Close on Escape key
+    const escapeHandler = (e) => {
+        if (e.key === 'Escape') {
+            closeModal();
+            document.removeEventListener('keydown', escapeHandler);
+        }
+    };
+    document.addEventListener('keydown', escapeHandler);
+    
+    // Clean up on modal removal
+    const observer = new MutationObserver(() => {
+        if (!document.getElementById('fullscreenImageModal')) {
+            document.body.style.overflow = '';
+            if (isBlobUrl) {
+                URL.revokeObjectURL(imageUrl);
+            }
+            observer.disconnect();
+        }
+    });
+    observer.observe(document.body, { childList: true });
+}
+
+// Download Single Result from URL - Now uses saveImageToGallery
+async function downloadResultFromUrl(imageUrl, filename, index) {
+    await saveImageToGallery(imageUrl, filename, index);
+}
+
+// Download Single Result - Now uses saveImageToGallery for consistent behavior
+async function downloadResult(imageData, index) {
+    // Generate filename with timestamp for uniqueness
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+    const filename = `tap-to-look-${timestamp}-${index + 1}.png`;
+    
+    // Use the universal saveImageToGallery function
+    await saveImageToGallery(imageData, filename, index);
 }
 
 // downloadAllResults function removed - functionality no longer needed
