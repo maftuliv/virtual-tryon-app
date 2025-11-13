@@ -641,16 +641,14 @@ async function handleTryOn() {
             generateSwitch.disabled = true;
             generateSwitch.classList.add('loading');
         }
-        progressBar.style.display = 'block';
         resultsSection.style.display = 'none';
         hideError();
 
-        // Show loading overlay with tips
+        // Show loading overlay with tips (progressBar is hidden now)
         showLoadingOverlay(
             'Загрузка изображений...',
             '💡 Не закрывайте страницу, процесс может занять несколько секунд'
         );
-        updateProgressText('Загрузка изображений...');
 
         // Step 1: Upload files
         const formData = new FormData();
@@ -690,10 +688,9 @@ async function handleTryOn() {
 
         // Step 2: Perform virtual try-on
         updateLoadingOverlay(
-            '✨ Создается магия твоего стиля ✨',
+            '<span class="sparkle-emoji">✨</span> Создается магия твоего стиля <span class="sparkle-emoji">✨</span>',
             '💡 Это может занять 10-30 секунд. Пока подумайте, где примените этот образ!'
         );
-        updateProgressText('создается магия твоего стиля ✨');
 
         const tryonResponse = await fetch(`${API_URL}/api/tryon`, {
             method: 'POST',
@@ -733,6 +730,17 @@ async function handleTryOn() {
         progressBar.style.display = 'none';
         resultsSection.style.display = 'block';
         
+        // Auto-scroll to results section (desktop only)
+        const isMobile = window.innerWidth <= 768;
+        if (!isMobile && resultsSection) {
+            setTimeout(() => {
+                resultsSection.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start' 
+                });
+            }, 300);
+        }
+        
         // Re-enable button
         if (generateSwitch) {
             generateSwitch.disabled = false;
@@ -766,7 +774,6 @@ async function handleTryOn() {
 
         showError(errorMsg);
         hideLoadingOverlay();
-        progressBar.style.display = 'none';
         // Reset button on error
         if (generateSwitch) {
             generateSwitch.disabled = false;
@@ -790,7 +797,7 @@ function showLoadingOverlay(message, tip) {
     
     if (overlay) {
         if (loadingMessage && message) {
-            loadingMessage.textContent = message;
+            loadingMessage.innerHTML = message;
         }
         if (loadingTips && tip) {
             loadingTips.innerHTML = `<p>${tip}</p>`;
@@ -815,7 +822,7 @@ function updateLoadingOverlay(message, tip) {
     const loadingTips = document.getElementById('loadingTips');
     
     if (loadingMessage && message) {
-        loadingMessage.textContent = message;
+        loadingMessage.innerHTML = message;
     }
     if (loadingTips && tip) {
         loadingTips.innerHTML = `<p>${tip}</p>`;
