@@ -929,7 +929,9 @@ def virtual_tryon():
                 results.append({
                     'original': os.path.basename(person_image),
                     'result_path': result_path,
-                    'result_image': f'data:image/png;base64,{img_data}'
+                    'result_image': f'data:image/png;base64,{img_data}',
+                    'result_url': result_url,  # Add URL for mobile download
+                    'result_filename': result_filename  # Add filename for download
                 })
                 
                 # Send result to Telegram if configured
@@ -1019,8 +1021,38 @@ def get_result(filename):
             }
             mimetype = mimetype_map.get(ext, 'image/png')
             
-            print(f"[RESULT] Serving result image: {filename} ({mimetype})")
-            return send_file(file_path, mimetype=mimetype)
+            # Generate a better filename for download
+            # Remove any special characters and ensure .png extension
+            safe_filename = filename.rsplit('.', 1)[0]  # Get name without extension
+            download_filename = f"tap-to-look-{safe_filename}.png"
+            
+            # Ensure filename is safe for HTTP headers
+            import urllib.parse
+            encoded_filename = urllib.parse.quote(download_filename)
+            
+            print(f"[RESULT] Serving result image: {filename} ({mimetype}) as {download_filename}")
+            
+            # Create response with proper headers for download
+            # Use as_attachment=True to force download instead of display
+            response = send_file(file_path, mimetype=mimetype, as_attachment=True)
+            
+            # Set Content-Disposition header for proper download on mobile devices
+            # This ensures the file downloads with the correct name, especially on iOS and Telegram browser
+            # Use both filename and filename* for maximum compatibility
+            response.headers['Content-Disposition'] = (
+                f'attachment; filename="{download_filename}"; '
+                f'filename*=UTF-8\'\'{encoded_filename}'
+            )
+            
+            # Set Content-Type explicitly
+            response.headers['Content-Type'] = mimetype
+            
+            # Allow CORS if needed
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            response.headers['Access-Control-Allow-Methods'] = 'GET'
+            response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+            
+            return response
         else:
             print(f"[RESULT] File not found: {filename}")
             return jsonify({'error': 'File not found'}), 404
