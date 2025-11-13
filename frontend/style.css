@@ -1331,50 +1331,6 @@ body::before {
     display: block;
 }
 
-.preview-status-badge {
-    position: absolute;
-    top: 8px;
-    left: 8px;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    padding: 4px 8px;
-    border-radius: 20px;
-    font-size: 0.85em;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.preview-status-badge.status-ok,
-.preview-status-badge.status-success {
-    color: #10b981;
-    border: 1px solid #10b981;
-}
-
-.preview-status-badge.status-warning {
-    color: #f59e0b;
-    border: 1px solid #f59e0b;
-}
-
-.preview-status-badge.status-error {
-    color: #ef4444;
-    border: 1px solid #ef4444;
-    font-weight: 700;
-}
-
-.preview-status-badge:hover {
-    transform: scale(1.05);
-    transition: transform 0.2s ease;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.preview-status-badge .status-icon {
-    font-size: 1.1em;
-}
-
 .preview-remove {
     position: absolute;
     top: 5px;

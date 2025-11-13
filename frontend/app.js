@@ -537,11 +537,6 @@ function createPreviewItem(src, index, type) {
     img.src = src;
     img.alt = type === 'person' ? 'Person Image' : 'Garment Image';
 
-    // Validate image on load
-    img.onload = async () => {
-        await validatePreviewImage(div, src, type, index);
-    };
-
     const removeBtn = document.createElement('button');
     removeBtn.className = 'preview-remove';
     removeBtn.innerHTML = '×';
@@ -558,69 +553,6 @@ function createPreviewItem(src, index, type) {
     div.appendChild(removeBtn);
 
     return div;
-}
-
-// Validate preview image and add status badge
-async function validatePreviewImage(previewDiv, imageSrc, type, index) {
-    try {
-        // Load image to get dimensions
-        const tempImg = new Image();
-        tempImg.src = imageSrc;
-
-        await new Promise((resolve) => {
-            tempImg.onload = resolve;
-        });
-
-        const width = tempImg.width;
-        const height = tempImg.height;
-        const aspectRatio = width / height;
-
-        // Create status badge
-        const badge = document.createElement('div');
-        badge.className = 'preview-status-badge';
-
-        if (type === 'person') {
-            // For person images: check orientation only
-            if (height > width) {
-                // Vertical photo - good for full body
-                badge.classList.add('status-ok');
-                badge.innerHTML = '<span class="status-icon">✅</span><span>OK</span>';
-                previewDiv.classList.add('validated-ok');
-            } else {
-                // Horizontal photo - warning
-                badge.classList.add('status-warning');
-                badge.innerHTML = '<span class="status-icon">⚠️</span><span>Рекомендуется вертикальное фото</span>';
-                previewDiv.classList.add('has-warnings');
-            }
-        } else if (type === 'garment') {
-            // For garment images: basic checks
-            if (width < 512 && height < 512) {
-                badge.classList.add('status-error');
-                badge.innerHTML = '<span class="status-icon">❌</span><span>Разрешение слишком низкое</span>';
-                previewDiv.classList.add('has-errors');
-            } else if (aspectRatio > 2.0 || aspectRatio < 0.5) {
-                badge.classList.add('status-warning');
-                badge.innerHTML = '<span class="status-icon">⚠️</span><span>Необычные пропорции</span>';
-                previewDiv.classList.add('has-warnings');
-            } else {
-                badge.classList.add('status-ok');
-                badge.innerHTML = '<span class="status-icon">✅</span><span>OK</span>';
-                previewDiv.classList.add('validated-ok');
-            }
-        }
-
-        previewDiv.appendChild(badge);
-
-        console.log(`[VALIDATION] ${type} - ${width}x${height}, ratio: ${aspectRatio.toFixed(2)}, orientation: ${height > width ? 'vertical' : 'horizontal'}`);
-
-        // Update button state after validation
-        setTimeout(() => {
-            updateGenerateSwitch();
-        }, 100);
-
-    } catch (error) {
-        console.error('[VALIDATION] Error validating preview:', error);
-    }
 }
 
 // Remove Images
@@ -641,8 +573,7 @@ function removeGarmentImage() {
 function updateGenerateSwitch() {
     const hasPersonImages = state.personImages.length > 0;
     const hasGarmentImage = state.garmentImage !== null;
-    const hasErrors = document.querySelectorAll('.preview-item.has-errors').length > 0;
-    const canGenerate = hasPersonImages && hasGarmentImage && !hasErrors;
+    const canGenerate = hasPersonImages && hasGarmentImage;
 
     if (generateSwitch) {
         // Enable/disable button based on ready state
