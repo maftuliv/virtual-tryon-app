@@ -1,0 +1,105 @@
+name: Automatic Backup to GitHub
+
+on:
+  # Запускается каждые 3 дня в 02:00 UTC
+  schedule:
+    - cron: '0 2 */3 * *'
+
+  # Можно запустить вручную
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Получить всю историю
+
+      - name: Set up Git
+        run: |
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "actions@github.com"
+
+      - name: Create backup branch
+        run: |
+          # Получить текущую дату
+          BACKUP_DATE=$(date +%Y-%m-%d)
+          BACKUP_BRANCH="backup/auto-${BACKUP_DATE}"
+
+          echo "Creating backup branch: ${BACKUP_BRANCH}"
+
+          # Создать новую ветку от main
+          git checkout -b ${BACKUP_BRANCH}
+
+          # Создать информационный файл о бэкапе
+          cat > BACKUP_INFO.txt << EOF
+          ========================================
+          Automatic Backup Information
+          ========================================
+
+          Date: $(date)
+          Branch: ${BACKUP_BRANCH}
+          Source: main branch
+          Type: Automatic scheduled backup
+
+          Last commit:
+          $(git log -1 --pretty=format:"Commit: %H%nAuthor: %an%nDate: %ad%nMessage: %s")
+
+          Files backed up:
+          - All project files
+          - Complete Git history
+          - Configuration files
+
+          Restore instructions:
+          1. git checkout ${BACKUP_BRANCH}
+          2. git checkout -b restored-from-backup
+          3. Verify files and merge to main if needed
+          ========================================
+          EOF
+
+          # Добавить файл в бэкап
+          git add BACKUP_INFO.txt
+          git commit -m "🔄 Automatic backup - ${BACKUP_DATE}" || echo "No changes to commit"
+
+          # Отправить ветку на GitHub
+          git push origin ${BACKUP_BRANCH} --force
+
+          echo "✅ Backup created successfully: ${BACKUP_BRANCH}"
+
+      - name: Clean old backup branches
+        run: |
+          echo "Cleaning old backup branches (keeping last 3)..."
+
+          # Получить список всех backup веток, отсортированных по дате
+          git fetch origin
+          BACKUP_BRANCHES=$(git branch -r | grep 'origin/backup/auto-' | sed 's|origin/||' | sort -r)
+
+          # Подсчитать количество
+          BRANCH_COUNT=$(echo "$BACKUP_BRANCHES" | wc -l)
+
+          echo "Found $BRANCH_COUNT backup branches"
+
+          # Если больше 3, удалить старые
+          if [ $BRANCH_COUNT -gt 3 ]; then
+            echo "$BACKUP_BRANCHES" | tail -n +4 | while read branch; do
+              echo "Deleting old branch: $branch"
+              git push origin --delete "$branch" || echo "Failed to delete $branch"
+            done
+          fi
+
+          echo "✅ Cleanup completed"
+
+      - name: Create backup summary
+        run: |
+          echo "📊 Backup Summary:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Backup completed successfully" >> $GITHUB_STEP_SUMMARY
+          echo "- 📅 Date: $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "- 🌿 Branch: backup/auto-$(date +%Y-%m-%d)" >> $GITHUB_STEP_SUMMARY
+          echo "- 🗂️ Repository: ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Recent Backup Branches:" >> $GITHUB_STEP_SUMMARY
+          git branch -r | grep 'origin/backup/auto-' | sed 's|origin/||' >> $GITHUB_STEP_SUMMARY || echo "No backup branches found"
