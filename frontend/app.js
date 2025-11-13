@@ -825,13 +825,12 @@ function displayResults(results) {
         const downloadBtn = document.createElement('button');
         downloadBtn.className = 'download-btn';
         downloadBtn.innerHTML = '💾 Скачать';
-        // Use result_url if available (better for mobile), otherwise use base64 image
+        // Always use base64 image (result_image) for instant access - no fetch delay
+        // Generate filename from result_filename if available, otherwise use default
         downloadBtn.onclick = () => {
-            if (result.result_url) {
-                downloadResultFromUrl(result.result_url, result.result_filename || `virtual-tryon-result-${index + 1}.png`, index);
-            } else {
-                downloadResult(result.result_image, index);
-            }
+            // Use base64 image directly for instant Web Share API - no fetch needed
+            const filename = result.result_filename || `taptolook.net_result_${index + 1}.png`;
+            downloadResult(result.result_image, index, filename);
         };
 
         const retryBtn = document.createElement('button');
@@ -952,15 +951,20 @@ async function saveImageToGallery(imageSource, filename, index) {
         
         if (typeof imageSource === 'string') {
             if (imageSource.startsWith('data:')) {
-                // Base64 data URL
-                const base64Data = imageSource.split(',')[1];
-                const byteCharacters = atob(base64Data);
-                const byteNumbers = new Array(byteCharacters.length);
-                for (let i = 0; i < byteCharacters.length; i++) {
-                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                // Base64 data URL - INSTANT conversion (no async delay)
+                // Extract base64 data and MIME type
+                const commaIndex = imageSource.indexOf(',');
+                const mimeType = imageSource.substring(5, commaIndex).split(';')[0] || 'image/png';
+                const base64Data = imageSource.substring(commaIndex + 1);
+                
+                // Fast synchronous base64 to Blob conversion
+                // This is instant - no network requests, no async operations
+                const binaryString = atob(base64Data);
+                const bytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
                 }
-                const byteArray = new Uint8Array(byteNumbers);
-                blob = new Blob([byteArray], { type: 'image/png' });
+                blob = new Blob([bytes], { type: mimeType });
                 blobUrl = URL.createObjectURL(blob);
             } else {
                 // URL - fetch and convert to Blob
@@ -1004,11 +1008,12 @@ async function saveImageToGallery(imageSource, filename, index) {
         // Step 2: For mobile devices, use Web Share API or show fullscreen modal
         if (isMobile) {
             // Try Web Share API first (iOS 12.2+, Android Chrome 89+)
-            if (navigator.share && navigator.canShare) {
+            // INSTANT: No canShare check - call share directly for maximum speed
+            if (navigator.share) {
                 try {
-                    // Create File object from Blob
+                    // Create File object from Blob (synchronous, instant)
                     const file = new File([blob], filename, {
-                        type: 'image/png',
+                        type: blob.type || 'image/png',
                         lastModified: Date.now()
                     });
                     
@@ -1018,13 +1023,12 @@ async function saveImageToGallery(imageSource, filename, index) {
                         text: 'Мой результат виртуальной примерки'
                     };
                     
-                    // Check if we can share files
-                    if (navigator.canShare && navigator.canShare(shareData)) {
-                        await navigator.share(shareData);
-                        // Clean up
-                        setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
-                        return; // Success - user chose where to save (Photos, Files, etc.)
-                    }
+                    // Call share directly - no canShare check to avoid delay
+                    // This opens the share menu INSTANTLY
+                    await navigator.share(shareData);
+                    // Clean up after share completes
+                    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+                    return; // Success - user chose where to save (Photos, Files, etc.)
                 } catch (shareError) {
                     // Web Share API failed or user cancelled
                     // Error code 20 = user cancelled (AbortError)
@@ -1033,7 +1037,9 @@ async function saveImageToGallery(imageSource, filename, index) {
                         URL.revokeObjectURL(blobUrl);
                         return;
                     }
-                    console.log('Web Share API error:', shareError);
+                    // DOMException: "Failed to execute 'share' on 'Navigator': Share failed"
+                    // NotSupportedError, TypeError, etc. - fall through to modal
+                    console.log('Web Share API not available:', shareError.name);
                     // Fall through to fullscreen modal
                 }
             }
@@ -1259,10 +1265,15 @@ async function downloadResultFromUrl(imageUrl, filename, index) {
 }
 
 // Download Single Result - Now uses saveImageToGallery for consistent behavior
-async function downloadResult(imageData, index) {
-    // Generate filename with timestamp for uniqueness
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-    const filename = `tap-to-look-${timestamp}-${index + 1}.png`;
+async function downloadResult(imageData, index, customFilename = null) {
+    // Use custom filename if provided, otherwise generate with timestamp
+    let filename;
+    if (customFilename) {
+        filename = customFilename;
+    } else {
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+        filename = `taptolook.net_result_${timestamp}_${index + 1}.png`;
+    }
     
     // Use the universal saveImageToGallery function
     await saveImageToGallery(imageData, filename, index);

@@ -632,7 +632,7 @@ def process_with_nanobanana(person_image_path, garment_image_path, category='aut
 
                     # Download result image
                     timestamp = int(time.time())
-                    result_filename = f'result_nanobanana_{timestamp}.png'
+                    result_filename = f'taptolook.net_result_{timestamp}.png'
                     result_path = os.path.join(app.config['RESULTS_FOLDER'], result_filename)
 
                     try:
