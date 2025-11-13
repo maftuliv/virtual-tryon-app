@@ -2639,19 +2639,54 @@ body::before {
     overflow: hidden;
     transition: opacity 0.2s ease;
     
-    /* Градиентный розово-фиолетовый стеклянный матовый фон */
+    /* Более яркий градиентный розово-фиолетовый стеклянный матовый фон */
     background: linear-gradient(135deg, 
-        rgba(192, 132, 252, 0.35) 0%, 
-        rgba(168, 85, 247, 0.4) 50%, 
-        rgba(236, 72, 153, 0.35) 100%);
+        rgba(192, 132, 252, 0.55) 0%, 
+        rgba(168, 85, 247, 0.65) 50%, 
+        rgba(236, 72, 153, 0.6) 100%);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.5);
     
     /* Матовая тень (не изменяется при hover) */
     box-shadow: 
-        0 4px 15px rgba(168, 85, 247, 0.2),
-        0 2px 8px rgba(236, 72, 153, 0.15);
+        0 4px 15px rgba(168, 85, 247, 0.3),
+        0 2px 8px rgba(236, 72, 153, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* Стеклянный блик сверху на краях */
+.glass-mat-cta-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background: linear-gradient(to bottom,
+        rgba(255, 255, 255, 0.4) 0%,
+        rgba(255, 255, 255, 0.15) 50%,
+        transparent 100%);
+    border-radius: 16px 16px 0 0;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Дополнительный блик на левом верхнем углу */
+.glass-mat-cta-button::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 60%;
+    height: 60%;
+    background: radial-gradient(ellipse at top left,
+        rgba(255, 255, 255, 0.5) 0%,
+        rgba(255, 255, 255, 0.2) 30%,
+        transparent 70%);
+    border-radius: 16px 0 0 0;
+    pointer-events: none;
+    z-index: 1;
 }
 
 .glass-mat-cta-button:hover {
@@ -2695,14 +2730,13 @@ body::before {
     gap: 10px;
 }
 
-/* Фиолетово-розовый градиентный текст */
+/* Белый текст для лучшей читаемости */
 .glass-mat-button-text {
     font-size: 1.25em;
     font-weight: 700;
-    background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #ffffff;
+    text-shadow: 0 2px 8px rgba(168, 85, 247, 0.5),
+                 0 1px 4px rgba(236, 72, 153, 0.4);
     letter-spacing: 0.3px;
 }
 

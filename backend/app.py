@@ -1281,7 +1281,22 @@ def submit_feedback():
         timestamp = data.get('timestamp', datetime.now().isoformat())
         session_id = data.get('session_id')
         
-        if not rating or not isinstance(rating, int) or rating < 1 or rating > 5:
+        # Безопасная обработка rating - может прийти как int, string, или list
+        try:
+            # Если rating это список, возьмем первый элемент
+            if isinstance(rating, list) and len(rating) > 0:
+                rating = rating[0]
+            # Если rating это строка, преобразуем в int
+            if isinstance(rating, str):
+                rating = int(rating.strip())
+            # Убедимся что rating это int
+            if not isinstance(rating, int):
+                rating = int(rating)
+        except (ValueError, TypeError, IndexError) as e:
+            print(f"[FEEDBACK] Error parsing rating: {e}, received: {rating}, type: {type(rating)}")
+            return jsonify({'error': 'Invalid rating. Must be 1-5'}), 400
+        
+        if not rating or rating < 1 or rating > 5:
             return jsonify({'error': 'Invalid rating. Must be 1-5'}), 400
         
         # Prepare feedback data
