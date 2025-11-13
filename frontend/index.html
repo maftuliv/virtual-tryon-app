@@ -10,6 +10,21 @@
     <link rel="dns-prefetch" href="https://fonts.googleapis.com">
 </head>
 <body>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-overlay-content">
+            <div class="loading-spinner">
+                <div class="spinner"></div>
+            </div>
+            <div class="loading-message" id="loadingMessage">
+                Загрузка изображений...
+            </div>
+            <div class="loading-tips" id="loadingTips">
+                <p>💡 Пока идет обработка, подумайте о следующем образе!</p>
+            </div>
+        </div>
+    </div>
+    
     <div class="app-wrapper">
         <!-- Top Bar -->
         <header class="top-bar">

@@ -645,7 +645,11 @@ async function handleTryOn() {
         resultsSection.style.display = 'none';
         hideError();
 
-        // Update progress text
+        // Show loading overlay with tips
+        showLoadingOverlay(
+            'Загрузка изображений...',
+            '💡 Не закрывайте страницу, процесс может занять несколько секунд'
+        );
         updateProgressText('Загрузка изображений...');
 
         // Step 1: Upload files
@@ -685,6 +689,10 @@ async function handleTryOn() {
         state.sessionId = uploadData.session_id;
 
         // Step 2: Perform virtual try-on
+        updateLoadingOverlay(
+            '✨ Создается магия твоего стиля ✨',
+            '💡 Это может занять 10-30 секунд. Пока подумайте, где примените этот образ!'
+        );
         updateProgressText('создается магия твоего стиля ✨');
 
         const tryonResponse = await fetch(`${API_URL}/api/tryon`, {
@@ -720,7 +728,8 @@ async function handleTryOn() {
         // Display results
         displayResults(tryonData.results);
 
-        // Hide progress, show results
+        // Hide loading overlay and progress, show results
+        hideLoadingOverlay();
         progressBar.style.display = 'none';
         resultsSection.style.display = 'block';
         
@@ -756,6 +765,7 @@ async function handleTryOn() {
         }
 
         showError(errorMsg);
+        hideLoadingOverlay();
         progressBar.style.display = 'none';
         // Reset button on error
         if (generateSwitch) {
@@ -769,6 +779,46 @@ function updateProgressText(text) {
     const progressText = document.querySelector('.progress-text');
     if (progressText) {
         progressText.textContent = text;
+    }
+}
+
+// Loading Overlay Functions
+function showLoadingOverlay(message, tip) {
+    const overlay = document.getElementById('loadingOverlay');
+    const loadingMessage = document.getElementById('loadingMessage');
+    const loadingTips = document.getElementById('loadingTips');
+    
+    if (overlay) {
+        if (loadingMessage && message) {
+            loadingMessage.textContent = message;
+        }
+        if (loadingTips && tip) {
+            loadingTips.innerHTML = `<p>${tip}</p>`;
+        }
+        overlay.style.display = 'flex';
+        // Блокируем скроллинг
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function hideLoadingOverlay() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) {
+        overlay.style.display = 'none';
+        // Восстанавливаем скроллинг
+        document.body.style.overflow = '';
+    }
+}
+
+function updateLoadingOverlay(message, tip) {
+    const loadingMessage = document.getElementById('loadingMessage');
+    const loadingTips = document.getElementById('loadingTips');
+    
+    if (loadingMessage && message) {
+        loadingMessage.textContent = message;
+    }
+    if (loadingTips && tip) {
+        loadingTips.innerHTML = `<p>${tip}</p>`;
     }
 }
 
