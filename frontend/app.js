@@ -1467,3 +1467,145 @@ function showTestFeedbackForm() {
         }
     }, 100);
 }
+
+// ============================================================
+// ADMIN TESTING FUNCTIONS - Hidden from regular users
+// ============================================================
+
+/**
+ * Test function to show results section with mock data
+ * This allows testing the results UI without making API calls
+ *
+ * Usage:
+ * - In browser console: window.testResults()
+ * - Or press: Ctrl + Shift + T
+ * - Or triple-click on logo (3 fast clicks)
+ */
+window.testResults = function(count = 2) {
+    console.log('🧪 Testing results section with', count, 'mock results');
+
+    // Create mock results data
+    const mockResults = [];
+    for (let i = 0; i < count; i++) {
+        mockResults.push({
+            result_image: `https://via.placeholder.com/400x600/ec4899/ffffff?text=Результат+${i + 1}`,
+            person_image: `https://via.placeholder.com/200x300/8b5cf6/ffffff?text=Человек+${i + 1}`,
+            garment_image: `https://via.placeholder.com/200x300/a855f7/ffffff?text=Одежда+${i + 1}`
+        });
+    }
+
+    // Show results section
+    if (resultsSection) {
+        resultsSection.style.display = 'block';
+    }
+
+    // Display results
+    displayResults(mockResults);
+
+    // Scroll to results
+    setTimeout(() => {
+        if (resultsSection) {
+            resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }, 100);
+
+    console.log('✅ Test results displayed successfully');
+};
+
+/**
+ * Test function to show error state
+ */
+window.testError = function() {
+    console.log('🧪 Testing error state');
+
+    const mockResults = [{
+        error: 'Это тестовая ошибка для проверки отображения'
+    }];
+
+    if (resultsSection) {
+        resultsSection.style.display = 'block';
+    }
+
+    displayResults(mockResults);
+
+    setTimeout(() => {
+        if (resultsSection) {
+            resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }, 100);
+
+    console.log('✅ Test error displayed successfully');
+};
+
+/**
+ * Test function to show mixed results (success + error)
+ */
+window.testMixed = function() {
+    console.log('🧪 Testing mixed results (success + error)');
+
+    const mockResults = [
+        {
+            result_image: 'https://via.placeholder.com/400x600/ec4899/ffffff?text=Успех+1'
+        },
+        {
+            error: 'Ошибка обработки второго изображения'
+        },
+        {
+            result_image: 'https://via.placeholder.com/400x600/8b5cf6/ffffff?text=Успех+2'
+        }
+    ];
+
+    if (resultsSection) {
+        resultsSection.style.display = 'block';
+    }
+
+    displayResults(mockResults);
+
+    setTimeout(() => {
+        if (resultsSection) {
+            resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }, 100);
+
+    console.log('✅ Test mixed results displayed successfully');
+};
+
+// Secret keyboard shortcut: Ctrl + Shift + T
+document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.shiftKey && e.key === 'T') {
+        e.preventDefault();
+        console.log('🔐 Secret shortcut activated!');
+        window.testResults();
+    }
+});
+
+// Secret triple-click on logo
+let logoClickCount = 0;
+let logoClickTimer = null;
+
+const logo = document.querySelector('.logo-container');
+if (logo) {
+    logo.addEventListener('click', () => {
+        logoClickCount++;
+
+        if (logoClickCount === 1) {
+            logoClickTimer = setTimeout(() => {
+                logoClickCount = 0;
+            }, 1000); // Reset after 1 second
+        }
+
+        if (logoClickCount === 3) {
+            clearTimeout(logoClickTimer);
+            logoClickCount = 0;
+            console.log('🔐 Secret logo click activated!');
+            window.testResults();
+        }
+    });
+}
+
+console.log('🔧 Admin testing functions loaded. Try:');
+console.log('   - window.testResults() - Show mock results');
+console.log('   - window.testError() - Show error state');
+console.log('   - window.testMixed() - Show mixed results');
+console.log('   - Ctrl+Shift+T - Quick test shortcut');
+console.log('   - Triple-click logo - Hidden trigger');
