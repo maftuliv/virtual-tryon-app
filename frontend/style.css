@@ -424,11 +424,12 @@ body {
 
 @media (max-width: 768px) {
     .top-bar-changelog-link {
-        display: none;
+        padding: 8px 12px;
+        font-size: 0.875rem;
     }
 
     .top-bar-right {
-        gap: 0;
+        gap: 8px;
     }
 
     .upload-card-step {

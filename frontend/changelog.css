@@ -99,7 +99,7 @@
     overflow: hidden;
     scroll-behavior: smooth;
     position: relative;
-    min-height: 900px;
+    min-height: 700px;
 }
 
 .timeline-item {
@@ -349,7 +349,7 @@
     display: flex;
     justify-content: center;
     gap: 12px;
-    margin-top: 40px;
+    margin-top: 20px;
 }
 
 .timeline-dot {
