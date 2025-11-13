@@ -2626,7 +2626,7 @@ body::before {
 
 /* ==================== AI Model Selector ==================== */
 
-/* Glass Mat CTA Button - Frosted glass style */
+/* Glass Mat CTA Button - Frosted glass with gradient */
 .glass-mat-cta-button {
     width: 100%;
     max-width: 400px;
@@ -2639,11 +2639,14 @@ body::before {
     overflow: hidden;
     transition: opacity 0.2s ease;
     
-    /* Стеклянный матовый фон */
-    background: rgba(255, 255, 255, 0.3);
+    /* Градиентный розово-фиолетовый стеклянный матовый фон */
+    background: linear-gradient(135deg, 
+        rgba(192, 132, 252, 0.35) 0%, 
+        rgba(168, 85, 247, 0.4) 50%, 
+        rgba(236, 72, 153, 0.35) 100%);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.4);
     
     /* Матовая тень (не изменяется при hover) */
     box-shadow: 
