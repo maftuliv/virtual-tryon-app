@@ -3408,6 +3408,10 @@ body::before {
 
 .promo-header {
     margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
 }
 
 .promo-title {

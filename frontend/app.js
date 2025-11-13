@@ -685,12 +685,8 @@ async function handleTryOn() {
         state.sessionId = uploadData.session_id;
 
         // Step 2: Perform virtual try-on
-        const isMobileForMessage = window.innerWidth <= 768;
-        const messageText = isMobileForMessage 
-            ? '✨ Создается магия твоего стиля ✨'
-            : '<span class="sparkle-emoji">✨</span> Создается магия твоего стиля <span class="sparkle-emoji">✨</span>';
         updateLoadingOverlay(
-            messageText,
+            '<span class="sparkle-emoji">✨</span> Создается магия твоего стиля <span class="sparkle-emoji">✨</span>',
             '💡 Это может занять 10-30 секунд. Пока подумайте, где примените этот образ!'
         );
 
@@ -735,11 +731,21 @@ async function handleTryOn() {
         // Auto-scroll to results section (both desktop and mobile)
         if (resultsSection) {
             setTimeout(() => {
-                resultsSection.scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'start' 
-                });
-            }, 300);
+                // For mobile devices, use window.scrollTo for better compatibility
+                const isMobile = window.innerWidth <= 768;
+                if (isMobile) {
+                    const resultsTop = resultsSection.offsetTop;
+                    window.scrollTo({
+                        top: resultsTop - 20,
+                        behavior: 'smooth'
+                    });
+                } else {
+                    resultsSection.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            }, 500);
         }
         
         // Re-enable button
@@ -942,7 +948,8 @@ function displayResults(results) {
         rightSide.innerHTML = `
             <div class="promo-content">
                 <div class="promo-header">
-                    <h3 class="promo-title">Полноценный образ <span class="promo-badge">Скоро</span></h3>
+                    <h3 class="promo-title">Полноценный образ</h3>
+                    <span class="promo-badge">Скоро</span>
                 </div>
                 <p class="promo-description">
                     Скоро вы сможете собирать целостные образы: официальный, уличный,
