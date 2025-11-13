@@ -494,6 +494,25 @@ function processGarmentImage(file) {
     
     // Hide error if image is now loaded
     hideCtaButtonError();
+    
+    // Плавный автоскролл до кнопки "Сделать примерку" в мобильной версии
+    // Только если уже загружено фото пользователя (шаг 1)
+    const isMobile = window.innerWidth <= 768;
+    const hasPersonImages = state.personImages.length > 0;
+    
+    if (isMobile && hasPersonImages) {
+        // Небольшая задержка для завершения отображения превью
+        setTimeout(() => {
+            const generateButton = document.getElementById('generateSwitch');
+            if (generateButton) {
+                generateButton.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center',
+                    inline: 'nearest'
+                });
+            }
+        }, 300);
+    }
 }
 
 function displayGarmentPreview() {
