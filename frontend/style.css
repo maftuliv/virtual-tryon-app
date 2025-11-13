@@ -2626,63 +2626,55 @@ body::before {
 
 /* ==================== AI Model Selector ==================== */
 
-/* Glass CTA Button - Premium Design */
-.glass-cta-button {
+/* Gradient CTA Button - Style like screenshot */
+.gradient-cta-button {
     width: 100%;
     max-width: 400px;
     margin: 20px auto;
-    padding: 20px 40px;
+    padding: 18px 40px;
     position: relative;
     border: none;
-    border-radius: 20px;
+    border-radius: 16px;
     cursor: pointer;
     overflow: hidden;
-    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    transition: all 0.3s ease;
     
-    /* Glassmorphism - полупрозрачный стеклянный фон */
-    background: rgba(255, 255, 255, 0.25);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 2px solid rgba(255, 255, 255, 0.4);
+    /* Фиолетово-розовый градиент как на скриншоте */
+    background: linear-gradient(135deg, #c084fc 0%, #a855f7 50%, #ec4899 100%);
     
-    /* Мягкий blur + легкая тень */
+    /* Мягкая тень */
     box-shadow: 
-        0 8px 32px rgba(168, 85, 247, 0.2),
-        0 2px 8px rgba(236, 72, 153, 0.15),
-        inset 0 1px 0 rgba(255, 255, 255, 0.6);
-    
-    /* Светящийся розовый ореол снизу */
-    filter: drop-shadow(0 0 20px rgba(236, 72, 153, 0.4));
+        0 4px 15px rgba(168, 85, 247, 0.3),
+        0 2px 8px rgba(236, 72, 153, 0.2);
 }
 
-.glass-cta-button:hover {
-    transform: translateY(-3px) scale(1.02);
+.gradient-cta-button:hover {
+    transform: translateY(-2px);
     box-shadow: 
-        0 12px 48px rgba(168, 85, 247, 0.3),
-        0 4px 16px rgba(236, 72, 153, 0.25),
-        inset 0 1px 0 rgba(255, 255, 255, 0.7);
-    filter: drop-shadow(0 0 30px rgba(236, 72, 153, 0.6));
-    border-color: rgba(255, 255, 255, 0.6);
+        0 6px 20px rgba(168, 85, 247, 0.4),
+        0 4px 12px rgba(236, 72, 153, 0.3);
 }
 
-.glass-cta-button:active {
-    transform: translateY(-1px) scale(0.98);
-    transition: all 0.15s ease;
+.gradient-cta-button:active {
+    transform: translateY(0);
+    box-shadow: 
+        0 2px 10px rgba(168, 85, 247, 0.3),
+        0 1px 5px rgba(236, 72, 153, 0.2);
 }
 
-.glass-cta-button.disabled {
+.gradient-cta-button.disabled {
     opacity: 0.5;
     cursor: not-allowed;
-    filter: none;
+    filter: grayscale(0.3);
     pointer-events: none;
 }
 
-.glass-cta-button.loading {
+.gradient-cta-button.loading {
     cursor: wait;
     pointer-events: none;
 }
 
-.glass-cta-button.loading .glass-button-text::after {
+.gradient-cta-button.loading .gradient-button-text::after {
     content: '...';
     animation: loadingDots 1.5s infinite;
 }
@@ -2693,96 +2685,74 @@ body::before {
     60%, 100% { content: '...'; }
 }
 
-/* Глянцевая полоса сверху */
-.glass-button-shine {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 50%;
-    background: linear-gradient(
-        180deg,
-        rgba(255, 255, 255, 0.4) 0%,
-        rgba(255, 255, 255, 0.1) 50%,
-        transparent 100%
-    );
-    border-radius: 20px 20px 0 0;
-    pointer-events: none;
-}
-
 /* Контент кнопки */
-.glass-button-content {
+.gradient-button-content {
     position: relative;
     z-index: 2;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
+    gap: 10px;
 }
 
-/* Фиолетово-розовый градиентный текст */
-.glass-button-text {
-    font-size: 1.3em;
+/* Белый текст на градиентном фоне */
+.gradient-button-text {
+    font-size: 1.25em;
     font-weight: 700;
-    background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    letter-spacing: 0.5px;
-    text-shadow: 0 2px 10px rgba(168, 85, 247, 0.3);
+    color: white;
+    letter-spacing: 0.3px;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
-.glass-button-icon {
-    font-size: 1.4em;
-    filter: drop-shadow(0 0 8px rgba(236, 72, 153, 0.6));
+.gradient-button-icon {
+    font-size: 1.3em;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
     animation: sparkle 2s ease-in-out infinite;
 }
 
 @keyframes sparkle {
     0%, 100% { 
-        transform: scale(1) rotate(0deg);
-        filter: drop-shadow(0 0 8px rgba(236, 72, 153, 0.6));
+        transform: scale(1);
     }
     50% { 
-        transform: scale(1.1) rotate(5deg);
-        filter: drop-shadow(0 0 12px rgba(236, 72, 153, 0.8));
+        transform: scale(1.1);
     }
 }
 
-/* Светящийся розовый ореол снизу (дополнительный эффект) */
-.glass-button-glow {
-    position: absolute;
-    bottom: -10px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 80%;
-    height: 20px;
-    background: radial-gradient(
-        ellipse,
-        rgba(236, 72, 153, 0.5) 0%,
-        rgba(168, 85, 247, 0.3) 50%,
-        transparent 100%
-    );
-    border-radius: 50%;
-    filter: blur(10px);
-    pointer-events: none;
-    z-index: 1;
-    animation: glowPulse 2s ease-in-out infinite;
+/* Stylized features text under button */
+.cta-features-text {
+    text-align: center;
+    margin-top: 16px;
+    margin-bottom: 8px;
+    font-size: 0.95em;
+    font-weight: 600;
+    background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: 0.8px;
+    opacity: 0.85;
+    line-height: 1.5;
+    position: relative;
 }
 
-@keyframes glowPulse {
-    0%, 100% { 
-        opacity: 0.6;
-        transform: translateX(-50%) scale(1);
-    }
-    50% { 
-        opacity: 1;
-        transform: translateX(-50%) scale(1.1);
-    }
+/* Добавляем зеленые галочки вокруг текста */
+.cta-features-text::before {
+    content: '✓ ';
+    display: inline;
+    color: #10b981;
+    -webkit-text-fill-color: #10b981;
+    font-weight: 700;
+    margin-right: 4px;
 }
 
-.glass-cta-button:hover .glass-button-glow {
-    animation: glowPulse 1s ease-in-out infinite;
+.cta-features-text::after {
+    content: ' ✓';
+    display: inline;
+    color: #10b981;
+    -webkit-text-fill-color: #10b981;
+    font-weight: 700;
+    margin-left: 4px;
 }
 
 /* Legacy support - hide old generate container if exists */
