@@ -1,7 +1,7 @@
 // API Configuration
 const API_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:5000'
-    : 'https://virtual-tryon-app-production.up.railway.app';
+    : ''; // Empty string means same origin (taptolook.net)
 
 // Global state
 let allFeedbacks = [];
