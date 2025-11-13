@@ -1,0 +1,12 @@
+node_modules\
+venv\
+.git\
+__pycache__\
+*.pyc
+.env
+.DS_Store
+Thumbs.db
+*.log
+uploads\
+results\
+project-backups\
