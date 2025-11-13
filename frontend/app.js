@@ -781,21 +781,39 @@ function displayResults(results) {
 
         const resultTitle = document.createElement('h3');
         resultTitle.className = 'result-number';
-        resultTitle.textContent = `Результат ${index + 1}`;
+        resultTitle.textContent = 'Вы восхитительны 🥹';
+
+        // Buttons container
+        const buttonsContainer = document.createElement('div');
+        buttonsContainer.className = 'result-buttons-container';
+        buttonsContainer.style.display = 'flex';
+        buttonsContainer.style.gap = '12px';
+        buttonsContainer.style.width = '100%';
+        buttonsContainer.style.maxWidth = '280px';
 
         const downloadBtn = document.createElement('button');
         downloadBtn.className = 'download-btn';
         downloadBtn.innerHTML = '💾 Скачать';
         downloadBtn.onclick = () => downloadResult(result.result_image, index);
 
+        const retryBtn = document.createElement('button');
+        retryBtn.className = 'download-btn';
+        retryBtn.innerHTML = '🔄 Повторить';
+        retryBtn.onclick = () => {
+            // Scroll to top and reset to step 1
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            setTimeout(() => {
+                switchStep(1);
+            }, 500);
+        };
+
+        buttonsContainer.appendChild(downloadBtn);
+        buttonsContainer.appendChild(retryBtn);
+
         imageContainer.appendChild(img);
         leftSide.appendChild(imageContainer);
         leftSide.appendChild(resultTitle);
-        leftSide.appendChild(downloadBtn);
-
-        // Center: Gradient divider (styled with CSS)
-        const divider = document.createElement('div');
-        divider.className = 'result-divider';
+        leftSide.appendChild(buttonsContainer);
 
         // Right side: Coming soon promo
         const rightSide = document.createElement('div');
@@ -831,7 +849,6 @@ function displayResults(results) {
 
         // Assemble card
         card.appendChild(leftSide);
-        card.appendChild(divider);
         card.appendChild(rightSide);
 
         resultsGrid.appendChild(card);
@@ -1650,3 +1667,17 @@ console.log('   - window.testError() - Show error state');
 console.log('   - window.testMixed() - Show mixed results');
 console.log('   - Ctrl+Shift+T - Quick test shortcut');
 console.log('   - Triple-click logo - Hidden trigger');
+
+// ============================================================
+// LOGO HOME NAVIGATION
+// ============================================================
+
+function goToHome(event) {
+    event.preventDefault();
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Switch to step 1
+    setTimeout(() => {
+        switchStep(1);
+    }, 500);
+}

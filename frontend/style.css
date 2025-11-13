@@ -68,6 +68,13 @@ body {
     display: flex;
     align-items: center;
     gap: 6px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.logo-container:hover .logo-icon {
+    transform: scale(1.05);
 }
 
 .logo-icon {
@@ -92,6 +99,15 @@ body {
     justify-content: center;
     position: relative;
     overflow: hidden;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.2s ease;
+}
+
+.logo-container:active .logo-icon {
+    transform: scale(0.95);
+    box-shadow:
+        0 1px 3px rgba(236, 72, 153, 0.1),
+        inset 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 
@@ -1446,7 +1462,10 @@ body::before {
     text-align: center;
     font-size: 2em;
     margin-bottom: 30px;
-    color: var(--text-primary);
+    background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     font-weight: 700;
 }
 
@@ -2863,29 +2882,26 @@ body::before {
 
 .result-card-new {
     display: grid;
-    grid-template-columns: 380px 80px 1fr;
+    grid-template-columns: 380px 1fr;
     gap: 0;
-    background: rgba(255, 255, 255, 0.4);
+    background: linear-gradient(to right,
+        rgba(255, 255, 255, 0.6) 0%,
+        rgba(251, 207, 232, 0.3) 30%,
+        rgba(233, 213, 255, 0.3) 70%,
+        rgba(255, 255, 255, 0.6) 100%);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-radius: 24px;
     border: 1px solid rgba(255, 255, 255, 0.5);
     overflow: hidden;
     box-shadow: 0 8px 32px rgba(168, 85, 247, 0.15);
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     margin-bottom: 32px;
     opacity: 0;
-    transform: translateY(20px);
 }
 
 .result-card-new.loaded {
     opacity: 1;
-    transform: translateY(0);
-}
-
-.result-card-new:hover {
-    box-shadow: 0 12px 48px rgba(168, 85, 247, 0.25);
-    transform: translateY(-4px);
 }
 
 /* Left Side: Image Preview */
@@ -2952,18 +2968,7 @@ body::before {
     max-width: 280px;
 }
 
-/* Center: Gradient Divider */
-.result-divider {
-    position: relative;
-    background: linear-gradient(to right,
-        rgba(236, 72, 153, 0.4) 0%,
-        rgba(217, 70, 239, 0.5) 25%,
-        rgba(168, 85, 247, 0.6) 50%,
-        rgba(217, 70, 239, 0.5) 75%,
-        rgba(236, 72, 153, 0.4) 100%);
-    filter: blur(12px);
-    overflow: visible;
-}
+/* Divider removed - using gradient background instead */
 
 /* Right Side: Promo Content */
 .result-right {
@@ -3062,18 +3067,12 @@ body::before {
 @media (max-width: 1024px) {
     .result-card-new {
         grid-template-columns: 1fr;
-        grid-template-rows: auto auto auto;
-    }
-
-    .result-divider {
-        height: 60px;
+        grid-template-rows: auto auto;
         background: linear-gradient(to bottom,
-            rgba(236, 72, 153, 0.4) 0%,
-            rgba(217, 70, 239, 0.5) 25%,
-            rgba(168, 85, 247, 0.6) 50%,
-            rgba(217, 70, 239, 0.5) 75%,
-            rgba(236, 72, 153, 0.4) 100%);
-        filter: blur(12px);
+            rgba(255, 255, 255, 0.6) 0%,
+            rgba(251, 207, 232, 0.3) 30%,
+            rgba(233, 213, 255, 0.3) 70%,
+            rgba(255, 255, 255, 0.6) 100%);
     }
 
     .result-left {
