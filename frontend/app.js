@@ -644,7 +644,12 @@ async function handleTryOn() {
         resultsSection.style.display = 'none';
         hideError();
 
-        // Show loading overlay with tips (progressBar is hidden now)
+        // Hide progressBar completely (yellow window in sidebar)
+        if (progressBar) {
+            progressBar.style.display = 'none';
+        }
+
+        // Show loading overlay with tips
         showLoadingOverlay(
             'Загрузка изображений...',
             '💡 Не закрывайте страницу, процесс может занять несколько секунд'
