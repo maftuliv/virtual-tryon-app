@@ -296,6 +296,19 @@ function setupEventListeners() {
             // Disable button to prevent double clicks
             if (generateSwitch.disabled) return;
             
+            // Check if images are loaded before starting
+            const hasPersonImages = state.personImages.length > 0;
+            const hasGarmentImage = state.garmentImage !== null;
+            
+            if (!hasPersonImages || !hasGarmentImage) {
+                // Show error message below button
+                showCtaButtonError();
+                return;
+            }
+            
+            // Hide any previous error
+            hideCtaButtonError();
+            
             // Add loading state
             generateSwitch.classList.add('loading');
             generateSwitch.disabled = true;
@@ -406,6 +419,9 @@ function processPersonImages(files) {
     displayPersonPreviews();
     updateGenerateSwitch();
     
+    // Hide error if images are now loaded
+    hideCtaButtonError();
+    
     // Automatically switch to step 2 after successful photo upload
     if (validFiles.length > 0 && currentStep === 1) {
         // Small delay for better UX
@@ -475,6 +491,9 @@ function processGarmentImage(file) {
     state.garmentImage = file;
     displayGarmentPreview();
     updateGenerateSwitch();
+    
+    // Hide error if image is now loaded
+    hideCtaButtonError();
 }
 
 function displayGarmentPreview() {
@@ -1430,6 +1449,38 @@ function showError(message) {
 
 function hideError() {
     errorMessage.style.display = 'none';
+}
+
+// Show error message below CTA button
+function showCtaButtonError() {
+    const ctaError = document.getElementById('ctaButtonError');
+    if (!ctaError) return;
+    
+    const hasPersonImages = state.personImages.length > 0;
+    const hasGarmentImage = state.garmentImage !== null;
+    
+    let errorMessage = '';
+    if (!hasPersonImages && !hasGarmentImage) {
+        errorMessage = '⚠️ Сначала загрузите ваше фото и фотографию одежды';
+    } else if (!hasPersonImages) {
+        errorMessage = '⚠️ Сначала загрузите ваше фото';
+    } else if (!hasGarmentImage) {
+        errorMessage = '⚠️ Сначала загрузите фотографию одежды';
+    }
+    
+    ctaError.textContent = errorMessage;
+    ctaError.style.display = 'block';
+    
+    // Auto-hide after 5 seconds
+    setTimeout(hideCtaButtonError, 5000);
+}
+
+// Hide error message below CTA button
+function hideCtaButtonError() {
+    const ctaError = document.getElementById('ctaButtonError');
+    if (ctaError) {
+        ctaError.style.display = 'none';
+    }
 }
 
 // Utility Functions
