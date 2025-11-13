@@ -748,12 +748,21 @@ function displayResults(results) {
             return;
         }
 
+        // New card structure with preview on left and promo on right
         const card = document.createElement('div');
-        card.className = 'result-card';
+        card.className = 'result-card-new';
+
+        // Left side: Image preview with gradient mask
+        const leftSide = document.createElement('div');
+        leftSide.className = 'result-left';
+
+        const imageContainer = document.createElement('div');
+        imageContainer.className = 'result-image-container';
 
         const img = document.createElement('img');
         img.src = result.result_image;
-        img.alt = `Result ${index + 1}`;
+        img.alt = `Результат ${index + 1}`;
+        img.className = 'result-image-preview';
 
         // Add loading state
         img.onload = () => {
@@ -770,33 +779,60 @@ function displayResults(results) {
             `;
         };
 
-        const info = document.createElement('div');
-        info.className = 'result-info';
-
-        const title = document.createElement('h3');
-        title.textContent = `Результат ${index + 1}`;
-
-        const buttonsContainer = document.createElement('div');
-        buttonsContainer.className = 'result-buttons-container';
+        const resultTitle = document.createElement('h3');
+        resultTitle.className = 'result-number';
+        resultTitle.textContent = `Результат ${index + 1}`;
 
         const downloadBtn = document.createElement('button');
         downloadBtn.className = 'download-btn';
         downloadBtn.innerHTML = '💾 Скачать';
         downloadBtn.onclick = () => downloadResult(result.result_image, index);
 
-        const resetBtn = document.createElement('button');
-        resetBtn.className = 'reset-btn';
-        resetBtn.innerHTML = '🔄 Начать заново';
-        resetBtn.onclick = () => resetApplication();
+        imageContainer.appendChild(img);
+        leftSide.appendChild(imageContainer);
+        leftSide.appendChild(resultTitle);
+        leftSide.appendChild(downloadBtn);
 
-        buttonsContainer.appendChild(downloadBtn);
-        buttonsContainer.appendChild(resetBtn);
+        // Center: Gradient divider (styled with CSS)
+        const divider = document.createElement('div');
+        divider.className = 'result-divider';
 
-        info.appendChild(title);
-        info.appendChild(buttonsContainer);
+        // Right side: Coming soon promo
+        const rightSide = document.createElement('div');
+        rightSide.className = 'result-right';
 
-        card.appendChild(img);
-        card.appendChild(info);
+        rightSide.innerHTML = `
+            <div class="promo-content">
+                <div class="promo-header">
+                    <h3 class="promo-title">Полноценный образ</h3>
+                    <span class="promo-badge">Скоро</span>
+                </div>
+                <p class="promo-description">
+                    Скоро вы сможете собирать целостные образы: официальный, уличный,
+                    вечерний — или подготовиться к любому мероприятию одним нажатием.
+                    Подбирайте одежду, обувь и аксессуары, а мы покажем, как это выглядит вместе.
+                </p>
+                <div class="promo-features">
+                    <div class="promo-feature">
+                        <span class="feature-icon">✨</span>
+                        <span class="feature-text">Полный образ за клик</span>
+                    </div>
+                    <div class="promo-feature">
+                        <span class="feature-icon">👔</span>
+                        <span class="feature-text">Все стили мероприятий</span>
+                    </div>
+                    <div class="promo-feature">
+                        <span class="feature-icon">👟</span>
+                        <span class="feature-text">Одежда + обувь + аксессуары</span>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Assemble card
+        card.appendChild(leftSide);
+        card.appendChild(divider);
+        card.appendChild(rightSide);
 
         resultsGrid.appendChild(card);
         successCount++;
