@@ -41,7 +41,38 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
     setupStepper();
     checkServerHealth();
+    setupAdminAccess();
 });
+
+// Setup admin access with keyboard shortcut
+function setupAdminAccess() {
+    let keysPressed = [];
+    const secretCode = ['Control', 'Shift', 'A'];
+
+    document.addEventListener('keydown', (e) => {
+        keysPressed.push(e.key);
+        keysPressed = keysPressed.slice(-3); // Keep only last 3 keys
+
+        // Check if secret code matches
+        if (keysPressed.join(',') === secretCode.join(',')) {
+            const statsLink = document.getElementById('statsLink');
+            if (statsLink) {
+                statsLink.style.display = 'inline-flex';
+                // Save to sessionStorage so it persists during session
+                sessionStorage.setItem('admin_access', 'true');
+                console.log('🔓 Admin access granted');
+            }
+        }
+    });
+
+    // Check if admin access was already granted in this session
+    if (sessionStorage.getItem('admin_access') === 'true') {
+        const statsLink = document.getElementById('statsLink');
+        if (statsLink) {
+            statsLink.style.display = 'inline-flex';
+        }
+    }
+}
 
 // Setup Stepper Navigation
 function setupStepper() {

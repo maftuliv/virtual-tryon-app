@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Статистика отзывов - Virtual Try-On</title>
+    <link rel="stylesheet" href="feedback-stats.css">
+</head>
+<body>
+    <div class="stats-container">
+        <!-- Password Protection -->
+        <div id="passwordProtection" class="password-protection">
+            <div class="password-card">
+                <div class="password-icon">🔒</div>
+                <h2 class="password-title">Доступ ограничен</h2>
+                <p class="password-description">Для просмотра статистики введите пароль администратора</p>
+                <form class="password-form" onsubmit="checkPassword(event)">
+                    <input type="password" id="passwordInput" class="password-input" placeholder="Введите пароль" autocomplete="off" />
+                    <button type="submit" class="password-submit">Войти</button>
+                </form>
+                <div id="passwordError" class="password-error" style="display: none;">Неверный пароль</div>
+            </div>
+        </div>
+
+        <!-- Header -->
+        <header class="stats-header" style="display: none;">
+            <div class="header-content">
+                <a href="index.html" class="back-link">← Назад</a>
+                <h1 class="stats-title">📊 Статистика отзывов</h1>
+                <button class="refresh-btn" onclick="loadFeedbackStats()">🔄 Обновить</button>
+            </div>
+        </header>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="loading-state" style="display: none;">
+            <div class="loading-spinner"></div>
+            <p>Загрузка статистики...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorState" class="error-state" style="display: none;">
+            <div class="error-icon">⚠️</div>
+            <p id="errorMessage">Ошибка загрузки данных</p>
+            <button class="retry-btn" onclick="loadFeedbackStats()">Повторить</button>
+        </div>
+
+        <!-- Stats Content -->
+        <div id="statsContent" style="display: none;">
+            <!-- Summary Cards -->
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <div class="card-icon">📝</div>
+                    <div class="card-content">
+                        <div class="card-label">Всего отзывов</div>
+                        <div class="card-value" id="totalCount">0</div>
+                    </div>
+                </div>
+
+                <div class="summary-card">
+                    <div class="card-icon">⭐</div>
+                    <div class="card-content">
+                        <div class="card-label">Средняя оценка</div>
+                        <div class="card-value" id="avgRating">0.0</div>
+                    </div>
+                </div>
+
+                <div class="summary-card">
+                    <div class="card-icon">💬</div>
+                    <div class="card-content">
+                        <div class="card-label">С комментариями</div>
+                        <div class="card-value" id="withComments">0</div>
+                    </div>
+                </div>
+
+                <div class="summary-card">
+                    <div class="card-icon">📈</div>
+                    <div class="card-content">
+                        <div class="card-label">Сегодня</div>
+                        <div class="card-value" id="todayCount">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rating Distribution Chart -->
+            <div class="chart-section">
+                <h2 class="section-title">Распределение оценок</h2>
+                <div class="rating-chart" id="ratingChart"></div>
+            </div>
+
+            <!-- Recent Feedback List -->
+            <div class="feedback-section">
+                <div class="section-header">
+                    <h2 class="section-title">Последние отзывы</h2>
+                    <div class="filter-buttons">
+                        <button class="filter-btn active" data-filter="all" onclick="filterFeedback('all')">Все</button>
+                        <button class="filter-btn" data-filter="5" onclick="filterFeedback('5')">⭐ 5</button>
+                        <button class="filter-btn" data-filter="4" onclick="filterFeedback('4')">⭐ 4</button>
+                        <button class="filter-btn" data-filter="3" onclick="filterFeedback('3')">⭐ 3</button>
+                        <button class="filter-btn" data-filter="2" onclick="filterFeedback('2')">⭐ 2</button>
+                        <button class="filter-btn" data-filter="1" onclick="filterFeedback('1')">⭐ 1</button>
+                    </div>
+                </div>
+                <div class="feedback-list" id="feedbackList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="feedback-stats.js"></script>
+</body>
+</html>
