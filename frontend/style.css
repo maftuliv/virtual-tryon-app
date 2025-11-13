@@ -1485,6 +1485,19 @@ body::before {
     animation: fadeIn 0.3s ease;
 }
 
+/* Blur only on mobile */
+@media (max-width: 768px) {
+    .loading-overlay {
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+    }
+    
+    .loading-overlay-content {
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+    }
+}
+
 @keyframes fadeIn {
     from {
         opacity: 0;
