@@ -99,25 +99,35 @@
     overflow: hidden;
     scroll-behavior: smooth;
     position: relative;
+    min-height: 600px;
 }
 
 .timeline-item {
     min-width: 100%;
+    max-width: 100%;
     flex-shrink: 0;
     padding: 0 10px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
     opacity: 0;
     transform: translateX(50px);
     transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
 }
 
 .timeline-item.active {
     opacity: 1;
     transform: translateX(0);
+    position: relative;
+    pointer-events: auto;
 }
 
 .timeline-item.prev {
     opacity: 0;
     transform: translateX(-50px);
+    position: absolute;
 }
 
 /* Timeline Card */

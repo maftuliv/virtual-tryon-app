@@ -64,6 +64,38 @@ body {
     justify-content: space-between;
 }
 
+.top-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.top-bar-changelog-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 50px;
+    color: var(--slate-700);
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.top-bar-changelog-link:hover {
+    background: linear-gradient(135deg,
+        rgba(251, 207, 232, 0.6) 0%,
+        rgba(233, 213, 255, 0.6) 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.2);
+}
+
 .logo-container {
     display: flex;
     align-items: center;
@@ -391,6 +423,14 @@ body {
 }
 
 @media (max-width: 768px) {
+    .top-bar-changelog-link {
+        display: none;
+    }
+
+    .top-bar-right {
+        gap: 0;
+    }
+
     .upload-card-step {
         position: relative !important;
         width: 100% !important;
