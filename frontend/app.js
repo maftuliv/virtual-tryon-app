@@ -1517,16 +1517,21 @@ function showTestFeedbackForm() {
  * - Or press: Ctrl + Shift + T
  * - Or triple-click on logo (3 fast clicks)
  */
-window.testResults = function(count = 2) {
+window.testResults = function(count = 3) {
     console.log('🧪 Testing results section with', count, 'mock results');
 
-    // Create mock results data
+    // Use real example images from the examples/result folder
+    const exampleImages = [
+        'examples/result/rs_01.jpg',
+        'examples/result/rs_02.jpg',
+        'examples/result/rs_03.jpg'
+    ];
+
+    // Create mock results data using real example images
     const mockResults = [];
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < Math.min(count, exampleImages.length); i++) {
         mockResults.push({
-            result_image: `https://via.placeholder.com/400x600/ec4899/ffffff?text=Результат+${i + 1}`,
-            person_image: `https://via.placeholder.com/200x300/8b5cf6/ffffff?text=Человек+${i + 1}`,
-            garment_image: `https://via.placeholder.com/200x300/a855f7/ffffff?text=Одежда+${i + 1}`
+            result_image: exampleImages[i]
         });
     }
 
