@@ -803,6 +803,11 @@ function displayResults(results) {
         `;
     }
 
+    // Show results grid - CRITICAL: always show grid when displaying results
+    if (resultsGrid) {
+        resultsGrid.style.display = 'grid';
+    }
+    
     // Show results title and action buttons when there are actual results
     const resultsTitle = document.querySelector('.results-title');
     const actionButtons = document.querySelector('.action-buttons');
@@ -813,7 +818,7 @@ function displayResults(results) {
         actionButtons.style.display = 'flex';
     }
     
-    // Show feedback form after results are displayed
+    // Show feedback form after results are displayed (but don't hide results!)
     const feedbackSection = document.getElementById('feedbackSection');
     if (feedbackSection && successCount > 0) {
         feedbackSection.style.display = 'block';
@@ -1399,14 +1404,15 @@ function showTestFeedbackForm() {
     
     if (hasResults) {
         // If there are results, show everything (title, grid, buttons, feedback form)
+        // CRITICAL: Always show results grid when results exist
+        if (resultsGrid) {
+            resultsGrid.style.display = 'grid';
+        }
         if (resultsTitle) {
             resultsTitle.style.display = 'block';
         }
         if (actionButtons) {
             actionButtons.style.display = 'flex';
-        }
-        if (resultsGrid) {
-            resultsGrid.style.display = 'grid';
         }
     } else {
         // If no results, hide title, grid, and buttons (test mode)
