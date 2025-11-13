@@ -2081,11 +2081,9 @@ console.log('   - Triple-click logo - Hidden trigger');
 // ============================================================
 
 function goToHome(event) {
-    event.preventDefault();
-    // Scroll to top
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    // Switch to step 1
-    setTimeout(() => {
-        switchStep(1);
-    }, 500);
+    if (event) {
+        event.preventDefault();
+    }
+    // Полное обновление страницы - возврат на главную
+    window.location.href = '/';
 }
