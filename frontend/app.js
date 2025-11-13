@@ -670,14 +670,14 @@ function updateCtaHelperMessage(hasPersonImages, hasGarmentImage, canGenerate) {
     
     // Если загружено фото пользователя, но нет фото одежды
     if (hasPersonImages && !hasGarmentImage) {
-        helperMessage.textContent = '👍 Отлично! Теперь загрузите фото желаемой одежды';
+        helperMessage.innerHTML = '👍 Отлично! Теперь загрузите фото желаемой одежды <em>(шаг 2)</em>';
         helperMessage.style.display = 'block';
         return;
     }
     
     // Если загружено фото одежды, но нет фото пользователя
     if (!hasPersonImages && hasGarmentImage) {
-        helperMessage.textContent = '👍 Отлично! Теперь загрузите своё фото';
+        helperMessage.innerHTML = '👍 Отлично! Теперь загрузите своё фото <em>(шаг 1)</em>';
         helperMessage.style.display = 'block';
         return;
     }

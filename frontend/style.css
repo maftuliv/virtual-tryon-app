@@ -2772,6 +2772,12 @@ body::before {
     line-height: 1.5;
 }
 
+.cta-helper-message em {
+    font-style: italic;
+    opacity: 0.85;
+    font-weight: 500;
+}
+
 /* Stylized features text under button */
 .cta-features-text {
     text-align: center;
