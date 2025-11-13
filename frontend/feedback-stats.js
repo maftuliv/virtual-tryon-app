@@ -75,17 +75,21 @@ async function loadFeedbackStats() {
         // Extract feedbacks array based on source
         if (data.source === 'database') {
             allFeedbacks = data.feedbacks || [];
-        } else {
+        } else if (data.source === 'files') {
             // Convert file format to feedback format
             allFeedbacks = (data.files || [])
-                .filter(f => !f.error)
+                .filter(f => !f.error && f.rating)
                 .map(f => ({
                     rating: f.rating,
-                    comment: f.comment,
+                    comment: f.comment || '',
                     timestamp: f.timestamp,
                     session_id: null
                 }));
+        } else {
+            allFeedbacks = [];
         }
+
+        console.log('Processed feedbacks:', allFeedbacks);
 
         // Display statistics
         displayStats(allFeedbacks);

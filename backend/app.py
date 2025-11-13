@@ -1517,24 +1517,19 @@ def list_feedback():
                         with open(filepath, 'r', encoding='utf-8') as f:
                             data = json.load(f)
                             feedback_files.append({
-                                'filename': filename,
                                 'rating': data.get('rating'),
-                                'comment': data.get('comment', '')[:50] + '...' if len(data.get('comment', '')) > 50 else data.get('comment', ''),
+                                'comment': data.get('comment', ''),
                                 'timestamp': data.get('timestamp'),
-                                'size': os.path.getsize(filepath)
+                                'session_id': data.get('session_id')
                             })
                     except Exception as e:
-                        feedback_files.append({
-                            'filename': filename,
-                            'error': str(e)
-                        })
+                        print(f"[FEEDBACK] Error reading {filename}: {e}")
 
         return jsonify({
             'success': True,
             'source': 'files',
             'count': len(feedback_files),
-            'files': feedback_files,
-            'folder': FEEDBACK_FOLDER
+            'files': feedback_files
         }), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
