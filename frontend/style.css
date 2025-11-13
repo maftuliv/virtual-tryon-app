@@ -2801,21 +2801,6 @@ body::before {
     pointer-events: none;
 }
 
-.glass-mat-cta-button.loading {
-    cursor: wait;
-    pointer-events: none;
-}
-
-.glass-mat-cta-button.loading .glass-mat-button-text::after {
-    content: '...';
-    animation: loadingDots 1.5s infinite;
-}
-
-@keyframes loadingDots {
-    0%, 20% { content: '.'; }
-    40% { content: '..'; }
-    60%, 100% { content: '...'; }
-}
 
 /* Контент кнопки */
 .glass-mat-button-content {
