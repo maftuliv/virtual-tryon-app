@@ -289,15 +289,19 @@ function setupEventListeners() {
         });
     }
 
-    // Generate switch - triggers generation when toggled ON
+    // Generate button - triggers generation when clicked
     if (generateSwitch) {
-        generateSwitch.addEventListener('change', (e) => {
-            if (e.target.checked) {
-                // Switch turned ON - start generation
-                handleTryOn();
-            } else {
-                // Switch turned OFF - do nothing (user can reset manually)
-            }
+        generateSwitch.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Disable button to prevent double clicks
+            if (generateSwitch.disabled) return;
+            
+            // Add loading state
+            generateSwitch.classList.add('loading');
+            generateSwitch.disabled = true;
+            
+            // Start generation
+            handleTryOn();
         });
     }
 
@@ -595,7 +599,7 @@ function removeGarmentImage() {
     updateGenerateSwitch();
 }
 
-// Update Generate Switch State
+// Update Generate Button State
 function updateGenerateSwitch() {
     const hasPersonImages = state.personImages.length > 0;
     const hasGarmentImage = state.garmentImage !== null;
@@ -603,17 +607,23 @@ function updateGenerateSwitch() {
     const canGenerate = hasPersonImages && hasGarmentImage && !hasErrors;
 
     if (generateSwitch) {
-        // Disable switch if images not ready
+        // Enable/disable button based on ready state
         generateSwitch.disabled = !canGenerate;
+        if (canGenerate) {
+            generateSwitch.classList.remove('disabled');
+        } else {
+            generateSwitch.classList.add('disabled');
+        }
     }
 }
 
 // Handle Try-On Process
 async function handleTryOn() {
     try {
-        // Disable switch
+        // Disable button and add loading state
         if (generateSwitch) {
             generateSwitch.disabled = true;
+            generateSwitch.classList.add('loading');
         }
         progressBar.style.display = 'block';
         resultsSection.style.display = 'none';
@@ -698,9 +708,10 @@ async function handleTryOn() {
         progressBar.style.display = 'none';
         resultsSection.style.display = 'block';
         
-        // Re-enable switch (but keep it checked)
+        // Re-enable button
         if (generateSwitch) {
             generateSwitch.disabled = false;
+            generateSwitch.classList.remove('loading');
         }
 
     } catch (error) {
@@ -730,10 +741,10 @@ async function handleTryOn() {
 
         showError(errorMsg);
         progressBar.style.display = 'none';
-        // Reset switch on error
+        // Reset button on error
         if (generateSwitch) {
-            generateSwitch.checked = false;
             generateSwitch.disabled = false;
+            generateSwitch.classList.remove('loading');
         }
     }
 }
@@ -1308,10 +1319,10 @@ function resetApplication() {
         feedbackSection.style.display = 'none';
     }
 
-    // Reset generate switch
+    // Reset generate button
     if (generateSwitch) {
-        generateSwitch.checked = false;
         generateSwitch.disabled = false;
+        generateSwitch.classList.remove('loading', 'disabled');
     }
     updateGenerateSwitch();
 
