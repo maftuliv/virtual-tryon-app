@@ -91,10 +91,14 @@ async function updateFreeGenerationsIndicator(limitData = null) {
     const remainingEl = document.getElementById('freeGenRemaining');
 
     console.log('[FREE-GEN] Updating indicator, auth.user:', auth.user);
-    console.log('[FREE-GEN] Counter element:', counter);
-    console.log('[FREE-GEN] Remaining element:', remainingEl);
 
-    if (!auth.user) {
+    // Check if user is logged in by looking at UI elements
+    const authButton = document.getElementById('authButton');
+    const isLoggedIn = authButton && authButton.style.display === 'none';
+
+    console.log('[FREE-GEN] Is logged in:', isLoggedIn);
+
+    if (!isLoggedIn) {
         // Show counter for non-logged users
         if (!limitData) {
             console.log('[FREE-GEN] Fetching limit data...');
@@ -103,7 +107,7 @@ async function updateFreeGenerationsIndicator(limitData = null) {
                 console.log('[FREE-GEN] Limit data:', limitData);
             } catch (error) {
                 console.error('[FREE-GEN] Error fetching limit data:', error);
-                limitData = { remaining: 3, used: 0, limit: 3 };
+                limitData = { remaining: 3, used: 0, limit: 3, can_generate: true };
             }
         }
 

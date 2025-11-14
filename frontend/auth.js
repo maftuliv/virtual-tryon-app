@@ -183,6 +183,12 @@ class AuthManager {
             if (authBanner) {
                 authBanner.style.display = 'none';
             }
+
+            // Hide free generations counter for logged users
+            const freeCounter = document.getElementById('freeGenerationsCounter');
+            if (freeCounter) {
+                freeCounter.classList.remove('show');
+            }
         } else {
             // Show auth button
             if (authButton) authButton.style.display = 'inline-flex';
@@ -191,6 +197,11 @@ class AuthManager {
             // Hide admin link
             const adminLink = document.getElementById('adminLink');
             if (adminLink) adminLink.style.display = 'none';
+
+            // Show free generations counter for guests
+            if (typeof updateFreeGenerationsIndicator === 'function') {
+                updateFreeGenerationsIndicator();
+            }
         }
     }
 
