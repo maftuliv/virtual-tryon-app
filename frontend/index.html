@@ -108,6 +108,29 @@
                     <span class="logo-text">to l<span class="logo-smile">oo</span>k</span>
                 </a>
                 <div class="top-bar-right">
+                    <!-- Auth Button (для неавторизованных) -->
+                    <button id="authButton" class="auth-btn" onclick="showAuthModal()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2"/>
+                            <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                        Войти
+                    </button>
+
+                    <!-- User Profile (для авторизованных) -->
+                    <div id="userProfile" class="user-profile" style="display: none;">
+                        <img id="userAvatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Ccircle cx='16' cy='16' r='16' fill='%23ec4899'/%3E%3C/svg%3E" class="user-avatar" alt="User">
+                        <div class="user-info">
+                            <span id="userName" class="user-name">User</span>
+                            <span id="userStatus" class="user-status-badge free">Free</span>
+                        </div>
+                        <button class="logout-btn" onclick="handleLogout()" title="Выход">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="2"/>
+                            </svg>
+                        </button>
+                    </div>
+
                     <a href="changelog.html" class="top-bar-changelog-link">📜 История</a>
                     <a href="feedback-stats.html" class="top-bar-changelog-link" id="statsLink" style="display: none;">📊 Статистика</a>
                     <div class="top-bar-badge">
@@ -753,6 +776,69 @@
         </div>
     </div>
 
+    <!-- Limit Banner -->
+    <div id="limitBanner" class="limit-banner" style="display: none;">
+        <span id="limitText"></span>
+        <button onclick="showUpgradeModal()">Upgrade to Premium</button>
+    </div>
+
+    <!-- Auth Modal -->
+    <div id="authModal" class="auth-modal" style="display: none;">
+        <div class="auth-modal-overlay" onclick="closeAuthModal()"></div>
+        <div class="auth-modal-content">
+            <button class="auth-modal-close" onclick="closeAuthModal()">&times;</button>
+
+            <h2 class="auth-modal-title">Вход в аккаунт</h2>
+
+            <div class="auth-tabs">
+                <button class="auth-tab active" onclick="switchAuthTab('login')">Вход</button>
+                <button class="auth-tab" onclick="switchAuthTab('register')">Регистрация</button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="loginForm" class="auth-form" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <input type="email" id="loginEmail" class="form-input" placeholder="Email" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="loginPassword" class="form-input" placeholder="Пароль" required>
+                </div>
+                <button type="submit" class="auth-submit-btn">Войти</button>
+                <div class="auth-error" id="loginError"></div>
+            </form>
+
+            <!-- Register Form -->
+            <form id="registerForm" class="auth-form" style="display: none;" onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <input type="text" id="registerName" class="form-input" placeholder="Имя" required>
+                </div>
+                <div class="form-group">
+                    <input type="email" id="registerEmail" class="form-input" placeholder="Email" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="registerPassword" class="form-input" placeholder="Пароль (мин. 6 символов)" required>
+                </div>
+                <button type="submit" class="auth-submit-btn">Зарегистрироваться</button>
+                <div class="auth-error" id="registerError"></div>
+            </form>
+
+            <div class="auth-divider">или войти через</div>
+
+            <div class="social-auth">
+                <button class="social-btn google-btn" onclick="googleLogin()">
+                    <svg width="18" height="18" viewBox="0 0 18 18">
+                        <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
+                        <path fill="#34A853" d="M9.003 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.96v2.332C2.438 15.983 5.482 18 9.003 18z"/>
+                        <path fill="#FBBC05" d="M3.964 10.71c-.18-.54-.282-1.117-.282-1.71s.102-1.17.282-1.71V4.958H.957C.347 6.173 0 7.548 0 9s.348 2.827.957 4.042l3.007-2.332z"/>
+                        <path fill="#EA4335" d="M9.003 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.464.891 11.428 0 9.003 0 5.482 0 2.438 2.017.96 4.958L3.967 7.29c.708-2.127 2.692-3.71 5.036-3.71z"/>
+                    </svg>
+                    Google
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
     <script src="app.js" defer></script>
 </body>
 </html>

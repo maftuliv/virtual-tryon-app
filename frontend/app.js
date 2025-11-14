@@ -636,6 +636,22 @@ function updateCtaHelperMessage(hasPersonImages, hasGarmentImage, canGenerate) {
 // Handle Try-On Process
 async function handleTryOn() {
     try {
+        // Check authentication first
+        if (!auth.user) {
+            showAuthModal();
+            return;
+        }
+
+        // Check daily limit
+        const limit = await auth.checkLimit();
+        if (!limit.can_generate) {
+            showUpgradeModal(`Вы исчерпали дневной лимит генераций (${limit.limit}/день). Перейдите на Premium для безлимитного доступа!`);
+            return;
+        }
+
+        // Update limit indicator
+        auth.updateLimitIndicator();
+
         // Disable button (no animation)
         if (generateSwitch) {
             generateSwitch.disabled = true;
@@ -694,7 +710,8 @@ async function handleTryOn() {
         const tryonResponse = await fetch(`${API_URL}/api/tryon`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${auth.token}`
             },
             body: JSON.stringify({
                 person_images: state.uploadedPersonPaths,

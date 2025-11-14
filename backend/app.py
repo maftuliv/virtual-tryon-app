@@ -3,6 +3,7 @@ import time
 import base64
 import json
 import requests
+import psycopg2
 from datetime import datetime
 from flask import Flask, request, jsonify, send_file, send_from_directory
 from flask_cors import CORS
@@ -22,6 +23,26 @@ try:
 except ImportError as e:
     print(f"[DATABASE] ⚠️ Database module not available: {e}")
     db_available = False
+
+# Auth imports
+try:
+    from auth import AuthManager, create_auth_decorator
+    print("[AUTH] ✅ Auth module loaded successfully")
+
+    # Initialize PostgreSQL connection for auth
+    DATABASE_URL = os.getenv('DATABASE_URL')
+    if DATABASE_URL:
+        db_conn = psycopg2.connect(DATABASE_URL)
+        auth_manager = AuthManager(db_conn)
+        require_auth = create_auth_decorator(auth_manager)
+        auth_available = True
+        print("[AUTH] ✅ Auth manager initialized")
+    else:
+        auth_available = False
+        print("[AUTH] ⚠️ DATABASE_URL not found, auth disabled")
+except Exception as e:
+    print(f"[AUTH] ⚠️ Auth module not available: {e}")
+    auth_available = False
 
 # Configuration for static files
 FRONTEND_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend')
@@ -865,13 +886,33 @@ def upload_files():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/tryon', methods=['POST'])
+@require_auth
 def virtual_tryon():
     """
     Perform virtual try-on using NanoBanana API (synchronous)
     Expects JSON: {person_images: [], garment_image: "", garment_category: "auto"}
     Returns: {success: true, results: [...]}
+    Requires authentication and checks daily limits
     """
     try:
+        # Check if auth is available
+        if not auth_available:
+            return jsonify({'error': 'Auth not available'}), 503
+
+        # Check daily limit for user
+        user_id = request.user_id
+        can_generate, remaining, limit = auth_manager.check_daily_limit(user_id)
+
+        if not can_generate:
+            return jsonify({
+                'error': 'LIMIT_EXCEEDED',
+                'message': f'Вы исчерпали дневной лимит генераций ({limit}/день). Перейдите на Premium для безлимитного доступа!',
+                'remaining': remaining,
+                'limit': limit
+            }), 403
+
+        print(f"[TRYON] User {user_id} - Limit check: {remaining}/{limit} remaining")
+
         data = request.get_json()
 
         if not data or 'person_images' not in data or 'garment_image' not in data:
@@ -986,9 +1027,30 @@ def virtual_tryon():
                     'error': str(e)
                 })
 
+        # Increment daily limit counter after successful generation
+        if auth_available and request.user_id and len(results) > 0:
+            # Only increment if at least one result was successful
+            successful_results = [r for r in results if 'error' not in r]
+            if successful_results:
+                try:
+                    auth_manager.increment_daily_limit(request.user_id)
+                    print(f"[TRYON] Daily limit incremented for user {request.user_id}")
+                except Exception as e:
+                    print(f"[TRYON] Warning: Failed to increment daily limit: {e}")
+
+        # Get updated limit info
+        updated_limit = {'can_generate': True, 'remaining': -1, 'limit': -1}
+        if auth_available and request.user_id:
+            try:
+                can_gen, rem, lim = auth_manager.check_daily_limit(request.user_id)
+                updated_limit = {'can_generate': can_gen, 'remaining': rem, 'limit': lim}
+            except Exception as e:
+                print(f"[TRYON] Warning: Failed to get updated limit: {e}")
+
         return jsonify({
             'success': True,
-            'results': results
+            'results': results,
+            'daily_limit': updated_limit
         }), 200
 
     except Exception as e:
@@ -1606,6 +1668,144 @@ def cleanup():
         }), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+# ==================== AUTH ENDPOINTS ====================
+
+@app.route('/api/auth/register', methods=['POST'])
+def register():
+    """Register new user with email and password"""
+    if not auth_available:
+        return jsonify({'success': False, 'error': 'Auth not available'}), 503
+
+    try:
+        data = request.json
+        email = data.get('email')
+        password = data.get('password')
+        full_name = data.get('full_name')
+
+        if not email or not password or not full_name:
+            return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+
+        result = auth_manager.register_user(email, password, full_name)
+
+        if result['success']:
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 400
+
+    except Exception as e:
+        print(f"[AUTH] Register error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/auth/login', methods=['POST'])
+def login():
+    """Login user with email and password"""
+    if not auth_available:
+        return jsonify({'success': False, 'error': 'Auth not available'}), 503
+
+    try:
+        data = request.json
+        email = data.get('email')
+        password = data.get('password')
+
+        if not email or not password:
+            return jsonify({'success': False, 'error': 'Missing email or password'}), 400
+
+        result = auth_manager.login_user(email, password)
+
+        if result['success']:
+            return jsonify(result), 200
+        else:
+            return jsonify(result), 401
+
+    except Exception as e:
+        print(f"[AUTH] Login error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/auth/me', methods=['GET'])
+@require_auth
+def get_current_user():
+    """Get current user profile"""
+    if not auth_available:
+        return jsonify({'error': 'Auth not available'}), 503
+
+    try:
+        user = auth_manager.get_user_by_id(request.user_id)
+
+        if user:
+            # Add daily limit info
+            can_generate, remaining, limit = auth_manager.check_daily_limit(request.user_id)
+            user['daily_limit'] = {
+                'can_generate': can_generate,
+                'remaining': remaining,
+                'limit': limit
+            }
+            return jsonify({'user': user}), 200
+        else:
+            return jsonify({'error': 'User not found'}), 404
+
+    except Exception as e:
+        print(f"[AUTH] Get user error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/auth/check-limit', methods=['GET'])
+@require_auth
+def check_limit():
+    """Check user's daily generation limit"""
+    if not auth_available:
+        return jsonify({'error': 'Auth not available'}), 503
+
+    try:
+        can_generate, remaining, limit = auth_manager.check_daily_limit(request.user_id)
+
+        return jsonify({
+            'can_generate': can_generate,
+            'remaining': remaining,
+            'limit': limit
+        }), 200
+
+    except Exception as e:
+        print(f"[AUTH] Check limit error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/auth/google', methods=['GET'])
+def google_auth():
+    """Initiate Google OAuth flow"""
+    if not auth_available:
+        return jsonify({'error': 'Auth not available'}), 503
+
+    try:
+        # TODO: Implement Google OAuth
+        # This requires google-auth-oauthlib setup
+        return jsonify({'error': 'Google OAuth not implemented yet'}), 501
+
+    except Exception as e:
+        print(f"[AUTH] Google auth error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/auth/google/callback', methods=['GET'])
+def google_callback():
+    """Handle Google OAuth callback"""
+    if not auth_available:
+        return jsonify({'error': 'Auth not available'}), 503
+
+    try:
+        # TODO: Implement Google OAuth callback
+        return jsonify({'error': 'Google OAuth not implemented yet'}), 501
+
+    except Exception as e:
+        print(f"[AUTH] Google callback error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+# ==================== END AUTH ENDPOINTS ====================
 
 if __name__ == '__main__':
     print("=" * 60)
