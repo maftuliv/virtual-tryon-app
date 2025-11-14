@@ -309,11 +309,8 @@ function setupEventListeners() {
             
             // Hide any previous error
             hideCtaButtonError();
-            
-            // Disable button (no animation)
-            generateSwitch.disabled = true;
-            
-            // Start generation
+
+            // Start generation (button will be disabled inside after auth check)
             handleTryOn();
         });
     }

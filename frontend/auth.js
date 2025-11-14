@@ -282,6 +282,12 @@ function closeAuthModal() {
     // Clear form errors
     const errors = document.querySelectorAll('.auth-error');
     errors.forEach(error => error.textContent = '');
+
+    // Re-enable generate button if it was disabled
+    const generateSwitch = document.querySelector('.cta-button');
+    if (generateSwitch) {
+        generateSwitch.disabled = false;
+    }
 }
 
 function switchAuthTab(tab) {
