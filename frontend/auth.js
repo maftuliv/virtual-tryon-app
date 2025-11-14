@@ -177,6 +177,12 @@ class AuthManager {
             if (adminLink) {
                 adminLink.style.display = this.user.role === 'admin' ? 'inline-flex' : 'none';
             }
+
+            // Hide auth required banner when logged in
+            const authBanner = document.getElementById('authRequiredBanner');
+            if (authBanner) {
+                authBanner.style.display = 'none';
+            }
         } else {
             // Show auth button
             if (authButton) authButton.style.display = 'inline-flex';

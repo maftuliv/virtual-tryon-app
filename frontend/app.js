@@ -296,17 +296,33 @@ function setupEventListeners() {
             e.preventDefault();
             // Disable button to prevent double clicks
             if (generateSwitch.disabled) return;
-            
+
+            // Check authentication FIRST
+            if (!auth.user) {
+                // Show friendly auth required banner
+                const authBanner = document.getElementById('authRequiredBanner');
+                if (authBanner) {
+                    authBanner.style.display = 'block';
+                }
+                return;
+            }
+
+            // Hide auth banner if user is logged in
+            const authBanner = document.getElementById('authRequiredBanner');
+            if (authBanner) {
+                authBanner.style.display = 'none';
+            }
+
             // Check if images are loaded before starting
             const hasPersonImages = state.personImages.length > 0;
             const hasGarmentImage = state.garmentImage !== null;
-            
+
             if (!hasPersonImages || !hasGarmentImage) {
                 // Show error message below button
                 showCtaButtonError();
                 return;
             }
-            
+
             // Hide any previous error
             hideCtaButtonError();
 
@@ -633,22 +649,6 @@ function updateCtaHelperMessage(hasPersonImages, hasGarmentImage, canGenerate) {
 // Handle Try-On Process
 async function handleTryOn() {
     try {
-        // Check authentication first
-        if (!auth.user) {
-            // Show friendly auth required banner
-            const authBanner = document.getElementById('authRequiredBanner');
-            if (authBanner) {
-                authBanner.style.display = 'block';
-            }
-            return;
-        }
-
-        // Hide auth banner if user is logged in
-        const authBanner = document.getElementById('authRequiredBanner');
-        if (authBanner) {
-            authBanner.style.display = 'none';
-        }
-
         // Check daily limit
         const limit = await auth.checkLimit();
         if (!limit.can_generate) {
