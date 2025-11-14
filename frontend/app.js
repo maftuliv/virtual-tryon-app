@@ -1,6 +1,36 @@
 // API Configuration
 const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:5000' : '';
 
+// Free generations tracking (for non-logged users)
+const FREE_GENERATIONS_KEY = 'free_generations_count';
+const FREE_GENERATIONS_DATE_KEY = 'free_generations_date';
+const FREE_GENERATIONS_LIMIT = 3;
+
+function getFreeGenerationsCount() {
+    const today = new Date().toDateString();
+    const savedDate = localStorage.getItem(FREE_GENERATIONS_DATE_KEY);
+
+    // Reset counter if it's a new day
+    if (savedDate !== today) {
+        localStorage.setItem(FREE_GENERATIONS_KEY, '0');
+        localStorage.setItem(FREE_GENERATIONS_DATE_KEY, today);
+        return 0;
+    }
+
+    return parseInt(localStorage.getItem(FREE_GENERATIONS_KEY) || '0', 10);
+}
+
+function incrementFreeGenerations() {
+    const count = getFreeGenerationsCount();
+    localStorage.setItem(FREE_GENERATIONS_KEY, String(count + 1));
+    console.log(`[FREE] Free generations used: ${count + 1}/${FREE_GENERATIONS_LIMIT}`);
+}
+
+function getRemainingFreeGenerations() {
+    const used = getFreeGenerationsCount();
+    return Math.max(0, FREE_GENERATIONS_LIMIT - used);
+}
+
 // State Management
 const state = {
     personImages: [],
@@ -297,22 +327,6 @@ function setupEventListeners() {
             // Disable button to prevent double clicks
             if (generateSwitch.disabled) return;
 
-            // Check authentication FIRST
-            if (!auth.user) {
-                // Show friendly auth required banner
-                const authBanner = document.getElementById('authRequiredBanner');
-                if (authBanner) {
-                    authBanner.style.display = 'block';
-                }
-                return;
-            }
-
-            // Hide auth banner if user is logged in
-            const authBanner = document.getElementById('authRequiredBanner');
-            if (authBanner) {
-                authBanner.style.display = 'none';
-            }
-
             // Check if images are loaded before starting
             const hasPersonImages = state.personImages.length > 0;
             const hasGarmentImage = state.garmentImage !== null;
@@ -326,7 +340,26 @@ function setupEventListeners() {
             // Hide any previous error
             hideCtaButtonError();
 
-            // Start generation (button will be disabled inside after auth check)
+            // Check free generation limit for non-logged users
+            if (!auth.user) {
+                const freeGenerations = getFreeGenerationsCount();
+                if (freeGenerations >= 3) {
+                    // Show auth banner when limit reached
+                    const authBanner = document.getElementById('authRequiredBanner');
+                    if (authBanner) {
+                        authBanner.style.display = 'block';
+                    }
+                    return;
+                }
+            }
+
+            // Hide auth banner
+            const authBanner = document.getElementById('authRequiredBanner');
+            if (authBanner) {
+                authBanner.style.display = 'none';
+            }
+
+            // Start generation
             handleTryOn();
         });
     }
@@ -751,6 +784,9 @@ async function handleTryOn() {
         // Update limit counter after successful generation
         if (tryonData.daily_limit && auth.user) {
             auth.updateLimitIndicator();
+        } else if (!auth.user) {
+            // Increment free generations for non-logged users
+            incrementFreeGenerations();
         }
 
         // Hide loading overlay and progress, show results

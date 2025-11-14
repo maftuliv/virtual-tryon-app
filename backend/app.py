@@ -899,34 +899,40 @@ def upload_files():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/tryon', methods=['POST'])
-@require_auth
 def virtual_tryon():
     """
     Perform virtual try-on using NanoBanana API (synchronous)
     Expects JSON: {person_images: [], garment_image: "", garment_category: "auto"}
     Returns: {success: true, results: [...]}
-    Requires authentication and checks daily limits
+    Authentication is optional - allows 3 free generations without login
     """
     try:
-        # Check if auth is available
-        if not auth_available:
-            return jsonify({'error': 'Auth not available'}), 503
+        # Check if user is authenticated (optional)
+        user_id = None
+        auth_header = request.headers.get('Authorization', '')
 
-        # Check daily limit for user
-        user_id = request.user_id
-        can_generate, used, limit = auth_manager.check_daily_limit(user_id)
+        if auth_available and auth_header.startswith('Bearer '):
+            token = auth_header.replace('Bearer ', '')
+            user_id = auth_manager.verify_token(token)
 
-        if not can_generate:
-            return jsonify({
-                'error': 'LIMIT_EXCEEDED',
-                'message': f'Вы исчерпали дневной лимит генераций ({limit}/день). Перейдите на Premium для безлимитного доступа!',
-                'used': used,
-                'remaining': 0,
-                'limit': limit
-            }), 403
+        # Check daily limit only for authenticated users
+        if user_id and auth_available:
+            can_generate, used, limit = auth_manager.check_daily_limit(user_id)
 
-        remaining = limit - used if limit >= 0 else -1
-        print(f"[TRYON] User {user_id} - Limit check: {used}/{limit} used, {remaining} remaining")
+            if not can_generate:
+                return jsonify({
+                    'error': 'LIMIT_EXCEEDED',
+                    'message': f'Вы исчерпали дневной лимит генераций ({limit}/день). Перейдите на Premium для безлимитного доступа!',
+                    'used': used,
+                    'remaining': 0,
+                    'limit': limit
+                }), 403
+
+            remaining = limit - used if limit >= 0 else -1
+            print(f"[TRYON] User {user_id} - Limit check: {used}/{limit} used, {remaining} remaining")
+        else:
+            # Non-authenticated user - frontend handles free generation limit
+            print(f"[TRYON] Non-authenticated user - free generation (frontend tracks limit)")
 
         data = request.get_json()
 
@@ -1042,22 +1048,22 @@ def virtual_tryon():
                     'error': str(e)
                 })
 
-        # Increment daily limit counter after successful generation
-        if auth_available and request.user_id and len(results) > 0:
+        # Increment daily limit counter after successful generation (only for authenticated users)
+        if auth_available and user_id and len(results) > 0:
             # Only increment if at least one result was successful
             successful_results = [r for r in results if 'error' not in r]
             if successful_results:
                 try:
-                    auth_manager.increment_daily_limit(request.user_id)
-                    print(f"[TRYON] Daily limit incremented for user {request.user_id}")
+                    auth_manager.increment_daily_limit(user_id)
+                    print(f"[TRYON] Daily limit incremented for user {user_id}")
                 except Exception as e:
                     print(f"[TRYON] Warning: Failed to increment daily limit: {e}")
 
-        # Get updated limit info
+        # Get updated limit info (only for authenticated users)
         updated_limit = {'can_generate': True, 'used': -1, 'remaining': -1, 'limit': -1}
-        if auth_available and request.user_id:
+        if auth_available and user_id:
             try:
-                can_gen, used_count, lim = auth_manager.check_daily_limit(request.user_id)
+                can_gen, used_count, lim = auth_manager.check_daily_limit(user_id)
                 rem = lim - used_count if lim >= 0 else -1
                 updated_limit = {'can_generate': can_gen, 'used': used_count, 'remaining': rem, 'limit': lim}
             except Exception as e:
