@@ -25,6 +25,15 @@ except ImportError as e:
     db_available = False
 
 # Auth imports
+# Dummy decorator for when auth is not available
+def dummy_auth_decorator(f):
+    """Decorator that returns 503 when auth is not available"""
+    from functools import wraps
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        return jsonify({'error': 'Auth not available'}), 503
+    return decorated_function
+
 try:
     from auth import AuthManager, create_auth_decorator
     print("[AUTH] ✅ Auth module loaded successfully")
@@ -39,10 +48,12 @@ try:
         print("[AUTH] ✅ Auth manager initialized")
     else:
         auth_available = False
+        require_auth = dummy_auth_decorator
         print("[AUTH] ⚠️ DATABASE_URL not found, auth disabled")
 except Exception as e:
     print(f"[AUTH] ⚠️ Auth module not available: {e}")
     auth_available = False
+    require_auth = dummy_auth_decorator
 
 # Configuration for static files
 FRONTEND_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend')
