@@ -171,10 +171,20 @@ class AuthManager {
 
             // Update limit indicator
             this.updateLimitIndicator();
+
+            // Show admin link if user is admin
+            const adminLink = document.getElementById('adminLink');
+            if (adminLink) {
+                adminLink.style.display = this.user.role === 'admin' ? 'inline-flex' : 'none';
+            }
         } else {
             // Show auth button
             if (authButton) authButton.style.display = 'inline-flex';
             if (userProfile) userProfile.style.display = 'none';
+
+            // Hide admin link
+            const adminLink = document.getElementById('adminLink');
+            if (adminLink) adminLink.style.display = 'none';
         }
     }
 

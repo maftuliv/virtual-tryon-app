@@ -43,17 +43,19 @@ try:
     if DATABASE_URL:
         db_conn = psycopg2.connect(DATABASE_URL)
         auth_manager = AuthManager(db_conn)
-        require_auth = create_auth_decorator(auth_manager)
+        require_auth, require_admin = create_auth_decorator(auth_manager)
         auth_available = True
         print("[AUTH] ✅ Auth manager initialized")
     else:
         auth_available = False
         require_auth = dummy_auth_decorator
+        require_admin = dummy_auth_decorator
         print("[AUTH] ⚠️ DATABASE_URL not found, auth disabled")
 except Exception as e:
     print(f"[AUTH] ⚠️ Auth module not available: {e}")
     auth_available = False
     require_auth = dummy_auth_decorator
+    require_admin = dummy_auth_decorator
 
 # Configuration for static files
 FRONTEND_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend')
@@ -1824,6 +1826,211 @@ def google_callback():
         return jsonify({'error': str(e)}), 500
 
 # ==================== END AUTH ENDPOINTS ====================
+
+# ==================== ADMIN ENDPOINTS ====================
+
+@app.route('/api/admin/users', methods=['GET'])
+@require_admin
+def admin_get_users():
+    """Get all users (admin only)"""
+    try:
+        if not auth_available:
+            return jsonify({'error': 'Auth system not available'}), 503
+
+        cursor = db_conn.cursor()
+        cursor.execute("""
+            SELECT u.id, u.email, u.full_name, u.is_premium, u.provider, u.role, u.created_at,
+                   COUNT(g.id) as generation_count
+            FROM users u
+            LEFT JOIN generations g ON u.id = g.user_id
+            GROUP BY u.id, u.email, u.full_name, u.is_premium, u.provider, u.role, u.created_at
+            ORDER BY u.created_at DESC
+        """)
+
+        users_data = cursor.fetchall()
+        cursor.close()
+
+        users = []
+        for user in users_data:
+            users.append({
+                'id': user[0],
+                'email': user[1],
+                'full_name': user[2],
+                'is_premium': user[3],
+                'provider': user[4],
+                'role': user[5],
+                'created_at': user[6].isoformat() if user[6] else None,
+                'generation_count': user[7]
+            })
+
+        return jsonify({'users': users}), 200
+
+    except Exception as e:
+        print(f"[ADMIN] Get users error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/admin/users/<int:user_id>/premium', methods=['POST'])
+@require_admin
+def admin_toggle_premium(user_id):
+    """Toggle user premium status (admin only)"""
+    try:
+        if not auth_available:
+            return jsonify({'error': 'Auth system not available'}), 503
+
+        data = request.get_json()
+        is_premium = data.get('is_premium', False)
+
+        cursor = db_conn.cursor()
+
+        if is_premium:
+            # Set premium for 30 days
+            from datetime import datetime, timedelta
+            premium_until = datetime.now() + timedelta(days=30)
+            cursor.execute("""
+                UPDATE users
+                SET is_premium = TRUE, premium_until = %s
+                WHERE id = %s
+            """, (premium_until, user_id))
+        else:
+            # Remove premium
+            cursor.execute("""
+                UPDATE users
+                SET is_premium = FALSE, premium_until = NULL
+                WHERE id = %s
+            """, (user_id,))
+
+        db_conn.commit()
+        cursor.close()
+
+        return jsonify({'success': True, 'is_premium': is_premium}), 200
+
+    except Exception as e:
+        db_conn.rollback()
+        print(f"[ADMIN] Toggle premium error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/admin/generations', methods=['GET'])
+@require_admin
+def admin_get_all_generations():
+    """Get all generations with user info (admin only)"""
+    try:
+        if not auth_available:
+            return jsonify({'error': 'Auth system not available'}), 503
+
+        # Get optional user_id filter
+        user_id = request.args.get('user_id', type=int)
+        limit = request.args.get('limit', 100, type=int)
+        offset = request.args.get('offset', 0, type=int)
+
+        cursor = db_conn.cursor()
+
+        if user_id:
+            # Get generations for specific user
+            cursor.execute("""
+                SELECT g.id, g.user_id, u.email, u.full_name, g.category, g.status,
+                       g.person_image_url, g.garment_image_url, g.result_image_url,
+                       g.created_at
+                FROM generations g
+                JOIN users u ON g.user_id = u.id
+                WHERE g.user_id = %s
+                ORDER BY g.created_at DESC
+                LIMIT %s OFFSET %s
+            """, (user_id, limit, offset))
+        else:
+            # Get all generations
+            cursor.execute("""
+                SELECT g.id, g.user_id, u.email, u.full_name, g.category, g.status,
+                       g.person_image_url, g.garment_image_url, g.result_image_url,
+                       g.created_at
+                FROM generations g
+                JOIN users u ON g.user_id = u.id
+                ORDER BY g.created_at DESC
+                LIMIT %s OFFSET %s
+            """, (limit, offset))
+
+        generations_data = cursor.fetchall()
+        cursor.close()
+
+        generations = []
+        for gen in generations_data:
+            generations.append({
+                'id': gen[0],
+                'user_id': gen[1],
+                'user_email': gen[2],
+                'user_name': gen[3],
+                'category': gen[4],
+                'status': gen[5],
+                'person_image_url': gen[6],
+                'garment_image_url': gen[7],
+                'result_image_url': gen[8],
+                'created_at': gen[9].isoformat() if gen[9] else None
+            })
+
+        return jsonify({'generations': generations, 'total': len(generations)}), 200
+
+    except Exception as e:
+        print(f"[ADMIN] Get generations error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/admin/stats', methods=['GET'])
+@require_admin
+def admin_get_stats():
+    """Get admin statistics (admin only)"""
+    try:
+        if not auth_available:
+            return jsonify({'error': 'Auth system not available'}), 503
+
+        cursor = db_conn.cursor()
+
+        # Get user stats
+        cursor.execute("SELECT COUNT(*) FROM users")
+        total_users = cursor.fetchone()[0]
+
+        cursor.execute("SELECT COUNT(*) FROM users WHERE is_premium = TRUE")
+        premium_users = cursor.fetchone()[0]
+
+        cursor.execute("SELECT COUNT(*) FROM users WHERE role = 'admin'")
+        admin_users = cursor.fetchone()[0]
+
+        # Get generation stats
+        cursor.execute("SELECT COUNT(*) FROM generations")
+        total_generations = cursor.fetchone()[0]
+
+        cursor.execute("SELECT COUNT(*) FROM generations WHERE DATE(created_at) = CURRENT_DATE")
+        today_generations = cursor.fetchone()[0]
+
+        cursor.execute("""
+            SELECT category, COUNT(*) as count
+            FROM generations
+            GROUP BY category
+            ORDER BY count DESC
+        """)
+        category_stats = cursor.fetchall()
+
+        cursor.close()
+
+        return jsonify({
+            'users': {
+                'total': total_users,
+                'premium': premium_users,
+                'free': total_users - premium_users,
+                'admins': admin_users
+            },
+            'generations': {
+                'total': total_generations,
+                'today': today_generations,
+                'by_category': [{'category': cat[0], 'count': cat[1]} for cat in category_stats]
+            }
+        }), 200
+
+    except Exception as e:
+        print(f"[ADMIN] Get stats error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+# ==================== END ADMIN ENDPOINTS ====================
 
 if __name__ == '__main__':
     print("=" * 60)

@@ -241,7 +241,7 @@ class AuthManager:
         try:
             cursor = self.db.cursor()
             cursor.execute("""
-                SELECT id, email, full_name, avatar_url, provider, is_premium, premium_until, created_at
+                SELECT id, email, full_name, avatar_url, provider, is_premium, premium_until, created_at, role
                 FROM users
                 WHERE id = %s
             """, (user_id,))
@@ -258,7 +258,8 @@ class AuthManager:
                     'provider': user[4],
                     'is_premium': user[5],
                     'premium_until': user[6].isoformat() if user[6] else None,
-                    'created_at': user[7].isoformat() if user[7] else None
+                    'created_at': user[7].isoformat() if user[7] else None,
+                    'role': user[8] if len(user) > 8 else 'user'
                 }
 
             return None
@@ -444,4 +445,39 @@ def create_auth_decorator(auth_manager):
 
         return decorated_function
 
-    return require_auth
+    def require_admin(f):
+        """Decorator to require admin role"""
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            # Get token from Authorization header
+            auth_header = request.headers.get('Authorization', '')
+
+            if not auth_header.startswith('Bearer '):
+                return jsonify({'error': 'No authorization token provided'}), 401
+
+            token = auth_header.replace('Bearer ', '')
+            user_id = auth_manager.verify_token(token)
+
+            if not user_id:
+                return jsonify({'error': 'Invalid or expired token'}), 401
+
+            # Check if user is admin
+            cursor = auth_manager.db.cursor()
+            cursor.execute("""
+                SELECT role FROM users WHERE id = %s
+            """, (user_id,))
+
+            user = cursor.fetchone()
+            cursor.close()
+
+            if not user or user[0] != 'admin':
+                return jsonify({'error': 'Access denied. Admin privileges required'}), 403
+
+            # Attach user_id to request for use in route
+            request.user_id = user_id
+
+            return f(*args, **kwargs)
+
+        return decorated_function
+
+    return require_auth, require_admin
