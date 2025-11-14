@@ -378,9 +378,9 @@
                 }
 
                 const data = await response.json();
-                currentUser = data;
+                currentUser = data.user;
 
-                if (data.role !== 'admin') {
+                if (!currentUser || currentUser.role !== 'admin') {
                     alert('У вас нет прав доступа к админ-панели');
                     window.location.href = 'index.html';
                     return;
