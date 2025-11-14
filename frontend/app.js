@@ -87,23 +87,23 @@ async function incrementDeviceLimit() {
 }
 
 async function updateFreeGenerationsIndicator(limitData = null) {
-    const indicator = document.getElementById('freeGenerationsIndicator');
+    const counter = document.getElementById('freeGenerationsCounter');
     const remainingEl = document.getElementById('freeGenRemaining');
 
     if (!auth.user) {
-        // Show indicator for non-logged users
+        // Show counter for non-logged users
         if (!limitData) {
             limitData = await checkDeviceLimit();
         }
 
-        if (indicator && remainingEl) {
+        if (counter && remainingEl) {
             remainingEl.textContent = limitData.remaining;
-            indicator.style.display = 'flex';
+            counter.style.display = 'flex';
         }
     } else {
         // Hide for logged users
-        if (indicator) {
-            indicator.style.display = 'none';
+        if (counter) {
+            counter.style.display = 'none';
         }
     }
 }
