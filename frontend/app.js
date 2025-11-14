@@ -98,13 +98,18 @@ async function updateFreeGenerationsIndicator(limitData = null) {
         // Show counter for non-logged users
         if (!limitData) {
             console.log('[FREE-GEN] Fetching limit data...');
-            limitData = await checkDeviceLimit();
-            console.log('[FREE-GEN] Limit data:', limitData);
+            try {
+                limitData = await checkDeviceLimit();
+                console.log('[FREE-GEN] Limit data:', limitData);
+            } catch (error) {
+                console.error('[FREE-GEN] Error fetching limit data:', error);
+                limitData = { remaining: 3, used: 0, limit: 3 };
+            }
         }
 
         if (counter && remainingEl && limitData) {
             remainingEl.textContent = limitData.remaining;
-            counter.style.display = 'flex';
+            counter.classList.add('show');
             console.log('[FREE-GEN] Counter shown with remaining:', limitData.remaining);
         } else {
             console.log('[FREE-GEN] Missing elements or data:', { counter, remainingEl, limitData });
@@ -112,7 +117,7 @@ async function updateFreeGenerationsIndicator(limitData = null) {
     } else {
         // Hide for logged users
         if (counter) {
-            counter.style.display = 'none';
+            counter.classList.remove('show');
             console.log('[FREE-GEN] Counter hidden for logged user');
         }
     }

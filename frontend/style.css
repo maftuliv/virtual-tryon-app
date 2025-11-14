@@ -2967,12 +2967,16 @@ body::before {
     background: linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
     border: 1.5px solid rgba(192, 132, 252, 0.3);
     border-radius: 16px;
-    display: flex;
+    display: none; /* Hidden by default */
     align-items: center;
     justify-content: space-between;
     gap: 16px;
     animation: slideInDown 0.3s ease;
     backdrop-filter: blur(10px);
+}
+
+.free-generations-counter.show {
+    display: flex;
 }
 
 .free-gen-label {
