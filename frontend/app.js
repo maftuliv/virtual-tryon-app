@@ -738,6 +738,11 @@ async function handleTryOn() {
         // Display results
         displayResults(tryonData.results);
 
+        // Update limit counter after successful generation
+        if (tryonData.daily_limit && auth.user) {
+            auth.updateLimitIndicator();
+        }
+
         // Hide loading overlay and progress, show results
         hideLoadingOverlay();
         progressBar.style.display = 'none';
