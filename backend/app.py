@@ -35,7 +35,7 @@ def dummy_auth_decorator(f):
     return decorated_function
 
 try:
-    from auth import AuthManager, create_auth_decorator
+    from backend.auth import AuthManager, create_auth_decorator
     print("[AUTH] ✅ Auth module loaded successfully")
 
     # Initialize PostgreSQL connection for auth
