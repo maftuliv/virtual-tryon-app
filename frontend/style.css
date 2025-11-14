@@ -2960,6 +2960,62 @@ body::before {
     text-overflow: ellipsis;
 }
 
+/* Auth required banner (yellow friendly banner) */
+.auth-required-banner {
+    margin-top: 16px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
+    animation: slideInDown 0.4s ease;
+}
+
+.auth-required-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.auth-required-icon {
+    font-size: 1.5em;
+    flex-shrink: 0;
+}
+
+.auth-required-text {
+    color: #78350f;
+    font-size: 0.95em;
+    font-weight: 600;
+    line-height: 1.4;
+    flex: 1;
+    min-width: 200px;
+}
+
+.auth-required-button {
+    padding: 10px 20px;
+    background: white;
+    color: #f59e0b;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.9em;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    white-space: nowrap;
+}
+
+.auth-required-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    background: #fffbeb;
+}
+
+.auth-required-button:active {
+    transform: translateY(0);
+}
+
 /* Error message below button */
 .cta-button-error {
     text-align: center;
@@ -3016,6 +3072,27 @@ body::before {
     .cta-button-error {
         font-size: 0.85em;
         padding: 10px 16px;
+    }
+
+    .auth-required-banner {
+        padding: 14px 16px;
+        margin-top: 12px;
+    }
+
+    .auth-required-content {
+        gap: 10px;
+    }
+
+    .auth-required-text {
+        font-size: 0.85em;
+        text-align: center;
+        min-width: 100%;
+    }
+
+    .auth-required-button {
+        padding: 8px 16px;
+        font-size: 0.85em;
+        width: 100%;
     }
 }
 

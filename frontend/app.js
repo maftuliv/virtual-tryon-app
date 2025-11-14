@@ -635,8 +635,18 @@ async function handleTryOn() {
     try {
         // Check authentication first
         if (!auth.user) {
-            showAuthModal();
+            // Show friendly auth required banner
+            const authBanner = document.getElementById('authRequiredBanner');
+            if (authBanner) {
+                authBanner.style.display = 'block';
+            }
             return;
+        }
+
+        // Hide auth banner if user is logged in
+        const authBanner = document.getElementById('authRequiredBanner');
+        if (authBanner) {
+            authBanner.style.display = 'none';
         }
 
         // Check daily limit

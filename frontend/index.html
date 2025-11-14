@@ -357,7 +357,17 @@
                                 <span class="glass-mat-button-text">сделать примерку</span>
                             </span>
                         </button>
-                        <p class="cta-features-text">Бесплатно. Быстро. Без регистрации!</p>
+                        <p class="cta-features-text">Бесплатно. Быстро. Качественно</p>
+                        <!-- Auth required message for non-logged users -->
+                        <div id="authRequiredBanner" class="auth-required-banner" style="display: none;">
+                            <div class="auth-required-content">
+                                <span class="auth-required-icon">🎉</span>
+                                <span class="auth-required-text">Пройдите быструю регистрацию, чтобы сохранить результаты и получить бонусы!</span>
+                                <button class="auth-required-button" onclick="auth.showAuthModal()">
+                                    Зарегистрироваться
+                                </button>
+                            </div>
+                        </div>
                         <!-- Error message below button -->
                         <div id="ctaButtonError" class="cta-button-error" style="display: none;"></div>
                     </div>
