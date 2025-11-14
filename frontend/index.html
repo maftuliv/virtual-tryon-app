@@ -358,6 +358,11 @@
                             </span>
                         </button>
                         <p class="cta-features-text">Бесплатно. Быстро. Качественно</p>
+                        <!-- Free generations indicator for guests -->
+                        <div id="freeGenerationsIndicator" class="free-generations-indicator" style="display: none;">
+                            <span class="free-gen-icon">✨</span>
+                            <span class="free-gen-text">У вас <strong id="freeGenRemaining">3</strong> бесплатные генерации сегодня</span>
+                        </div>
                         <!-- Auth required message for non-logged users -->
                         <div id="authRequiredBanner" class="auth-required-banner" style="display: none;">
                             <div class="auth-required-content">
@@ -854,6 +859,7 @@
         </div>
     </div>
 
+    <script src="device-fingerprint.js"></script>
     <script src="auth.js"></script>
     <script src="app.js" defer></script>
 </body>

@@ -2960,6 +2960,34 @@ body::before {
     text-overflow: ellipsis;
 }
 
+/* Free generations indicator */
+.free-generations-indicator {
+    margin-top: 12px;
+    padding: 10px 16px;
+    background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    animation: slideInDown 0.3s ease;
+}
+
+.free-gen-icon {
+    font-size: 1.2em;
+}
+
+.free-gen-text {
+    color: white;
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+.free-gen-text strong {
+    font-weight: 700;
+    font-size: 1.1em;
+}
+
 /* Auth required banner (yellow friendly banner) */
 .auth-required-banner {
     margin-top: 16px;

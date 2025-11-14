@@ -1,34 +1,111 @@
 // API Configuration
 const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:5000' : '';
 
-// Free generations tracking (for non-logged users)
-const FREE_GENERATIONS_KEY = 'free_generations_count';
-const FREE_GENERATIONS_DATE_KEY = 'free_generations_date';
+// Device fingerprint-based limit tracking (for non-logged users)
 const FREE_GENERATIONS_LIMIT = 3;
+let deviceFingerprintValue = null;
+let currentDeviceLimit = null;
 
-function getFreeGenerationsCount() {
-    const today = new Date().toDateString();
-    const savedDate = localStorage.getItem(FREE_GENERATIONS_DATE_KEY);
-
-    // Reset counter if it's a new day
-    if (savedDate !== today) {
-        localStorage.setItem(FREE_GENERATIONS_KEY, '0');
-        localStorage.setItem(FREE_GENERATIONS_DATE_KEY, today);
-        return 0;
+async function getDeviceFingerprint() {
+    if (deviceFingerprintValue) {
+        return deviceFingerprintValue;
     }
 
-    return parseInt(localStorage.getItem(FREE_GENERATIONS_KEY) || '0', 10);
+    try {
+        deviceFingerprintValue = await window.deviceFingerprint.generate();
+        console.log('[DEVICE] Generated fingerprint:', deviceFingerprintValue);
+        return deviceFingerprintValue;
+    } catch (error) {
+        console.error('[DEVICE] Error generating fingerprint:', error);
+        // Fallback to localStorage if fingerprinting fails
+        return 'fallback_' + Date.now();
+    }
 }
 
-function incrementFreeGenerations() {
-    const count = getFreeGenerationsCount();
-    localStorage.setItem(FREE_GENERATIONS_KEY, String(count + 1));
-    console.log(`[FREE] Free generations used: ${count + 1}/${FREE_GENERATIONS_LIMIT}`);
+async function checkDeviceLimit() {
+    try {
+        const fingerprint = await getDeviceFingerprint();
+
+        const response = await fetch(`${API_URL}/api/check-device-limit`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ device_fingerprint: fingerprint })
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to check device limit');
+        }
+
+        const data = await response.json();
+        currentDeviceLimit = data;
+
+        console.log(`[DEVICE] Limit check: ${data.used}/${data.limit} used, ${data.remaining} remaining`);
+
+        return data;
+    } catch (error) {
+        console.error('[DEVICE] Error checking limit:', error);
+        // Fallback to allowing generation
+        return {
+            can_generate: true,
+            used: 0,
+            remaining: 3,
+            limit: 3
+        };
+    }
 }
 
-function getRemainingFreeGenerations() {
-    const used = getFreeGenerationsCount();
-    return Math.max(0, FREE_GENERATIONS_LIMIT - used);
+async function incrementDeviceLimit() {
+    try {
+        const fingerprint = await getDeviceFingerprint();
+
+        const response = await fetch(`${API_URL}/api/increment-device-limit`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ device_fingerprint: fingerprint })
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to increment device limit');
+        }
+
+        const data = await response.json();
+        currentDeviceLimit = data;
+
+        console.log(`[DEVICE] Limit incremented: ${data.used}/${data.limit}`);
+
+        // Update indicator
+        updateFreeGenerationsIndicator(data);
+
+        return data;
+    } catch (error) {
+        console.error('[DEVICE] Error incrementing limit:', error);
+    }
+}
+
+async function updateFreeGenerationsIndicator(limitData = null) {
+    const indicator = document.getElementById('freeGenerationsIndicator');
+    const remainingEl = document.getElementById('freeGenRemaining');
+
+    if (!auth.user) {
+        // Show indicator for non-logged users
+        if (!limitData) {
+            limitData = await checkDeviceLimit();
+        }
+
+        if (indicator && remainingEl) {
+            remainingEl.textContent = limitData.remaining;
+            indicator.style.display = 'flex';
+        }
+    } else {
+        // Hide for logged users
+        if (indicator) {
+            indicator.style.display = 'none';
+        }
+    }
 }
 
 // State Management
@@ -66,13 +143,18 @@ const feedbackSuccess = document.getElementById('feedbackSuccess');
 let currentStep = 1;
 
 // Event Listeners
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     setupUploadZones();
     setupEventListeners();
     setupStepper();
     checkServerHealth();
     setupAdminAccess();
     checkOnboarding();
+
+    // Update free generations indicator for guests
+    setTimeout(async () => {
+        await updateFreeGenerationsIndicator();
+    }, 1000);
 });
 
 // Setup admin access with keyboard shortcut
@@ -322,7 +404,7 @@ function setupEventListeners() {
 
     // Generate button - triggers generation when clicked
     if (generateSwitch) {
-        generateSwitch.addEventListener('click', (e) => {
+        generateSwitch.addEventListener('click', async (e) => {
             e.preventDefault();
             // Disable button to prevent double clicks
             if (generateSwitch.disabled) return;
@@ -340,14 +422,12 @@ function setupEventListeners() {
             // Hide any previous error
             hideCtaButtonError();
 
-            // Check free generation limit for non-logged users
+            // Check device fingerprint limit for non-logged users
             if (!auth.user) {
-                const freeGenerations = getFreeGenerationsCount();
-                const remaining = FREE_GENERATIONS_LIMIT - freeGenerations;
-                console.log(`[FREE] Non-logged user - Used: ${freeGenerations}/${FREE_GENERATIONS_LIMIT}, Remaining: ${remaining}`);
+                const deviceLimit = await checkDeviceLimit();
 
-                if (freeGenerations >= FREE_GENERATIONS_LIMIT) {
-                    console.log('[FREE] Limit reached - showing auth banner');
+                if (!deviceLimit.can_generate) {
+                    console.log('[DEVICE] Limit reached - showing auth banner');
                     // Show auth banner when limit reached
                     const authBanner = document.getElementById('authRequiredBanner');
                     if (authBanner) {
@@ -356,7 +436,7 @@ function setupEventListeners() {
                     return;
                 }
 
-                console.log('[FREE] Limit OK - proceeding with generation');
+                console.log('[DEVICE] Limit OK - proceeding with generation');
             }
 
             // Hide auth banner
@@ -793,8 +873,8 @@ async function handleTryOn() {
         if (tryonData.daily_limit && auth.user) {
             auth.updateLimitIndicator();
         } else if (!auth.user) {
-            // Increment free generations for non-logged users
-            incrementFreeGenerations();
+            // Increment device fingerprint limit for non-logged users
+            await incrementDeviceLimit();
         }
 
         // Hide loading overlay and progress, show results

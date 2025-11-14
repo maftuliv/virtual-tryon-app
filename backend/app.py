@@ -898,6 +898,131 @@ def upload_files():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/check-device-limit', methods=['POST'])
+def check_device_limit():
+    """
+    Check generation limit for anonymous users using device fingerprint
+    Expects JSON: {device_fingerprint: "abc123"}
+    Returns: {can_generate: bool, used: int, remaining: int, limit: int}
+    """
+    try:
+        data = request.get_json()
+        device_fingerprint = data.get('device_fingerprint')
+
+        if not device_fingerprint:
+            return jsonify({'error': 'device_fingerprint required'}), 400
+
+        # Get client IP and user agent for logging
+        client_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+        user_agent = request.headers.get('User-Agent', '')
+
+        cursor = db_conn.cursor()
+        today = datetime.now().date()
+
+        # Check if device exists and get current usage
+        cursor.execute("""
+            SELECT generations_used, limit_date
+            FROM device_limits
+            WHERE device_fingerprint = %s
+        """, (device_fingerprint,))
+
+        result = cursor.fetchone()
+
+        if result:
+            generations_used, limit_date = result
+
+            # Reset if new day
+            if limit_date < today:
+                cursor.execute("""
+                    UPDATE device_limits
+                    SET generations_used = 0, limit_date = %s, last_used_at = NOW()
+                    WHERE device_fingerprint = %s
+                """, (today, device_fingerprint))
+                db_conn.commit()
+                generations_used = 0
+        else:
+            # Create new entry
+            cursor.execute("""
+                INSERT INTO device_limits (device_fingerprint, generations_used, limit_date, ip_address, user_agent)
+                VALUES (%s, 0, %s, %s, %s)
+            """, (device_fingerprint, today, client_ip, user_agent))
+            db_conn.commit()
+            generations_used = 0
+
+        cursor.close()
+
+        FREE_LIMIT = 3
+        remaining = max(0, FREE_LIMIT - generations_used)
+        can_generate = generations_used < FREE_LIMIT
+
+        print(f"[DEVICE-LIMIT] Fingerprint: {device_fingerprint[:16]}... Used: {generations_used}/{FREE_LIMIT}")
+
+        return jsonify({
+            'can_generate': can_generate,
+            'used': generations_used,
+            'remaining': remaining,
+            'limit': FREE_LIMIT
+        }), 200
+
+    except Exception as e:
+        print(f"[DEVICE-LIMIT] Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/increment-device-limit', methods=['POST'])
+def increment_device_limit():
+    """
+    Increment generation counter for device fingerprint
+    Expects JSON: {device_fingerprint: "abc123"}
+    Returns: {success: bool, used: int, remaining: int}
+    """
+    try:
+        data = request.get_json()
+        device_fingerprint = data.get('device_fingerprint')
+
+        if not device_fingerprint:
+            return jsonify({'error': 'device_fingerprint required'}), 400
+
+        cursor = db_conn.cursor()
+        today = datetime.now().date()
+
+        # Update counter
+        cursor.execute("""
+            UPDATE device_limits
+            SET generations_used = generations_used + 1, last_used_at = NOW(), updated_at = NOW()
+            WHERE device_fingerprint = %s AND limit_date = %s
+            RETURNING generations_used
+        """, (device_fingerprint, today))
+
+        result = cursor.fetchone()
+        if result:
+            generations_used = result[0]
+            db_conn.commit()
+
+            FREE_LIMIT = 3
+            remaining = max(0, FREE_LIMIT - generations_used)
+
+            print(f"[DEVICE-LIMIT] Incremented: {device_fingerprint[:16]}... Now: {generations_used}/{FREE_LIMIT}")
+
+            cursor.close()
+            return jsonify({
+                'success': True,
+                'used': generations_used,
+                'remaining': remaining,
+                'limit': FREE_LIMIT
+            }), 200
+        else:
+            cursor.close()
+            return jsonify({'error': 'Device not found or date mismatch'}), 404
+
+    except Exception as e:
+        db_conn.rollback()
+        print(f"[DEVICE-LIMIT] Increment error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/tryon', methods=['POST'])
 def virtual_tryon():
     """
