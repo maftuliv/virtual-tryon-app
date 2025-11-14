@@ -4543,12 +4543,17 @@ body::before {
     }
 
     .logout-btn {
-        padding: 2px;
+        padding: 8px;
+        min-width: 40px;
+        min-height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .logout-btn svg {
-        width: 14px;
-        height: 14px;
+        width: 18px;
+        height: 18px;
     }
 
     .top-bar-badge {
