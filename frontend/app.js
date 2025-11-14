@@ -90,20 +90,30 @@ async function updateFreeGenerationsIndicator(limitData = null) {
     const counter = document.getElementById('freeGenerationsCounter');
     const remainingEl = document.getElementById('freeGenRemaining');
 
+    console.log('[FREE-GEN] Updating indicator, auth.user:', auth.user);
+    console.log('[FREE-GEN] Counter element:', counter);
+    console.log('[FREE-GEN] Remaining element:', remainingEl);
+
     if (!auth.user) {
         // Show counter for non-logged users
         if (!limitData) {
+            console.log('[FREE-GEN] Fetching limit data...');
             limitData = await checkDeviceLimit();
+            console.log('[FREE-GEN] Limit data:', limitData);
         }
 
-        if (counter && remainingEl) {
+        if (counter && remainingEl && limitData) {
             remainingEl.textContent = limitData.remaining;
             counter.style.display = 'flex';
+            console.log('[FREE-GEN] Counter shown with remaining:', limitData.remaining);
+        } else {
+            console.log('[FREE-GEN] Missing elements or data:', { counter, remainingEl, limitData });
         }
     } else {
         // Hide for logged users
         if (counter) {
             counter.style.display = 'none';
+            console.log('[FREE-GEN] Counter hidden for logged user');
         }
     }
 }
