@@ -300,8 +300,8 @@ class AuthManager:
             cursor.close()
 
             if not limit_record:
-                # First generation today
-                return True, FREE_DAILY_LIMIT - 1, FREE_DAILY_LIMIT
+                # No generations yet today - full limit available
+                return True, FREE_DAILY_LIMIT, FREE_DAILY_LIMIT
 
             used = limit_record[0]
             remaining = FREE_DAILY_LIMIT - used
