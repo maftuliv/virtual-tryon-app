@@ -99,15 +99,23 @@ async function updateFreeGenerationsIndicator(limitData = null) {
     if (!limitData) {
         try {
             limitData = await checkDeviceLimit();
+            console.log('[FREE-GEN] Fetched limit data:', limitData);
         } catch (error) {
-            console.error('[FREE-GEN] Error fetching limit data:', error);
-            limitData = { remaining: 3, used: 0, limit: 3, can_generate: true };
+            console.error('[FREE-GEN] CRITICAL Error fetching limit data:', error);
+            // Show error state instead of fake data
+            remainingEl.textContent = '?';
+            return;
         }
     }
 
     // Update the number
-    remainingEl.textContent = limitData.remaining;
-    console.log('[FREE-GEN] Updated counter to:', limitData.remaining);
+    if (limitData && typeof limitData.remaining !== 'undefined') {
+        remainingEl.textContent = limitData.remaining;
+        console.log('[FREE-GEN] Updated counter to:', limitData.remaining);
+    } else {
+        console.error('[FREE-GEN] Invalid limit data:', limitData);
+        remainingEl.textContent = '?';
+    }
 }
 
 // State Management
