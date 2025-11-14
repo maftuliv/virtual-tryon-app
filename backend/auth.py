@@ -6,13 +6,33 @@ Handles user registration, login, JWT tokens, and premium features
 import os
 import jwt
 import hashlib
+import secrets
 from datetime import datetime, timedelta
 from functools import wraps
 from flask import request, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 
+
+def _load_jwt_secret():
+    """
+    Load JWT secret key from environment variables.
+    Falls back to a generated secret for local/dev usage to avoid weak defaults.
+    """
+    value = (
+        os.getenv('JWT_SECRET_KEY') or
+        os.getenv('jwt_secret_key')
+    )
+    if value:
+        return value
+
+    generated = secrets.token_urlsafe(64)
+    print("[AUTH] ⚠️ JWT_SECRET_KEY not set. Generated a temporary secret for this session.")
+    print("[AUTH] ⚠️ Tokens issued before restart will become invalid. Set JWT_SECRET_KEY ASAP.")
+    return generated
+
+
 # JWT Configuration
-JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'your-secret-key-change-this-in-production')
+JWT_SECRET_KEY = _load_jwt_secret()
 JWT_ALGORITHM = 'HS256'
 JWT_EXPIRATION_DAYS = 7
 

@@ -46,12 +46,13 @@ async function checkDeviceLimit() {
         return data;
     } catch (error) {
         console.error('[DEVICE] Error checking limit:', error);
-        // Fallback to allowing generation
+        // Fail safe: block generation when limit cannot be checked
         return {
-            can_generate: true,
-            used: 0,
-            remaining: 3,
-            limit: 3
+            can_generate: false,
+            used: FREE_GENERATIONS_LIMIT,
+            remaining: 0,
+            limit: FREE_GENERATIONS_LIMIT,
+            error: 'Не удалось проверить лимит. Повторите позже или войдите в аккаунт.'
         };
     }
 }
@@ -109,6 +110,12 @@ async function updateFreeGenerationsIndicator(limitData = null) {
     }
 
     // Update the number
+    if (limitData && limitData.error) {
+        remainingEl.textContent = '—';
+        console.warn('[FREE-GEN] Limit indicator error state:', limitData.error);
+        return;
+    }
+
     if (limitData && typeof limitData.remaining !== 'undefined') {
         remainingEl.textContent = limitData.remaining;
         console.log('[FREE-GEN] Updated counter to:', limitData.remaining);
@@ -430,6 +437,11 @@ function setupEventListeners() {
             // Check device fingerprint limit for non-logged users
             if (!auth.user) {
                 const deviceLimit = await checkDeviceLimit();
+
+                if (deviceLimit.error) {
+                    showCtaButtonError(deviceLimit.error);
+                    return;
+                }
 
                 if (!deviceLimit.can_generate) {
                     console.log('[DEVICE] Limit reached - showing auth banner');
@@ -1596,20 +1608,23 @@ function hideError() {
 }
 
 // Show error message below CTA button
-function showCtaButtonError() {
+function showCtaButtonError(customMessage = '') {
     const ctaError = document.getElementById('ctaButtonError');
     if (!ctaError) return;
     
-    const hasPersonImages = state.personImages.length > 0;
-    const hasGarmentImage = state.garmentImage !== null;
-    
-    let errorMessage = '';
-    if (!hasPersonImages && !hasGarmentImage) {
-        errorMessage = '⚠️ Сначала загрузите ваше фото и фотографию одежды';
-    } else if (!hasPersonImages) {
-        errorMessage = '⚠️ Сначала загрузите ваше фото';
-    } else if (!hasGarmentImage) {
-        errorMessage = '⚠️ Сначала загрузите фотографию одежды';
+    let errorMessage = customMessage;
+
+    if (!errorMessage) {
+        const hasPersonImages = state.personImages.length > 0;
+        const hasGarmentImage = state.garmentImage !== null;
+
+        if (!hasPersonImages && !hasGarmentImage) {
+            errorMessage = '⚠️ Сначала загрузите ваше фото и фотографию одежды';
+        } else if (!hasPersonImages) {
+            errorMessage = '⚠️ Сначала загрузите ваше фото';
+        } else if (!hasGarmentImage) {
+            errorMessage = '⚠️ Сначала загрузите фотографию одежды';
+        }
     }
     
     ctaError.textContent = errorMessage;

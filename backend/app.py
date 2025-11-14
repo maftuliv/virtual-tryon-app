@@ -34,6 +34,8 @@ def dummy_auth_decorator(f):
         return jsonify({'error': 'Auth not available'}), 503
     return decorated_function
 
+db_conn = None
+
 try:
     from backend.auth import AuthManager, create_auth_decorator
     print("[AUTH] ✅ Auth module loaded successfully")
@@ -106,72 +108,75 @@ HUGGINGFACE_API_KEY = (
     os.environ.get('HF_TOKEN', '')
 ).strip()
 
-# ==================== DIAGNOSTICS (runs on import, works with gunicorn) ====================
-print("=" * 80)
-print("🔍 RAILWAY ENVIRONMENT DIAGNOSTICS")
-print("=" * 80)
+ENABLE_STARTUP_DIAGNOSTICS = os.getenv('ENABLE_STARTUP_DIAGNOSTICS') == '1'
 
-# Show ALL environment variables containing "NANO", "BANANA", "API", or "TELEGRAM"
-print("\n[ENV VARS] All variables containing 'NANO', 'BANANA', 'API', or 'TELEGRAM':")
-found_vars = False
-for key, value in sorted(os.environ.items()):
-    if any(keyword in key.upper() for keyword in ['NANO', 'BANANA', 'API', 'TELEGRAM']):
-        found_vars = True
-        # Show preview of value (hide sensitive info)
-        if len(value) > 20:
-            preview = f"{value[:10]}...{value[-6:]}"
-        else:
-            preview = value if len(value) <= 12 else f"{value[:8]}...{value[-4:]}"
-        print(f"  ✓ {key} = {preview} (length: {len(value)})")
+def log_masked_value(value):
+    """Return a masked version of a secret for safe logging."""
+    if not value:
+        return "(empty)"
+    if len(value) <= 6:
+        return "***"
+    return f"{value[:3]}...{value[-3:]}"
 
-if not found_vars:
-    print("  ⚠️  NO variables found containing 'NANO', 'BANANA', or 'API'!")
 
-# Show loaded API key status
-print("\n[API KEYS] Loaded values in Python:")
-print(f"  NANOBANANA_API_KEY: {'✅ SET' if NANOBANANA_API_KEY else '❌ MISSING'} (length: {len(NANOBANANA_API_KEY)})")
+# ==================== DIAGNOSTICS (optional) ====================
+if ENABLE_STARTUP_DIAGNOSTICS:
+    print("=" * 80)
+    print("🔍 RAILWAY ENVIRONMENT DIAGNOSTICS")
+    print("=" * 80)
 
-# Check Telegram variables - try multiple variations
-TELEGRAM_BOT_TOKEN_CHECK = (
-    os.environ.get('TELEGRAM_BOT_TOKEN', '').strip() or
-    os.environ.get('TELEGRAM_BOT_TOKEN'.lower(), '').strip() or
-    os.environ.get('telegram_bot_token', '').strip()
-)
-TELEGRAM_CHAT_ID_CHECK = (
-    os.environ.get('TELEGRAM_CHAT_ID', '').strip() or
-    os.environ.get('TELEGRAM_CHAT_ID'.lower(), '').strip() or
-    os.environ.get('telegram_chat_id', '').strip()
-)
+    print("\n[ENV VARS] All variables containing 'NANO', 'BANANA', 'API', or 'TELEGRAM':")
+    found_vars = False
+    for key, value in sorted(os.environ.items()):
+        if any(keyword in key.upper() for keyword in ['NANO', 'BANANA', 'API', 'TELEGRAM']):
+            found_vars = True
+            print(f"  ✓ {key} = {log_masked_value(value)} (length: {len(value)})")
 
-print(f"\n[TELEGRAM] Configuration check:")
-print(f"  TELEGRAM_BOT_TOKEN: {'✅ SET' if TELEGRAM_BOT_TOKEN_CHECK else '❌ MISSING'} (length: {len(TELEGRAM_BOT_TOKEN_CHECK)})")
-if TELEGRAM_BOT_TOKEN_CHECK:
-    print(f"  TELEGRAM_BOT_TOKEN preview: {TELEGRAM_BOT_TOKEN_CHECK[:15]}...{TELEGRAM_BOT_TOKEN_CHECK[-5:]}")
-print(f"  TELEGRAM_CHAT_ID: {'✅ SET' if TELEGRAM_CHAT_ID_CHECK else '❌ MISSING'} (value: {TELEGRAM_CHAT_ID_CHECK})")
+    if not found_vars:
+        print("  ⚠️  NO variables found containing 'NANO', 'BANANA', or 'API'!")
 
-# Check all possible variations
-print(f"\n[TELEGRAM] Checking all variations:")
-for var_name in ['TELEGRAM_BOT_TOKEN', 'TELEGRAM_BOT_TOKEN'.lower(), 'telegram_bot_token']:
-    value = os.environ.get(var_name, '')
-    if value:
-        print(f"  Found: {var_name} = {value[:15]}... (length: {len(value)})")
+    print("\n[API KEYS] Loaded values in Python:")
+    print(f"  NANOBANANA_API_KEY: {'✅ SET' if NANOBANANA_API_KEY else '❌ MISSING'}")
 
-if not TELEGRAM_BOT_TOKEN_CHECK:
-    print(f"  ⚠️  TELEGRAM_BOT_TOKEN not found in environment variables")
-    print(f"  💡 Make sure variable is added in Railway Variables and redeploy is done")
-if not TELEGRAM_CHAT_ID_CHECK:
-    print(f"  ℹ️  TELEGRAM_CHAT_ID not set (will be auto-detected from bot messages)")
-if not TELEGRAM_BOT_TOKEN_CHECK:
-    print(f"  ⚠️  Telegram notifications will be disabled until TELEGRAM_BOT_TOKEN is set")
+    TELEGRAM_BOT_TOKEN_CHECK = (
+        os.environ.get('TELEGRAM_BOT_TOKEN', '').strip() or
+        os.environ.get('TELEGRAM_BOT_TOKEN'.lower(), '').strip() or
+        os.environ.get('telegram_bot_token', '').strip()
+    )
+    TELEGRAM_CHAT_ID_CHECK = (
+        os.environ.get('TELEGRAM_CHAT_ID', '').strip() or
+        os.environ.get('TELEGRAM_CHAT_ID'.lower(), '').strip() or
+        os.environ.get('telegram_chat_id', '').strip()
+    )
 
-if NANOBANANA_API_KEY:
-    print(f"  NANOBANANA_API_KEY preview: {NANOBANANA_API_KEY[:8]}...{NANOBANANA_API_KEY[-4:]}")
-else:
-    print("  ⚠️  NANOBANANA_API_KEY is EMPTY or MISSING!")
-    print("  ℹ️  Checked: NANOBANANA_API_KEY, nanobanana_api_key")
+    print(f"\n[TELEGRAM] Configuration check:")
+    print(f"  TELEGRAM_BOT_TOKEN: {'✅ SET' if TELEGRAM_BOT_TOKEN_CHECK else '❌ MISSING'}")
+    if TELEGRAM_BOT_TOKEN_CHECK:
+        print(f"  TELEGRAM_BOT_TOKEN preview: {log_masked_value(TELEGRAM_BOT_TOKEN_CHECK)}")
+    print(f"  TELEGRAM_CHAT_ID: {'✅ SET' if TELEGRAM_CHAT_ID_CHECK else '❌ MISSING'}")
 
-print("=" * 80)
-print()
+    print(f"\n[TELEGRAM] Checking all variations:")
+    for var_name in ['TELEGRAM_BOT_TOKEN', 'TELEGRAM_BOT_TOKEN'.lower(), 'telegram_bot_token']:
+        value = os.environ.get(var_name, '')
+        if value:
+            print(f"  Found: {var_name} = {log_masked_value(value)} (length: {len(value)})")
+
+    if not TELEGRAM_BOT_TOKEN_CHECK:
+        print(f"  ⚠️  TELEGRAM_BOT_TOKEN not found in environment variables")
+        print(f"  💡 Make sure variable is added in Railway Variables and redeploy is done")
+    if not TELEGRAM_CHAT_ID_CHECK:
+        print(f"  ℹ️  TELEGRAM_CHAT_ID not set (will be auto-detected from bot messages)")
+    if not TELEGRAM_BOT_TOKEN_CHECK:
+        print(f"  ⚠️  Telegram notifications will be disabled until TELEGRAM_BOT_TOKEN is set")
+
+    if NANOBANANA_API_KEY:
+        print(f"  NANOBANANA_API_KEY preview: {log_masked_value(NANOBANANA_API_KEY)}")
+    else:
+        print("  ⚠️  NANOBANANA_API_KEY is EMPTY or MISSING!")
+        print("  ℹ️  Checked: NANOBANANA_API_KEY, nanobanana_api_key")
+
+    print("=" * 80)
+    print()
 # ==================== END DIAGNOSTICS ====================
 
 # ==================== ENVIRONMENT VALIDATION ====================
@@ -907,6 +912,9 @@ def check_device_limit():
     Expects JSON: {device_fingerprint: "abc123"}
     Returns: {can_generate: bool, used: int, remaining: int, limit: int}
     """
+    if not db_conn:
+        return jsonify({'error': 'Device limit service not configured'}), 503
+
     try:
         data = request.get_json()
         device_fingerprint = data.get('device_fingerprint')
@@ -1006,6 +1014,9 @@ def increment_device_limit():
     Expects JSON: {device_fingerprint: "abc123"}
     Returns: {success: bool, used: int, remaining: int}
     """
+    if not db_conn:
+        return jsonify({'error': 'Device limit service not configured'}), 503
+
     try:
         data = request.get_json()
         device_fingerprint = data.get('device_fingerprint')
