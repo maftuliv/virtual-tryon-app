@@ -901,7 +901,9 @@ def upload_files():
 @app.route('/api/check-device-limit', methods=['POST'])
 def check_device_limit():
     """
-    Check generation limit for anonymous users using device fingerprint
+    Check generation limit for anonymous users using device fingerprint + IP
+    Multi-factor protection: tracks both fingerprint AND IP address
+    Prevents bypass via incognito mode, browser switching, etc.
     Expects JSON: {device_fingerprint: "abc123"}
     Returns: {can_generate: bool, used: int, remaining: int, limit: int}
     """
@@ -912,54 +914,75 @@ def check_device_limit():
         if not device_fingerprint:
             return jsonify({'error': 'device_fingerprint required'}), 400
 
-        # Get client IP and user agent for logging
+        # Get client IP and user agent for tracking
         client_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+        if ',' in client_ip:
+            client_ip = client_ip.split(',')[0].strip()
         user_agent = request.headers.get('User-Agent', '')
 
         cursor = db_conn.cursor()
         today = datetime.now().date()
+        FREE_LIMIT = 3
 
-        # Check if device exists and get current usage
+        # CRITICAL: Check total usage across BOTH fingerprint AND IP
+        # This prevents incognito mode bypass (different fingerprint, same IP)
         cursor.execute("""
-            SELECT generations_used, limit_date
+            SELECT COALESCE(SUM(generations_used), 0) as total_used
+            FROM device_limits
+            WHERE (device_fingerprint = %s OR ip_address = %s)
+            AND limit_date = %s
+        """, (device_fingerprint, client_ip, today))
+
+        result = cursor.fetchone()
+        total_generations_used = result[0] if result else 0
+
+        # Check if this specific fingerprint exists
+        cursor.execute("""
+            SELECT id, generations_used, limit_date
             FROM device_limits
             WHERE device_fingerprint = %s
         """, (device_fingerprint,))
 
-        result = cursor.fetchone()
+        fingerprint_record = cursor.fetchone()
 
-        if result:
-            generations_used, limit_date = result
+        if fingerprint_record:
+            record_id, fp_generations, limit_date = fingerprint_record
 
             # Reset if new day
             if limit_date < today:
                 cursor.execute("""
                     UPDATE device_limits
-                    SET generations_used = 0, limit_date = %s, last_used_at = NOW()
-                    WHERE device_fingerprint = %s
-                """, (today, device_fingerprint))
+                    SET generations_used = 0, limit_date = %s, last_used_at = NOW(), updated_at = NOW()
+                    WHERE id = %s
+                """, (today, record_id))
                 db_conn.commit()
-                generations_used = 0
+
+                # Recalculate total after reset
+                cursor.execute("""
+                    SELECT COALESCE(SUM(generations_used), 0)
+                    FROM device_limits
+                    WHERE (device_fingerprint = %s OR ip_address = %s)
+                    AND limit_date = %s
+                """, (device_fingerprint, client_ip, today))
+                total_generations_used = cursor.fetchone()[0]
         else:
-            # Create new entry
+            # Create new fingerprint entry
             cursor.execute("""
                 INSERT INTO device_limits (device_fingerprint, generations_used, limit_date, ip_address, user_agent)
                 VALUES (%s, 0, %s, %s, %s)
             """, (device_fingerprint, today, client_ip, user_agent))
             db_conn.commit()
-            generations_used = 0
 
         cursor.close()
 
-        FREE_LIMIT = 3
-        remaining = max(0, FREE_LIMIT - generations_used)
-        can_generate = generations_used < FREE_LIMIT
+        remaining = max(0, FREE_LIMIT - total_generations_used)
+        can_generate = total_generations_used < FREE_LIMIT
 
-        print(f"[DEVICE-LIMIT] Fingerprint: {device_fingerprint[:16]}... Used: {generations_used}/{FREE_LIMIT}")
+        print(f"[DEVICE-LIMIT] FP: {device_fingerprint[:16]}... IP: {client_ip} Total: {total_generations_used}/{FREE_LIMIT}")
 
         return jsonify({
             'can_generate': can_generate,
-            'used': generations_used,
+            'used': total_generations_used,
             'remaining': remaining,
             'limit': FREE_LIMIT
         }), 200
@@ -974,7 +997,8 @@ def check_device_limit():
 @app.route('/api/increment-device-limit', methods=['POST'])
 def increment_device_limit():
     """
-    Increment generation counter for device fingerprint
+    Increment generation counter for device fingerprint + IP tracking
+    Multi-factor protection: increments for this fingerprint but returns total across IP
     Expects JSON: {device_fingerprint: "abc123"}
     Returns: {success: bool, used: int, remaining: int}
     """
@@ -985,10 +1009,16 @@ def increment_device_limit():
         if not device_fingerprint:
             return jsonify({'error': 'device_fingerprint required'}), 400
 
+        # Get client IP for multi-factor tracking
+        client_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+        if ',' in client_ip:
+            client_ip = client_ip.split(',')[0].strip()
+
         cursor = db_conn.cursor()
         today = datetime.now().date()
+        FREE_LIMIT = 3
 
-        # Update counter
+        # Update counter for this specific fingerprint
         cursor.execute("""
             UPDATE device_limits
             SET generations_used = generations_used + 1, last_used_at = NOW(), updated_at = NOW()
@@ -998,18 +1028,26 @@ def increment_device_limit():
 
         result = cursor.fetchone()
         if result:
-            generations_used = result[0]
+            fingerprint_used = result[0]
             db_conn.commit()
 
-            FREE_LIMIT = 3
-            remaining = max(0, FREE_LIMIT - generations_used)
+            # Get TOTAL usage across fingerprint + IP
+            cursor.execute("""
+                SELECT COALESCE(SUM(generations_used), 0)
+                FROM device_limits
+                WHERE (device_fingerprint = %s OR ip_address = %s)
+                AND limit_date = %s
+            """, (device_fingerprint, client_ip, today))
 
-            print(f"[DEVICE-LIMIT] Incremented: {device_fingerprint[:16]}... Now: {generations_used}/{FREE_LIMIT}")
+            total_used = cursor.fetchone()[0]
+            remaining = max(0, FREE_LIMIT - total_used)
+
+            print(f"[DEVICE-LIMIT] Incremented: FP {device_fingerprint[:16]}... IP {client_ip} Total: {total_used}/{FREE_LIMIT}")
 
             cursor.close()
             return jsonify({
                 'success': True,
-                'used': generations_used,
+                'used': total_used,
                 'remaining': remaining,
                 'limit': FREE_LIMIT
             }), 200
