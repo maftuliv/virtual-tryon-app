@@ -179,10 +179,13 @@ class AuthManager {
     }
 
     async updateLimitIndicator() {
+        const userLimitBadge = document.getElementById('userLimit');
+
         if (!this.user || this.user.is_premium) {
             // Hide limit indicator for premium users
             const limitBanner = document.getElementById('limitBanner');
             if (limitBanner) limitBanner.style.display = 'none';
+            if (userLimitBadge) userLimitBadge.style.display = 'none';
             return;
         }
 
@@ -190,6 +193,25 @@ class AuthManager {
         const limitBanner = document.getElementById('limitBanner');
         const limitText = document.getElementById('limitText');
 
+        // Update user profile limit badge
+        if (userLimitBadge && limit.remaining !== undefined) {
+            userLimitBadge.textContent = `${limit.remaining}/${limit.limit}`;
+            userLimitBadge.style.display = 'inline-block';
+
+            // Change color based on remaining
+            if (limit.remaining === 0) {
+                userLimitBadge.style.background = 'rgba(220, 38, 38, 0.1)';
+                userLimitBadge.style.color = '#dc2626';
+            } else if (limit.remaining <= 1) {
+                userLimitBadge.style.background = 'rgba(251, 191, 36, 0.1)';
+                userLimitBadge.style.color = '#f59e0b';
+            } else {
+                userLimitBadge.style.background = 'rgba(236, 72, 153, 0.1)';
+                userLimitBadge.style.color = '#ec4899';
+            }
+        }
+
+        // Show warning banner when limit is low
         if (limitBanner && limitText) {
             if (limit.remaining !== undefined && limit.remaining >= 0 && limit.remaining <= 1) {
                 limitBanner.style.display = 'flex';

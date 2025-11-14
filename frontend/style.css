@@ -4176,6 +4176,16 @@ body::before {
     color: white;
 }
 
+.user-limit-badge {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+    background: rgba(236, 72, 153, 0.1);
+    color: #ec4899;
+    white-space: nowrap;
+}
+
 .logout-btn {
     background: none;
     border: none;

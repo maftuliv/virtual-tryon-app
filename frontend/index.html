@@ -122,7 +122,10 @@
                         <img id="userAvatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Ccircle cx='16' cy='16' r='16' fill='%23ec4899'/%3E%3C/svg%3E" class="user-avatar" alt="User">
                         <div class="user-info">
                             <span id="userName" class="user-name">User</span>
-                            <span id="userStatus" class="user-status-badge free">Free</span>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span id="userStatus" class="user-status-badge free">Free</span>
+                                <span id="userLimit" class="user-limit-badge" style="display: none;">3/3</span>
+                            </div>
                         </div>
                         <button class="logout-btn" onclick="handleLogout()" title="Выход">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
