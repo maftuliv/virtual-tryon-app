@@ -343,7 +343,11 @@ function setupEventListeners() {
             // Check free generation limit for non-logged users
             if (!auth.user) {
                 const freeGenerations = getFreeGenerationsCount();
-                if (freeGenerations >= 3) {
+                const remaining = FREE_GENERATIONS_LIMIT - freeGenerations;
+                console.log(`[FREE] Non-logged user - Used: ${freeGenerations}/${FREE_GENERATIONS_LIMIT}, Remaining: ${remaining}`);
+
+                if (freeGenerations >= FREE_GENERATIONS_LIMIT) {
+                    console.log('[FREE] Limit reached - showing auth banner');
                     // Show auth banner when limit reached
                     const authBanner = document.getElementById('authRequiredBanner');
                     if (authBanner) {
@@ -351,6 +355,8 @@ function setupEventListeners() {
                     }
                     return;
                 }
+
+                console.log('[FREE] Limit OK - proceeding with generation');
             }
 
             // Hide auth banner
@@ -682,15 +688,17 @@ function updateCtaHelperMessage(hasPersonImages, hasGarmentImage, canGenerate) {
 // Handle Try-On Process
 async function handleTryOn() {
     try {
-        // Check daily limit
-        const limit = await auth.checkLimit();
-        if (!limit.can_generate) {
-            showUpgradeModal(`Вы исчерпали дневной лимит генераций (${limit.limit}/день). Перейдите на Premium для безлимитного доступа!`);
-            return;
-        }
+        // Check daily limit only for logged-in users
+        if (auth.user) {
+            const limit = await auth.checkLimit();
+            if (!limit.can_generate) {
+                showUpgradeModal(`Вы исчерпали дневной лимит генераций (${limit.limit}/день). Зарегистрируйтесь для получения новых генераций!`);
+                return;
+            }
 
-        // Update limit indicator
-        auth.updateLimitIndicator();
+            // Update limit indicator
+            auth.updateLimitIndicator();
+        }
 
         // Disable button (no animation)
         if (generateSwitch) {
