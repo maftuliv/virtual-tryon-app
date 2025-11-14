@@ -374,7 +374,17 @@ function googleLogin() {
 }
 
 function handleLogout() {
-    if (confirm('Вы уверены, что хотите выйти?')) {
+    console.log('[LOGOUT] Logout button clicked');
+    try {
+        if (confirm('Вы уверены, что хотите выйти?')) {
+            console.log('[LOGOUT] User confirmed logout');
+            auth.logout();
+        } else {
+            console.log('[LOGOUT] User cancelled logout');
+        }
+    } catch (error) {
+        console.error('[LOGOUT] Error during logout:', error);
+        // Fallback - logout without confirmation
         auth.logout();
     }
 }

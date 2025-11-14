@@ -4296,10 +4296,17 @@ body::before {
     padding: 4px;
     display: flex;
     align-items: center;
+    position: relative;
+    z-index: 10;
+    flex-shrink: 0;
 }
 
 .logout-btn:hover {
     color: var(--slate-800);
+}
+
+.logout-btn:active {
+    opacity: 0.7;
 }
 
 /* Limit Banner */
@@ -4544,16 +4551,25 @@ body::before {
 
     .logout-btn {
         padding: 8px;
-        min-width: 40px;
-        min-height: 40px;
+        min-width: 44px;
+        min-height: 44px;
         display: flex;
         align-items: center;
         justify-content: center;
+        border-radius: 8px;
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+        touch-action: manipulation;
+    }
+
+    .logout-btn:active {
+        background: rgba(0, 0, 0, 0.05);
+        transform: scale(0.95);
     }
 
     .logout-btn svg {
-        width: 18px;
-        height: 18px;
+        width: 20px;
+        height: 20px;
+        pointer-events: none;
     }
 
     .top-bar-badge {
