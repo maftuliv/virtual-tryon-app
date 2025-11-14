@@ -193,41 +193,45 @@ class DeviceFingerprint {
         try {
             console.log('[FINGERPRINT] Generating device fingerprint...');
 
-            // Collect all fingerprint components
-            const canvas = this.getCanvasFingerprint();
+            // Use ONLY stable parameters that don't change in incognito
             const webgl = this.getWebGLFingerprint();
             const screen = this.getScreenInfo();
-            const fonts = this.getFontsFingerprint();
-            const audio = await this.getAudioFingerprint();
-            const plugins = this.getPluginsInfo();
 
-            // Combine all data
-            const fingerprintData = {
-                canvas: this.simpleHash(canvas),
-                webgl: this.simpleHash(webgl),
-                screen: this.simpleHash(JSON.stringify(screen)),
-                fonts: this.simpleHash(fonts),
-                audio: this.simpleHash(audio),
-                plugins: this.simpleHash(plugins),
-                userAgent: this.simpleHash(navigator.userAgent)
+            // Create stable fingerprint using only hardware info
+            // These DON'T change in incognito mode:
+            // - GPU vendor/renderer (WebGL)
+            // - Screen resolution
+            // - Hardware concurrency (CPU cores)
+            // - Device memory
+            // - Timezone
+            const stableData = {
+                // GPU info - most stable
+                gpu: webgl,
+                // Screen - very stable
+                screen: `${screen.screenResolution}_${screen.screenDepth}_${screen.hardwareConcurrency}`,
+                // Timezone - stable
+                tz: `${screen.timezone}_${screen.timezoneOffset}`,
+                // Platform - stable
+                platform: navigator.platform,
+                // Memory - stable
+                mem: screen.deviceMemory || 0
             };
 
-            // Create final fingerprint hash
-            const combinedString = Object.values(fingerprintData).join('|');
+            // Create final fingerprint from stable components ONLY
+            const combinedString = Object.values(stableData).join('|');
             this.fingerprint = this.simpleHash(combinedString);
 
-            console.log('[FINGERPRINT] Generated:', this.fingerprint);
-            console.log('[FINGERPRINT] Components:', fingerprintData);
+            console.log('[FINGERPRINT] Generated STABLE fingerprint:', this.fingerprint);
+            console.log('[FINGERPRINT] Stable components:', stableData);
 
             return this.fingerprint;
         } catch (error) {
             console.error('[FINGERPRINT] Error generating fingerprint:', error);
-            // Fallback to simpler fingerprint
+            // Fallback to screen + GPU only
             const fallback = this.simpleHash(
-                navigator.userAgent +
-                screen.width +
-                screen.height +
-                navigator.language
+                screen.width + 'x' + screen.height +
+                navigator.platform +
+                (navigator.hardwareConcurrency || 4)
             );
             this.fingerprint = fallback;
             return fallback;
