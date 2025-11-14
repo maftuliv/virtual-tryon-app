@@ -966,12 +966,29 @@ def check_device_limit():
                 """, (device_fingerprint, client_ip, today))
                 total_generations_used = cursor.fetchone()[0]
         else:
-            # Create new fingerprint entry
-            cursor.execute("""
-                INSERT INTO device_limits (device_fingerprint, generations_used, limit_date, ip_address, user_agent)
-                VALUES (%s, 0, %s, %s, %s)
-            """, (device_fingerprint, today, client_ip, user_agent))
-            db_conn.commit()
+            # Create new fingerprint entry - use ON CONFLICT to handle UNIQUE constraint
+            try:
+                cursor.execute("""
+                    INSERT INTO device_limits (device_fingerprint, generations_used, limit_date, ip_address, user_agent)
+                    VALUES (%s, 0, %s, %s, %s)
+                    ON CONFLICT (device_fingerprint)
+                    DO UPDATE SET
+                        limit_date = EXCLUDED.limit_date,
+                        ip_address = EXCLUDED.ip_address,
+                        user_agent = EXCLUDED.user_agent,
+                        last_used_at = NOW(),
+                        updated_at = NOW()
+                """, (device_fingerprint, today, client_ip, user_agent))
+                db_conn.commit()
+            except Exception as insert_error:
+                # If still fails, just update existing record
+                print(f"[DEVICE-LIMIT] Insert failed, updating: {insert_error}")
+                cursor.execute("""
+                    UPDATE device_limits
+                    SET limit_date = %s, ip_address = %s, user_agent = %s, last_used_at = NOW(), updated_at = NOW()
+                    WHERE device_fingerprint = %s
+                """, (today, client_ip, user_agent, device_fingerprint))
+                db_conn.commit()
 
         cursor.close()
 
