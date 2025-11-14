@@ -99,7 +99,7 @@ body {
 .logo-container {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 2px;
     text-decoration: none;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -160,6 +160,7 @@ body {
     color: var(--slate-800);
     font-size: 1.21em;
     position: relative;
+    margin-left: -3px;
 }
 
 .logo-smile {
@@ -3688,19 +3689,6 @@ body::before {
     overflow: hidden;
 }
 
-.onboarding-step::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 40%;
-    background: linear-gradient(180deg,
-        rgba(255, 255, 255, 0.8) 0%,
-        rgba(255, 255, 255, 0) 100%);
-    border-radius: 20px 20px 0 0;
-    pointer-events: none;
-}
 
 .onboarding-step:hover {
     transform: translateY(-6px);
@@ -3734,7 +3722,7 @@ body::before {
 
 .onboarding-step-image-wrapper {
     width: 100%;
-    height: 180px;
+    height: 260px;
     margin-bottom: 20px;
     border-radius: 12px;
     overflow: hidden;
