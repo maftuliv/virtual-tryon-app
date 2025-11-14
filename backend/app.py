@@ -924,6 +924,8 @@ def check_device_limit():
         today = datetime.now().date()
         FREE_LIMIT = 3
 
+        print(f"[DEVICE-LIMIT] CHECK Request from FP: {device_fingerprint[:16]}... IP: {client_ip}")
+
         # CRITICAL: Check total usage across BOTH fingerprint AND IP
         # This prevents incognito mode bypass (different fingerprint, same IP)
         cursor.execute("""
@@ -935,6 +937,8 @@ def check_device_limit():
 
         result = cursor.fetchone()
         total_generations_used = result[0] if result else 0
+
+        print(f"[DEVICE-LIMIT] Found {total_generations_used} total generations for FP or IP")
 
         # Check if this specific fingerprint exists
         cursor.execute("""
