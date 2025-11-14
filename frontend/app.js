@@ -90,41 +90,24 @@ async function updateFreeGenerationsIndicator(limitData = null) {
     const counter = document.getElementById('freeGenerationsCounter');
     const remainingEl = document.getElementById('freeGenRemaining');
 
-    console.log('[FREE-GEN] Updating indicator, auth.user:', auth.user);
+    if (!counter || !remainingEl) {
+        console.log('[FREE-GEN] Elements not found');
+        return;
+    }
 
-    // Check if user is logged in by looking at UI elements
-    const authButton = document.getElementById('authButton');
-    const isLoggedIn = authButton && authButton.style.display === 'none';
-
-    console.log('[FREE-GEN] Is logged in:', isLoggedIn);
-
-    if (!isLoggedIn) {
-        // Show counter for non-logged users
-        if (!limitData) {
-            console.log('[FREE-GEN] Fetching limit data...');
-            try {
-                limitData = await checkDeviceLimit();
-                console.log('[FREE-GEN] Limit data:', limitData);
-            } catch (error) {
-                console.error('[FREE-GEN] Error fetching limit data:', error);
-                limitData = { remaining: 3, used: 0, limit: 3, can_generate: true };
-            }
-        }
-
-        if (counter && remainingEl && limitData) {
-            remainingEl.textContent = limitData.remaining;
-            counter.classList.add('show');
-            console.log('[FREE-GEN] Counter shown with remaining:', limitData.remaining);
-        } else {
-            console.log('[FREE-GEN] Missing elements or data:', { counter, remainingEl, limitData });
-        }
-    } else {
-        // Hide for logged users
-        if (counter) {
-            counter.classList.remove('show');
-            console.log('[FREE-GEN] Counter hidden for logged user');
+    // Fetch limit data if not provided
+    if (!limitData) {
+        try {
+            limitData = await checkDeviceLimit();
+        } catch (error) {
+            console.error('[FREE-GEN] Error fetching limit data:', error);
+            limitData = { remaining: 3, used: 0, limit: 3, can_generate: true };
         }
     }
+
+    // Update the number
+    remainingEl.textContent = limitData.remaining;
+    console.log('[FREE-GEN] Updated counter to:', limitData.remaining);
 }
 
 // State Management
@@ -169,11 +152,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     checkServerHealth();
     setupAdminAccess();
     checkOnboarding();
-
-    // Update free generations indicator for guests
-    setTimeout(async () => {
-        await updateFreeGenerationsIndicator();
-    }, 1000);
 });
 
 // Setup admin access with keyboard shortcut

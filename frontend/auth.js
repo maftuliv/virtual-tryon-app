@@ -187,7 +187,7 @@ class AuthManager {
             // Hide free generations counter for logged users
             const freeCounter = document.getElementById('freeGenerationsCounter');
             if (freeCounter) {
-                freeCounter.classList.remove('show');
+                freeCounter.classList.add('hide');
             }
         } else {
             // Show auth button
@@ -199,8 +199,13 @@ class AuthManager {
             if (adminLink) adminLink.style.display = 'none';
 
             // Show free generations counter for guests
-            if (typeof updateFreeGenerationsIndicator === 'function') {
-                updateFreeGenerationsIndicator();
+            const freeCounter = document.getElementById('freeGenerationsCounter');
+            if (freeCounter) {
+                freeCounter.classList.remove('hide');
+                // Update counter data
+                if (typeof updateFreeGenerationsIndicator === 'function') {
+                    updateFreeGenerationsIndicator();
+                }
             }
         }
     }
