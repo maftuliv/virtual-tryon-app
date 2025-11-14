@@ -194,18 +194,21 @@ class AuthManager {
         const limitText = document.getElementById('limitText');
 
         // Update user profile limit badge
-        if (userLimitBadge && limit.remaining !== undefined) {
-            userLimitBadge.textContent = `${limit.remaining}/${limit.limit}`;
+        if (userLimitBadge && limit.used !== undefined) {
+            userLimitBadge.textContent = `${limit.used}/${limit.limit}`;
             userLimitBadge.style.display = 'inline-block';
 
-            // Change color based on remaining
-            if (limit.remaining === 0) {
+            // Change color based on used count
+            if (limit.used >= limit.limit) {
+                // All used (3/3) - red
                 userLimitBadge.style.background = 'rgba(220, 38, 38, 0.1)';
                 userLimitBadge.style.color = '#dc2626';
-            } else if (limit.remaining <= 1) {
+            } else if (limit.used >= limit.limit - 1) {
+                // Almost used (2/3) - yellow
                 userLimitBadge.style.background = 'rgba(251, 191, 36, 0.1)';
                 userLimitBadge.style.color = '#f59e0b';
             } else {
+                // Plenty left (0/3, 1/3) - pink
                 userLimitBadge.style.background = 'rgba(236, 72, 153, 0.1)';
                 userLimitBadge.style.color = '#ec4899';
             }

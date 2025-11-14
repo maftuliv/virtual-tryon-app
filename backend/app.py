@@ -912,17 +912,19 @@ def virtual_tryon():
 
         # Check daily limit for user
         user_id = request.user_id
-        can_generate, remaining, limit = auth_manager.check_daily_limit(user_id)
+        can_generate, used, limit = auth_manager.check_daily_limit(user_id)
 
         if not can_generate:
             return jsonify({
                 'error': 'LIMIT_EXCEEDED',
                 'message': f'Вы исчерпали дневной лимит генераций ({limit}/день). Перейдите на Premium для безлимитного доступа!',
-                'remaining': remaining,
+                'used': used,
+                'remaining': 0,
                 'limit': limit
             }), 403
 
-        print(f"[TRYON] User {user_id} - Limit check: {remaining}/{limit} remaining")
+        remaining = limit - used if limit >= 0 else -1
+        print(f"[TRYON] User {user_id} - Limit check: {used}/{limit} used, {remaining} remaining")
 
         data = request.get_json()
 
@@ -1050,11 +1052,12 @@ def virtual_tryon():
                     print(f"[TRYON] Warning: Failed to increment daily limit: {e}")
 
         # Get updated limit info
-        updated_limit = {'can_generate': True, 'remaining': -1, 'limit': -1}
+        updated_limit = {'can_generate': True, 'used': -1, 'remaining': -1, 'limit': -1}
         if auth_available and request.user_id:
             try:
-                can_gen, rem, lim = auth_manager.check_daily_limit(request.user_id)
-                updated_limit = {'can_generate': can_gen, 'remaining': rem, 'limit': lim}
+                can_gen, used_count, lim = auth_manager.check_daily_limit(request.user_id)
+                rem = lim - used_count if lim >= 0 else -1
+                updated_limit = {'can_generate': can_gen, 'used': used_count, 'remaining': rem, 'limit': lim}
             except Exception as e:
                 print(f"[TRYON] Warning: Failed to get updated limit: {e}")
 
@@ -1749,9 +1752,11 @@ def get_current_user():
 
         if user:
             # Add daily limit info
-            can_generate, remaining, limit = auth_manager.check_daily_limit(request.user_id)
+            can_generate, used, limit = auth_manager.check_daily_limit(request.user_id)
+            remaining = limit - used if limit >= 0 else -1
             user['daily_limit'] = {
                 'can_generate': can_generate,
+                'used': used,
                 'remaining': remaining,
                 'limit': limit
             }
@@ -1773,10 +1778,12 @@ def check_limit():
         return jsonify({'error': 'Auth not available'}), 503
 
     try:
-        can_generate, remaining, limit = auth_manager.check_daily_limit(request.user_id)
+        can_generate, used, limit = auth_manager.check_daily_limit(request.user_id)
+        remaining = limit - used if limit >= 0 else -1
 
         return jsonify({
             'can_generate': can_generate,
+            'used': used,
             'remaining': remaining,
             'limit': limit
         }), 200

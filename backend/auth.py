@@ -272,7 +272,7 @@ class AuthManager:
     # ============================================================
 
     def check_daily_limit(self, user_id):
-        """Check if user can generate (returns can_generate, remaining, limit)"""
+        """Check if user can generate (returns can_generate, used, limit)"""
         try:
             cursor = self.db.cursor()
 
@@ -300,16 +300,15 @@ class AuthManager:
             cursor.close()
 
             if not limit_record:
-                # No generations yet today - full limit available
-                return True, FREE_DAILY_LIMIT, FREE_DAILY_LIMIT
+                # No generations yet today - return 0 used
+                return True, 0, FREE_DAILY_LIMIT
 
             used = limit_record[0]
-            remaining = FREE_DAILY_LIMIT - used
 
             if used >= FREE_DAILY_LIMIT:
-                return False, 0, FREE_DAILY_LIMIT
+                return False, FREE_DAILY_LIMIT, FREE_DAILY_LIMIT
 
-            return True, remaining, FREE_DAILY_LIMIT
+            return True, used, FREE_DAILY_LIMIT
 
         except Exception as e:
             print(f"Check limit error: {e}")
