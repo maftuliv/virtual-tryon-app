@@ -1126,6 +1126,12 @@ body {
     color: var(--slate-600);
 }
 
+.feedback-bar-buttons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
 .feedback-bar-btn {
     border-radius: 12px;
     background: linear-gradient(to right, #d946ef 0%, #4f46e5 100%);
@@ -1136,10 +1142,23 @@ body {
     cursor: pointer;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     transition: opacity 0.2s;
+    text-decoration: none;
+    display: inline-block;
 }
 
 .feedback-bar-btn:hover {
     opacity: 0.95;
+}
+
+.feedback-bar-btn-secondary {
+    background: rgba(100, 116, 139, 0.1);
+    color: var(--slate-700);
+    border: 1px solid rgba(100, 116, 139, 0.2);
+}
+
+.feedback-bar-btn-secondary:hover {
+    background: rgba(100, 116, 139, 0.15);
+    opacity: 1;
 }
 
 /* Modern 2025 Abstract Gradient Shapes - Static */
@@ -4133,30 +4152,36 @@ body::before {
 .user-profile {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 8px 12px;
+    gap: 10px;
+    padding: 6px 12px;
     background: rgba(255, 255, 255, 0.5);
     backdrop-filter: blur(10px);
     border-radius: 50px;
+    min-height: 40px;
 }
 
 .user-avatar {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     object-fit: cover;
+    flex-shrink: 0;
 }
 
 .user-info {
     display: flex;
     flex-direction: column;
     gap: 2px;
+    min-width: 0;
 }
 
 .user-name {
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
     font-weight: 600;
     color: var(--slate-800);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .user-status-badge {
@@ -4415,16 +4440,46 @@ body::before {
     }
 
     .user-profile {
-        padding: 6px 10px;
-        gap: 8px;
+        padding: 4px 8px;
+        gap: 6px;
+        min-height: 36px;
     }
 
     .user-avatar {
-        width: 28px;
-        height: 28px;
+        width: 24px;
+        height: 24px;
     }
 
     .user-name {
-        font-size: 0.8125rem;
+        font-size: 0.75rem;
+        max-width: 60px;
+    }
+
+    .user-status-badge {
+        font-size: 0.65rem;
+        padding: 1px 6px;
+    }
+
+    .user-limit-badge {
+        font-size: 0.65rem;
+        padding: 1px 4px;
+    }
+
+    .logout-btn {
+        padding: 2px;
+    }
+
+    .logout-btn svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    .top-bar-badge {
+        font-size: 0.75rem;
+        padding: 6px 12px;
+    }
+
+    .badge-text {
+        font-size: 0.75rem;
     }
 }
