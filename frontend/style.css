@@ -3698,6 +3698,21 @@ body::before {
     color: #ec4899;
 }
 
+.onboarding-logo-smile::after {
+    content: ')';
+    position: absolute;
+    bottom: -6px;
+    left: 52%;
+    transform: translateX(-50%) rotate(90deg);
+    font-size: 0.8em;
+    color: var(--slate-800);
+    line-height: 1;
+    font-weight: 500;
+    -webkit-text-stroke: 0.5px var(--slate-800);
+    text-stroke: 0.5px var(--slate-800);
+    display: block;
+}
+
 .onboarding-title {
     font-size: 2rem;
     font-weight: 800;
