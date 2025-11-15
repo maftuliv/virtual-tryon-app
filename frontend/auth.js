@@ -370,8 +370,9 @@ class AuthManager {
             if (token) {
                 console.log('[GOOGLE-AUTH] Callback successful, token received');
 
-                // Save token
-                this.saveToken(token);
+                // Save token to localStorage (same as login/register)
+                this.token = token;
+                localStorage.setItem('auth_token', this.token);
 
                 // Clean URL
                 window.location.hash = '';
