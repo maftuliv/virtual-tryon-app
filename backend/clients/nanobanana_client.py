@@ -20,7 +20,7 @@ class NanoBananaClient:
     Speed: 5-10 seconds average generation time
     """
 
-    BASE_URL = "https://api.nanobananaapi.ai"
+    BASE_URL = "https://api.nanobananaapi.ai/api/v1/nanobanana"
 
     def __init__(self, api_key: str, timeout: int = 120):
         """
