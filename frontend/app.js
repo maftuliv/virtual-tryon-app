@@ -821,10 +821,10 @@ async function handleTryOn() {
         state.uploadedGarmentPath = uploadData.garment_image;
         state.sessionId = uploadData.session_id;
 
-        // Step 2: Perform virtual try-on
+        // Step 2: Perform virtual try-on asynchronously
         updateLoadingOverlay(
-            '<span class="sparkle-emoji">✨</span> Создается магия твоего стиля <span class="sparkle-emoji">✨</span>',
-            '💡 Это может занять 10-30 секунд. Пока подумайте, где примените этот образ!'
+            '<span class="sparkle-emoji">✨</span> Создаем задачу примерки <span class="sparkle-emoji">✨</span>',
+            'Подготавливаем изображения и отправляем их в очередь обработки'
         );
 
         const tryonResponse = await fetch(`${API_URL}/api/tryon`, {
@@ -843,20 +843,25 @@ async function handleTryOn() {
 
         if (!tryonResponse.ok) {
             const errorData = await tryonResponse.json().catch(() => ({}));
-            // Handle special error format with message field
-            const errorMessage = errorData.message || errorData.error || 'Ошибка обработки изображений';
+            const errorMessage = errorData.message || errorData.error || 'Ошибка запуска обработки';
             throw new Error(errorMessage);
         }
 
-        const tryonData = await tryonResponse.json();
+        const tryonJob = await tryonResponse.json();
 
-        if (!tryonData.success) {
-            throw new Error(tryonData.error || 'Обработка не удалась');
+        if (!tryonJob.success || !tryonJob.job_id) {
+            throw new Error(tryonJob.error || 'Не удалось запустить обработку');
         }
 
-        // Check if we have results
-        if (!tryonData.results || tryonData.results.length === 0) {
-            throw new Error('Не удалось получить результаты. Проверьте настройки API.');
+        updateLoadingOverlay(
+            '<span class="sparkle-emoji">✨</span> Генерируем твой образ <span class="sparkle-emoji">✨</span>',
+            '💡 Это может занять до 60 секунд. Скоро результат будет готов!'
+        );
+
+        const tryonData = await pollTryOnJob(tryonJob.job_id);
+
+        if (!tryonData || !tryonData.results || tryonData.results.length === 0) {
+            throw new Error('Не удалось получить результаты. Попробуйте загрузить другие изображения.');
         }
 
         // Display results
@@ -1570,6 +1575,40 @@ function resetApplication() {
 
     // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function pollTryOnJob(jobId) {
+    const POLL_INTERVAL = 2500;
+
+    while (true) {
+        const statusResponse = await fetch(`${API_URL}/api/tryon/status/${jobId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${auth.token}`
+            }
+        });
+
+        if (!statusResponse.ok) {
+            throw new Error('Не удалось получить статус обработки. Попробуйте еще раз.');
+        }
+
+        const statusData = await statusResponse.json();
+
+        if (!statusData.success) {
+            throw new Error(statusData.error || 'Обработка завершилась с ошибкой');
+        }
+
+        if (statusData.status === 'completed') {
+            return statusData.result;
+        }
+
+        if (statusData.status === 'failed') {
+            throw new Error(statusData.error || 'Обработка не удалась. Попробуйте снова.');
+        }
+
+        await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL));
+    }
 }
 
 // Validation Warnings Display
