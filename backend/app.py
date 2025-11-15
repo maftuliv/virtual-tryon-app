@@ -17,6 +17,7 @@ import io
 # Setup logging
 from backend.logger import get_logger
 logger = get_logger(__name__)
+api_logger = get_logger('api')
 
 # Database imports
 try:
@@ -456,14 +457,14 @@ def preprocess_image(image_path, max_dimension=2000, quality=95):
                 new_height = max_dimension
             
             img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
-            print(f"[PREPROCESS] Resized from {original_size[0]}x{original_size[1]} to {new_width}x{new_height}")
-            
+            api_logger.info(f"Resized image from {original_size[0]}x{original_size[1]} to {new_width}x{new_height}")
+
             # Double-check dimensions after resize
             final_width, final_height = img.size
             if final_width > max_dimension or final_height > max_dimension:
-                print(f"[PREPROCESS] ⚠️ WARNING: Final size {final_width}x{final_height} still exceeds {max_dimension}!")
+                api_logger.warning(f"Final size {final_width}x{final_height} still exceeds {max_dimension}!")
         else:
-            print(f"[PREPROCESS] Image size {width}x{height} is within limits (max: {max_dimension})")
+            api_logger.info(f"Image size {width}x{height} is within limits (max: {max_dimension})")
 
         # Save as optimized JPEG
         output_path = image_path.rsplit('.', 1)[0] + '_optimized.jpg'
@@ -472,17 +473,15 @@ def preprocess_image(image_path, max_dimension=2000, quality=95):
         # Verify final dimensions
         final_img = Image.open(output_path)
         final_width, final_height = final_img.size
-        print(f"[PREPROCESS] ✅ Optimized image saved: {output_path} (final size: {final_width}x{final_height})")
-        
+        api_logger.info(f"Optimized image saved: {output_path} (final size: {final_width}x{final_height})")
+
         if final_width > max_dimension or final_height > max_dimension:
             raise ValueError(f"Final image dimensions {final_width}x{final_height} exceed maximum {max_dimension} pixels!")
-        
+
         return output_path
 
     except Exception as e:
-        print(f"[PREPROCESS ERROR] Failed to preprocess {image_path}: {e}")
-        import traceback
-        traceback.print_exc()
+        api_logger.error(f"Failed to preprocess {image_path}: {e}", exc_info=True)
         # Return original path if preprocessing fails (but this might cause API errors)
         return image_path
 
@@ -534,12 +533,12 @@ def validate_image(image_path):
         elif brightness > 200:
             warnings.append("Изображение слишком яркое - проверьте экспозицию")
 
-        print(f"[VALIDATION] Image: {width}x{height}, brightness: {brightness:.1f}, warnings: {len(warnings)}")
+        api_logger.info(f"Image validation: {width}x{height}, brightness: {brightness:.1f}, warnings: {len(warnings)}")
 
         return True, warnings
 
     except Exception as e:
-        print(f"[VALIDATION ERROR] Failed to validate {image_path}: {e}")
+        api_logger.error(f"Failed to validate {image_path}: {e}")
         return False, ["Не удалось проанализировать изображение"]
 
 
@@ -574,29 +573,29 @@ def get_public_image_url(image_path, request_obj=None):
             if host:
                 # Remove port if present
                 domain = host.split(':')[0]
-                print(f"[IMAGE URL] Detected domain from request: {domain}")
+                api_logger.info(f"Detected domain from request: {domain}")
         except Exception as e:
-            print(f"[IMAGE URL] Could not get domain from request: {e}")
+            api_logger.warning(f"Could not get domain from request: {e}")
 
     # Fallback to environment variable or default
     if not domain:
         domain = os.environ.get('RAILWAY_PUBLIC_DOMAIN', 'taptolook.net')
-        print(f"[IMAGE URL] Using domain from environment/default: {domain}")
+        api_logger.info(f"Using domain from environment/default: {domain}")
 
     # Construct public URL for the uploaded file
     public_url = f"https://{domain}/uploads/{filename}"
 
-    print(f"[IMAGE URL] Generated public URL: {public_url}")
+    api_logger.info(f"Generated public URL: {public_url}")
 
     # Verify file exists before generating URL
     if not os.path.exists(image_path):
-        print(f"[IMAGE URL] ⚠️ WARNING: Image file does not exist: {image_path}")
+        api_logger.warning(f"Image file does not exist: {image_path}")
 
     # Optional: Try ImgBB if API key is explicitly set (not required)
     imgbb_key = os.environ.get('IMGBB_API_KEY', '')
     if imgbb_key and imgbb_key != '':
         try:
-            print(f"[IMGBB] Attempting to upload to ImgBB as alternative...")
+            api_logger.info("Attempting to upload to ImgBB to ImgBB as alternative...")
             image_b64 = image_to_base64(image_path)
 
             imgbb_url = "https://api.imgbb.com/1/upload"
@@ -611,10 +610,10 @@ def get_public_image_url(image_path, request_obj=None):
                 result = response.json()
                 if result.get('success'):
                     imgbb_public_url = result['data']['url']
-                    print(f"[IMGBB] Successfully uploaded: {imgbb_public_url}")
+                    api_logger.info(f"Successfully uploaded: {imgbb_public_url}")
                     return imgbb_public_url
         except Exception as e:
-            print(f"[IMGBB] Upload failed, using Railway URL: {e}")
+            api_logger.warning(f"Upload failed, using Railway URL: {e}")
 
     # Return Railway public URL
     return public_url
@@ -631,7 +630,7 @@ def process_with_nanobanana(person_image_path, garment_image_path, category='aut
     API Documentation: https://docs.nanobananaapi.ai/quickstart
     """
     try:
-        print(f"[NANOBANANA] 🍌 Starting Nano Banana processing...")
+        api_logger.info("🍌 Starting Nano Banana processing...")
 
         if not NANOBANANA_API_KEY:
             raise ValueError(
@@ -640,13 +639,13 @@ def process_with_nanobanana(person_image_path, garment_image_path, category='aut
             )
 
         # Preprocess images - ensure BOTH width and height are <= 2000 pixels
-        print(f"[NANOBANANA] Preprocessing images...")
+        api_logger.info("Preprocessing images...")
         person_image_optimized = preprocess_image(person_image_path, max_dimension=2000, quality=95)
         garment_image_optimized = preprocess_image(garment_image_path, max_dimension=2000, quality=95)
 
         # NanoBananaAPI requires image URLs, not base64
         # Generate public URLs for uploaded images (served via Railway)
-        print(f"[NANOBANANA] Generating public URLs for images...")
+        api_logger.info("Generating public URLs for images...")
 
         # Try to get request object from Flask context (if available)
         from flask import has_request_context, request as flask_request
@@ -656,27 +655,27 @@ def process_with_nanobanana(person_image_path, garment_image_path, category='aut
         garment_image_url = get_public_image_url(garment_image_optimized, request_obj)
         
         # Verify URLs are accessible (quick check)
-        print(f"[NANOBANANA] Verifying image URLs are accessible...")
+        api_logger.info("Verifying image URLs are accessible...")
         try:
             # Quick HEAD request to check if URLs are accessible
             person_check = requests.head(person_image_url, timeout=5, allow_redirects=True)
             garment_check = requests.head(garment_image_url, timeout=5, allow_redirects=True)
             
             if person_check.status_code != 200:
-                print(f"[NANOBANANA] ⚠️ WARNING: Person image URL returned {person_check.status_code}: {person_image_url}")
+                api_logger.warning(f"Person image URL returned {person_check.status_code}: {person_image_url}")
             else:
-                print(f"[NANOBANANA] ✅ Person image URL is accessible")
+                api_logger.info("Person image URL is accessible")
                 
             if garment_check.status_code != 200:
-                print(f"[NANOBANANA] ⚠️ WARNING: Garment image URL returned {garment_check.status_code}: {garment_image_url}")
+                api_logger.warning(f"Garment image URL returned {garment_check.status_code}: {garment_image_url}")
             else:
-                print(f"[NANOBANANA] ✅ Garment image URL is accessible")
+                api_logger.info("Garment image URL is accessible")
         except Exception as e:
-            print(f"[NANOBANANA] ⚠️ Could not verify URL accessibility: {e}")
-            print(f"[NANOBANANA] Continuing anyway - API will handle errors...")
+            api_logger.warning(f"Could not verify URL accessibility: {e}")
+            api_logger.warning("Continuing anyway - API will handle errors...")
 
-        print(f"[NANOBANANA] Person image URL: {person_image_url}")
-        print(f"[NANOBANANA] Garment image URL: {garment_image_url}")
+        api_logger.info(f"Person image URL: {person_image_url}")
+        api_logger.info(f"Garment image URL: {garment_image_url}")
 
         # Create optimized prompt for virtual try-on
         # NanoBanana API works best with clear, direct instructions for outfit editing
@@ -692,8 +691,8 @@ def process_with_nanobanana(person_image_path, garment_image_path, category='aut
         # More explicit prompt to ensure the API actually modifies the image
         prompt = f"Replace the clothing on the person in the first image with the {garment_type} shown in the second image. The {garment_type} must be placed accurately on the person's body, matching their pose and body shape. Preserve the exact colors, patterns, textures, and style of the {garment_type} from the second image. Ensure the {garment_type} fits naturally with realistic shadows, lighting, and fabric draping. The result should show the person wearing the {garment_type}, not just the original image."
 
-        print(f"[NANOBANANA] Sending request to NanoBananaAPI.ai...")
-        print(f"[NANOBANANA] Prompt: {prompt[:100]}...")
+        api_logger.info("Sending request to NanoBananaAPI.ai...")
+        api_logger.info(f"Prompt: {prompt[:100]}...")
 
         # Prepare API request
         headers = {
@@ -711,7 +710,7 @@ def process_with_nanobanana(person_image_path, garment_image_path, category='aut
 
         # Submit generation task
         generate_url = f"{NANOBANANA_BASE_URL}/generate"
-        print(f"[NANOBANANA] POST to: {generate_url}")
+        api_logger.info(f"POST to: {generate_url}")
         response = requests.post(
             generate_url,
             headers=headers,
@@ -719,15 +718,15 @@ def process_with_nanobanana(person_image_path, garment_image_path, category='aut
             timeout=30
         )
 
-        print(f"[NANOBANANA] API Response Status: {response.status_code}")
+        api_logger.info(f"API Response Status: {response.status_code}")
 
         if response.status_code != 200:
             error_msg = f"NanoBanana API error: {response.status_code} - {response.text}"
-            print(f"[NANOBANANA ERROR] {error_msg}")
+            api_logger.error(f" {error_msg}")
             raise ValueError(error_msg)
 
         result = response.json()
-        print(f"[NANOBANANA] Initial response: {result}")
+        api_logger.info(f"Initial response: {result}")
 
         if result.get('code') != 200:
             raise ValueError(f"NanoBanana API error: {result.get('msg', 'Unknown error')}")
@@ -736,8 +735,8 @@ def process_with_nanobanana(person_image_path, garment_image_path, category='aut
         if not task_id:
             raise ValueError("No taskId returned from NanoBanana API")
 
-        print(f"[NANOBANANA] Task created: {task_id}")
-        print(f"[NANOBANANA] Polling for completion...")
+        api_logger.info(f"Task created: {task_id}")
+        api_logger.info("Polling for completion...")
 
         # Poll for task completion (max 120 seconds - increased for reliability)
         max_attempts = 60  # Increased from 30 to 60
@@ -749,26 +748,26 @@ def process_with_nanobanana(person_image_path, garment_image_path, category='aut
                 time.sleep(poll_interval)
 
             status_url = f"{NANOBANANA_BASE_URL}/record-info?taskId={task_id}"
-            print(f"[NANOBANANA] GET status check {attempt + 1}/{max_attempts}: {status_url}")
+            api_logger.info(f"GET status check {attempt + 1}/{max_attempts}: {status_url}")
             
             try:
                 status_response = requests.get(status_url, headers=headers, timeout=10)
             except requests.exceptions.RequestException as e:
-                print(f"[NANOBANANA WARNING] Request failed: {e}")
+                api_logger.warning(f"Request failed: {e}")
                 continue  # Continue polling on network errors
 
             if status_response.status_code == 200:
                 try:
                     status_data = status_response.json()
-                    print(f"[NANOBANANA] Status check {attempt + 1}/{max_attempts}: {status_data}")
+                    api_logger.info(f"Status check {attempt + 1}/{max_attempts}: {status_data}")
                 except ValueError as e:
-                    print(f"[NANOBANANA WARNING] Failed to parse JSON: {e}, response: {status_response.text[:200]}")
+                    api_logger.warning(f"Failed to parse JSON: {e}, response: {status_response.text[:200]}")
                     continue
 
                 # Extract data object (API wraps response in 'data' field)
                 data_obj = status_data.get('data', {})
                 if not isinstance(data_obj, dict):
-                    print(f"[NANOBANANA WARNING] Invalid data structure, continuing...")
+                    api_logger.warning("Invalid data structure, continuing...")
                     continue
 
                 # Handle successFlag - can be int or string, located in data.successFlag
@@ -782,11 +781,11 @@ def process_with_nanobanana(person_image_path, garment_image_path, category='aut
                 else:
                     success_flag = int(success_flag_raw) if success_flag_raw else 0
 
-                print(f"[NANOBANANA] Parsed success_flag: {success_flag} (type: {type(success_flag)}, raw: {success_flag_raw})")
+                api_logger.info(f"Parsed success_flag: {success_flag} (type: {type(success_flag)}, raw: {success_flag_raw})")
 
                 if success_flag == 1:
                     # Task completed successfully
-                    print(f"[NANOBANANA] ✅ Task completed! Extracting result URL...")
+                    api_logger.info("Task completed! Extracting result URL...")
                     
                     # resultImageUrl is in data.response.resultImageUrl
                     result_image_url = None
@@ -799,13 +798,13 @@ def process_with_nanobanana(person_image_path, garment_image_path, category='aut
                     if not result_image_url:
                         result_image_url = status_data.get('resultImageUrl') or status_data.get('result_image_url')
                     
-                    print(f"[NANOBANANA] Result URL found: {result_image_url}")
+                    api_logger.info(f"Result URL found: {result_image_url}")
                     
                     if not result_image_url:
-                        print(f"[NANOBANANA ERROR] Full status_data structure: {status_data}")
+                        api_logger.error(f" Full status_data structure: {status_data}")
                         raise ValueError("No result image URL in completed task. Check logs for full response structure.")
 
-                    print(f"[NANOBANANA] ✅ Generation complete! Downloading result from: {result_image_url}")
+                    api_logger.info(f"Generation complete! Downloading result from: {result_image_url}")
 
                     # Download result image
                     timestamp = int(time.time())
@@ -818,15 +817,15 @@ def process_with_nanobanana(person_image_path, garment_image_path, category='aut
                             with open(result_path, 'wb') as img_file:
                                 img_file.write(img_response.content)
                             file_size = len(img_response.content)
-                            print(f"[NANOBANANA] ✅ Result saved: {result_path} ({file_size} bytes)")
+                            api_logger.info(f"Result saved: {result_path} ({file_size} bytes)")
                             
                             # Verify the result image is valid
                             try:
                                 result_img = Image.open(result_path)
                                 result_width, result_height = result_img.size
-                                print(f"[NANOBANANA] ✅ Result image verified: {result_width}x{result_height} pixels")
+                                api_logger.info(f"Result image verified: {result_width}x{result_height} pixels")
                             except Exception as e:
-                                print(f"[NANOBANANA] ⚠️ WARNING: Could not verify result image: {e}")
+                                api_logger.warning(f"Could not verify result image: {e}")
                             
                             return result_path
                         else:
@@ -842,19 +841,19 @@ def process_with_nanobanana(person_image_path, garment_image_path, category='aut
                     raise ValueError(f"Generation failed: {error_msg}")
                 # success_flag == 0 means still processing, continue polling
                 else:
-                    print(f"[NANOBANANA] Task still processing (successFlag={success_flag}), continuing...")
+                    api_logger.info(f"Task still processing (successFlag={success_flag}), continuing...")
 
             elif status_response.status_code == 404:
                 # 404 might mean task not found yet, continue polling
-                print(f"[NANOBANANA WARNING] Status check returned 404 (task may not be ready yet), continuing...")
+                api_logger.warning("Status check returned 404 (task may not be ready yet), continuing...")
             else:
-                print(f"[NANOBANANA WARNING] Status check failed: {status_response.status_code} - {status_response.text[:200]}")
+                api_logger.warning(f"Status check failed: {status_response.status_code} - {status_response.text[:200]}")
 
         # Timeout
         raise ValueError(f"Task timed out after {max_attempts * poll_interval} seconds ({max_attempts} attempts)")
 
     except Exception as e:
-        print(f"[NANOBANANA ERROR] ❌ Error in process_with_nanobanana: {e}")
+        api_logger.error(f" ❌ Error in process_with_nanobanana: {e}")
         import traceback
         traceback.print_exc()
         raise
@@ -907,18 +906,18 @@ def serve_upload(filename):
         
         # Additional security check
         if not os.path.abspath(file_path).startswith(os.path.abspath(UPLOAD_FOLDER)):
-            print(f"[UPLOADS] ⚠️ Security check failed for: {filename}")
+            api_logger.warning(f"Security check failed for: {filename}")
             return jsonify({"error": "Invalid file path"}), 403
         
         if not os.path.exists(file_path):
-            print(f"[UPLOADS] ⚠️ File not found: {filename} (path: {file_path})")
+            api_logger.warning(f"File not found: {filename} (path: {file_path})")
             # List available files for debugging
             if os.path.exists(UPLOAD_FOLDER):
                 available_files = [f for f in os.listdir(UPLOAD_FOLDER) if os.path.isfile(os.path.join(UPLOAD_FOLDER, f))]
-                print(f"[UPLOADS] Available files in uploads folder: {available_files[:10]}...")  # Show first 10
+                api_logger.info(f"Available files in uploads folder: {available_files[:10]}...")  # Show first 10
             return jsonify({"error": "File not found"}), 404
         
-        print(f"[UPLOADS] ✅ Serving file: {filename} ({os.path.getsize(file_path)} bytes)")
+        api_logger.info(f"Serving file: {filename} ({os.path.getsize(file_path)} bytes)")
         return send_from_directory(UPLOAD_FOLDER, filename)
     except Exception as e:
         print(f"[UPLOADS] ❌ Error serving file {filename}: {e}")
@@ -2286,7 +2285,7 @@ def admin_get_all_generations():
         return jsonify({'generations': generations, 'total': len(generations)}), 200
 
     except Exception as e:
-        print(f"[ADMIN] Get generations error: {e}")
+        logger.error(f"Admin get generations error: {e}")
         return jsonify({'error': str(e)}), 500
 
 
