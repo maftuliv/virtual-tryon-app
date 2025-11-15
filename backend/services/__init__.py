@@ -11,6 +11,7 @@ Services are framework-agnostic and should be testable without Flask.
 """
 
 from backend.services.auth_service import AuthService
+from backend.services.device_fingerprint_service import DeviceFingerprintService
 from backend.services.feedback_service import FeedbackService
 from backend.services.image_service import ImageService
 from backend.services.limit_service import LimitService
@@ -19,6 +20,7 @@ from backend.services.tryon_service import TryonService
 
 __all__ = [
     "AuthService",
+    "DeviceFingerprintService",
     "FeedbackService",
     "ImageService",
     "LimitService",

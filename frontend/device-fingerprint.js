@@ -4,6 +4,9 @@
  * Resistant to incognito mode and different browsers on same device
  */
 
+const FP_API_BASE =
+    window.location.hostname === 'localhost' ? 'http://localhost:5000' : '';
+
 class DeviceFingerprint {
     constructor() {
         this.fingerprint = null;
@@ -190,51 +193,56 @@ class DeviceFingerprint {
      * Generate complete device fingerprint
      */
     async generate() {
+        // Gather only stable parameters that don't change in incognito
+        const webgl = this.getWebGLFingerprint();
+        const screen = this.getScreenInfo();
+
+        const stableData = {
+            gpu: webgl,
+            screen: `${screen.screenResolution}_${screen.screenDepth}_${screen.hardwareConcurrency}`,
+            tz: `${screen.timezone}_${screen.timezoneOffset}`,
+            platform: navigator.platform,
+            mem: screen.deviceMemory || 0
+        };
+
         try {
-            console.log('[FINGERPRINT] Generating device fingerprint...');
-
-            // Use ONLY stable parameters that don't change in incognito
-            const webgl = this.getWebGLFingerprint();
-            const screen = this.getScreenInfo();
-
-            // Create stable fingerprint using only hardware info
-            // These DON'T change in incognito mode:
-            // - GPU vendor/renderer (WebGL)
-            // - Screen resolution
-            // - Hardware concurrency (CPU cores)
-            // - Device memory
-            // - Timezone
-            const stableData = {
-                // GPU info - most stable
-                gpu: webgl,
-                // Screen - very stable
-                screen: `${screen.screenResolution}_${screen.screenDepth}_${screen.hardwareConcurrency}`,
-                // Timezone - stable
-                tz: `${screen.timezone}_${screen.timezoneOffset}`,
-                // Platform - stable
-                platform: navigator.platform,
-                // Memory - stable
-                mem: screen.deviceMemory || 0
-            };
-
-            // Create final fingerprint from stable components ONLY
-            const combinedString = Object.values(stableData).join('|');
-            this.fingerprint = this.simpleHash(combinedString);
-
-            console.log('[FINGERPRINT] Generated STABLE fingerprint:', this.fingerprint);
-            console.log('[FINGERPRINT] Stable components:', stableData);
-
+            this.fingerprint = await this.requestServerFingerprint(stableData);
             return this.fingerprint;
         } catch (error) {
-            console.error('[FINGERPRINT] Error generating fingerprint:', error);
-            // Fallback to screen + GPU only
-            const fallback = this.simpleHash(
-                screen.width + 'x' + screen.height +
-                navigator.platform +
-                (navigator.hardwareConcurrency || 4)
-            );
+            console.warn('[FINGERPRINT] Falling back to client-side hash', error);
+            const combinedString = Object.values(stableData).join('|');
+            const fallback = this.simpleHash(combinedString);
             this.fingerprint = fallback;
             return fallback;
+        }
+    }
+
+    async requestServerFingerprint(stableComponents) {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 5000);
+
+        try {
+            const response = await fetch(`${FP_API_BASE}/api/fingerprint/generate`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ stable_components: stableComponents }),
+                signal: controller.signal
+            });
+
+            if (!response.ok) {
+                throw new Error('Server rejected fingerprint request');
+            }
+
+            const data = await response.json();
+            if (!data || !data.fingerprint) {
+                throw new Error('Invalid fingerprint payload');
+            }
+
+            return data.fingerprint;
+        } finally {
+            clearTimeout(timeout);
         }
     }
 

@@ -5,6 +5,7 @@ This module creates and configures the Flask application with all services,
 repositories, and blueprints properly initialized and wired together.
 """
 
+import hashlib
 import os
 from typing import Optional
 
@@ -17,6 +18,7 @@ from flask_limiter.util import get_remote_address
 from backend.api.admin import create_admin_blueprint
 from backend.api.auth import create_auth_blueprint
 from backend.api.feedback import create_feedback_blueprint
+from backend.api.fingerprint import create_fingerprint_blueprint
 from backend.api.static import create_static_blueprint
 from backend.api.tryon import create_tryon_blueprint
 from backend.api.upload import create_upload_blueprint
@@ -28,6 +30,7 @@ from backend.repositories.device_limit_repository import DeviceLimitRepository
 from backend.repositories.feedback_repository import FeedbackRepository
 from backend.repositories.generation_repository import GenerationRepository
 from backend.services.auth_service import AuthService
+from backend.services.device_fingerprint_service import DeviceFingerprintService
 from backend.services.feedback_service import FeedbackService
 from backend.services.image_service import ImageService
 from backend.services.limit_service import LimitService
@@ -168,6 +171,15 @@ def create_app(config: Optional[Settings] = None) -> Flask:
 
     auth_service = AuthService(user_repository=user_repository) if user_repository else None
 
+    if config.device_fingerprint_secret:
+        fingerprint_secret = config.device_fingerprint_secret
+    else:
+        derived_secret = hashlib.sha256((config.jwt_secret_key + "|fingerprint").encode("utf-8")).hexdigest()
+        fingerprint_secret = derived_secret
+        os.environ.setdefault("DEVICE_FINGERPRINT_SECRET", derived_secret)
+        logger.info("[INFO] DEVICE_FINGERPRINT_SECRET not set; derived from JWT secret")
+    fingerprint_service = DeviceFingerprintService(secret=fingerprint_secret)
+
     tryon_service = TryonService(
         nanobanana_client=nanobanana_client,
         image_service=image_service,
@@ -191,6 +203,11 @@ def create_app(config: Optional[Settings] = None) -> Flask:
     upload_bp = create_upload_blueprint(image_service, upload_folder)
     app.register_blueprint(upload_bp)
     logger.info("  - Upload blueprint registered")
+
+    # Fingerprint blueprint
+    fingerprint_bp = create_fingerprint_blueprint(fingerprint_service)
+    app.register_blueprint(fingerprint_bp)
+    logger.info("  - Fingerprint blueprint registered")
 
     # Feedback blueprint
     feedback_bp = create_feedback_blueprint(feedback_service)

@@ -46,6 +46,13 @@ class Settings(BaseSettings):
         validation_alias="HF_API_TOKEN",
     )
 
+    # ==================== SECURITY ENHANCEMENTS ====================
+    device_fingerprint_secret: Optional[str] = Field(
+        default=None,
+        alias="DEVICE_FINGERPRINT_SECRET",
+        description="Secret pepper for device fingerprint hashing (defaults to JWT secret if unset)",
+    )
+
     # ==================== NOTIFICATIONS CONFIGURATION (OPTIONAL) ====================
     telegram_bot_token: Optional[str] = Field(default=None, description="Telegram bot token for feedback notifications")
 
@@ -142,6 +149,7 @@ class Settings(BaseSettings):
             "fashn_api_key",
             "huggingface_api_key",
             "telegram_bot_token",
+            "device_fingerprint_secret",
         ]
 
         for key in sensitive_keys:

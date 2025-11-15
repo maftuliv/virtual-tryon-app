@@ -88,6 +88,7 @@ mkdir results
 |-----------|------------|-----------|
 | `DATABASE_URL` | Подключение к PostgreSQL (используется auth и лимиты) | Railway создаёт автоматически или укажите свою БД |
 | `JWT_SECRET_KEY` | Подпись JWT-токенов. **Обязательно** задайте уникальное значение. | Сгенерируйте командой `python -c "import secrets; print(secrets.token_urlsafe(64))"` |
+| `DEVICE_FINGERPRINT_SECRET` | Соль/pepper для хеширования отпечатка устройства на бэкенде. Лучше НЕ совпадать с JWT ключом. | Сгенерируйте отдельную строку: `python -c "import secrets; print(secrets.token_hex(32))"` |
 | `NANOBANANA_API_KEY` | Основной API-ключ try-on | Кабинет NanoBanana |
 
 ### 4.2 Дополнительные переменные
@@ -97,7 +98,7 @@ mkdir results
 - `TELEGRAM_BOT_TOKEN` и `TELEGRAM_CHAT_ID` — чтобы получать отзывы в Telegram (см. TELEGRAM_SETUP.md).
 - `ENABLE_STARTUP_DIAGNOSTICS` — оставьте пустым/`0` на проде. Установите в `1`, только если нужно локально вывести диагностику (ключи будут замаскированы).
 
-После задания переменных **перезапустите backend**. В логах не должно быть предупреждения `[AUTH] ⚠️ JWT_SECRET_KEY not set...`.
+После задания переменных **перезапустите backend**. В логах не должно быть предупреждения `[AUTH] ⚠️ JWT_SECRET_KEY not set...`. Для fingerprint-сервиса вы увидите только `[INFO] DEVICE_FINGERPRINT_SECRET not set; derived from JWT secret`, если забыли задать переменную (нежелательно на проде).
 
 ## Шаг 5: (Опционально) Настройка Hugging Face API Token
 
