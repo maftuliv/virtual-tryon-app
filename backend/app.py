@@ -1236,6 +1236,8 @@ def virtual_tryon():
                     'result_url': result_url,  # Add URL for mobile download
                     'result_filename': result_filename  # Add filename for download
                 })
+
+                api_logger.info(f"✅ Successfully generated result for {os.path.basename(person_image)}")
                 
                 # Send result to Telegram if configured
                 try:
@@ -1272,18 +1274,16 @@ def virtual_tryon():
                             caption
                         )
                         if success:
-                            print(f"[TELEGRAM] ✅ Result photo sent successfully")
+                            logger.info("Telegram result photo sent successfully")
                         else:
-                            print(f"[TELEGRAM] ⚠️ Failed to send result photo: {error}")
+                            logger.warning(f"Failed to send result photo to Telegram: {error}")
                     else:
-                        print(f"[TELEGRAM] ⚠️ Telegram not configured (missing token or chat_id)")
+                        logger.debug("Telegram not configured (missing token or chat_id)")
                 except Exception as e:
-                    print(f"[TELEGRAM] ⚠️ Error sending result to Telegram: {e}")
+                    logger.warning(f"Error sending result to Telegram: {e}")
                     # Don't fail the whole request if Telegram send fails
             except Exception as e:
-                print(f"Error processing {person_image}: {e}")
-                import traceback
-                traceback.print_exc()
+                api_logger.error(f"Error processing {person_image}: {e}", exc_info=True)
                 results.append({
                     'original': os.path.basename(person_image),
                     'error': str(e)
