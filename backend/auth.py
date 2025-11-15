@@ -619,7 +619,7 @@ def create_auth_decorator(auth_manager: AuthManager) -> Tuple[Callable, Callable
         Tuple[Callable, Callable]: (require_auth, require_admin) decorators
     """
 
-    def require_auth(f: Callable) -> Callable:
+        def require_auth(f: Callable) -> Callable:
         """
         Decorator to require authentication.
 
@@ -632,22 +632,20 @@ def create_auth_decorator(auth_manager: AuthManager) -> Tuple[Callable, Callable
 
         @wraps(f)
         def decorated_function(*args: Any, **kwargs: Any) -> Any:
-            # Get token from Authorization header
-            auth_header = request.headers.get("Authorization", "")
+                # Extract token from cookie/header
+                token = get_token_from_request()
 
-            if not auth_header.startswith("Bearer "):
-                return jsonify({"error": "No authorization token provided"}), 401
+                if not token:
+                    return jsonify({"error": "No authorization token provided"}), 401
 
-            token = auth_header.replace("Bearer ", "")
-            user_id = auth_manager.verify_token(token)
+                user = decode_token(token)
+                if not user:
+                    return jsonify({"error": "Invalid or expired token"}), 401
 
-            if not user_id:
-                return jsonify({"error": "Invalid or expired token"}), 401
+                # Attach user info for downstream handlers
+                request.user_id = user["id"]
 
-            # Attach user_id to request for use in route
-            request.user_id = user_id
-
-            return f(*args, **kwargs)
+                return f(*args, **kwargs)
 
         return decorated_function
 
@@ -664,37 +662,18 @@ def create_auth_decorator(auth_manager: AuthManager) -> Tuple[Callable, Callable
 
         @wraps(f)
         def decorated_function(*args: Any, **kwargs: Any) -> Any:
-            # Get token from Authorization header
-            auth_header = request.headers.get("Authorization", "")
+                token = get_token_from_request()
 
-            if not auth_header.startswith("Bearer "):
-                return jsonify({"error": "No authorization token provided"}), 401
+                if not token:
+                    return jsonify({"error": "No authorization token provided"}), 401
 
-            token = auth_header.replace("Bearer ", "")
-            user_id = auth_manager.verify_token(token)
+                user = decode_token(token, require_admin=True)
+                if not user:
+                    return jsonify({"error": "Access denied. Admin privileges required"}), 403
 
-            if not user_id:
-                return jsonify({"error": "Invalid or expired token"}), 401
+                request.user_id = user["id"]
 
-            # Check if user is admin
-            cursor = auth_manager.db.cursor()
-            cursor.execute(
-                """
-                SELECT role FROM users WHERE id = %s
-            """,
-                (user_id,),
-            )
-
-            user = cursor.fetchone()
-            cursor.close()
-
-            if not user or user[0] != "admin":
-                return jsonify({"error": "Access denied. Admin privileges required"}), 403
-
-            # Attach user_id to request for use in route
-            request.user_id = user_id
-
-            return f(*args, **kwargs)
+                return f(*args, **kwargs)
 
         return decorated_function
 
@@ -828,15 +807,15 @@ def get_token_from_request() -> Optional[str]:
     Returns:
         Token string or None
     """
-    # Try Authorization header first
-    auth_header = request.headers.get("Authorization", "")
-    if auth_header.startswith("Bearer "):
-        return auth_header.replace("Bearer ", "").strip()
-
-    # Fall back to cookie
+    # Try HTTP-only cookie first (source of truth after server-issued login)
     token = request.cookies.get("auth_token")
     if token:
         return token.strip()
+
+    # Fall back to Authorization header (legacy/localStorage usage)
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        return auth_header.replace("Bearer ", "").strip()
 
     return None
 

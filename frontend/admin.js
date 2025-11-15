@@ -9,6 +9,7 @@ class AdminPanel {
         this.currentPage = 1;
         this.pageSize = 20;
         this.searchTimeout = null;
+        this.unauthorizedShown = false;
     }
 
     async init() {
@@ -74,24 +75,31 @@ class AdminPanel {
     }
 
     async apiCall(endpoint, options = {}) {
-        const token = localStorage.getItem('auth_token');
-        if (!token) {
-            throw new Error('No auth token');
+        const fetchOptions = {
+            credentials: 'include',
+            ...options,
+        };
+
+        fetchOptions.headers = {
+            'Content-Type': 'application/json',
+            ...(options.headers || {}),
+        };
+
+        const response = await fetch(`${this.API_URL}${endpoint}`, fetchOptions);
+
+        if (response.status === 401 || response.status === 403) {
+            throw new Error('ADMIN_UNAUTHORIZED');
         }
 
-        const response = await fetch(`${this.API_URL}${endpoint}`, {
-            ...options,
-            credentials: 'include',  // CRITICAL: Include cookies in request
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-                ...options.headers,
-            },
-        });
-
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || `HTTP ${response.status}`);
+            let errorMessage = `HTTP ${response.status}`;
+            try {
+                const error = await response.json();
+                errorMessage = error.error || errorMessage;
+            } catch (parseError) {
+                console.warn('[ADMIN] Failed to parse error response:', parseError);
+            }
+            throw new Error(errorMessage);
         }
 
         return response.json();
@@ -112,6 +120,10 @@ class AdminPanel {
 
             console.log('[ADMIN] Dashboard loaded');
         } catch (error) {
+            if (error.message === 'ADMIN_UNAUTHORIZED') {
+                this.handleUnauthorized();
+                return;
+            }
             console.error('[ADMIN] Failed to load dashboard:', error);
             alert('Ошибка загрузки дашборда: ' + error.message);
         }
@@ -137,6 +149,10 @@ class AdminPanel {
 
             console.log('[ADMIN] Users loaded:', data.total);
         } catch (error) {
+            if (error.message === 'ADMIN_UNAUTHORIZED') {
+                this.handleUnauthorized();
+                return;
+            }
             console.error('[ADMIN] Failed to load users:', error);
             document.getElementById('usersTableBody').innerHTML =
                 `<tr><td colspan="8" class="loading">Ошибка загрузки: ${error.message}</td></tr>`;
@@ -207,6 +223,10 @@ class AdminPanel {
             alert(`✅ Роль успешно изменена на "${newRole}"`);
             this.loadUsers(document.getElementById('userSearch').value);
         } catch (error) {
+            if (error.message === 'ADMIN_UNAUTHORIZED') {
+                this.handleUnauthorized();
+                return;
+            }
             console.error('[ADMIN] Failed to change role:', error);
             alert('❌ Ошибка изменения роли: ' + error.message);
         }
@@ -233,6 +253,10 @@ class AdminPanel {
             alert(`✅ Premium ${enable ? 'выдан' : 'отобран'}`);
             this.loadUsers(document.getElementById('userSearch').value);
         } catch (error) {
+            if (error.message === 'ADMIN_UNAUTHORIZED') {
+                this.handleUnauthorized();
+                return;
+            }
             console.error('[ADMIN] Failed to toggle premium:', error);
             alert('❌ Ошибка: ' + error.message);
         }
@@ -250,6 +274,10 @@ class AdminPanel {
 
             alert('✅ Лимит сброшен');
         } catch (error) {
+            if (error.message === 'ADMIN_UNAUTHORIZED') {
+                this.handleUnauthorized();
+                return;
+            }
             console.error('[ADMIN] Failed to reset limit:', error);
             alert('❌ Ошибка: ' + error.message);
         }
@@ -283,6 +311,10 @@ class AdminPanel {
 
             console.log('[ADMIN] Feedback loaded:', data.length);
         } catch (error) {
+            if (error.message === 'ADMIN_UNAUTHORIZED') {
+                this.handleUnauthorized();
+                return;
+            }
             console.error('[ADMIN] Failed to load feedback:', error);
             document.getElementById('feedbackList').innerHTML =
                 `<div class="loading">Ошибка загрузки: ${error.message}</div>`;
@@ -317,6 +349,10 @@ class AdminPanel {
 
             console.log('[ADMIN] Audit logs loaded:', data.length);
         } catch (error) {
+            if (error.message === 'ADMIN_UNAUTHORIZED') {
+                this.handleUnauthorized();
+                return;
+            }
             console.error('[ADMIN] Failed to load audit logs:', error);
             document.getElementById('auditTableBody').innerHTML =
                 `<tr><td colspan="6" class="loading">Ошибка загрузки: ${error.message}</td></tr>`;
@@ -332,6 +368,21 @@ class AdminPanel {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    handleUnauthorized() {
+        if (this.unauthorizedShown) {
+            return;
+        }
+
+        this.unauthorizedShown = true;
+        alert('❌ Сессия администратора истекла. Пожалуйста, войдите заново.');
+
+        if (auth && typeof auth.clearLocalSession === 'function') {
+            auth.clearLocalSession(false);
+        }
+
+        window.location.href = '/';
     }
 }
 

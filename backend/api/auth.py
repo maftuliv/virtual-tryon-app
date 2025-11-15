@@ -2,7 +2,7 @@
 
 from flask import Blueprint, jsonify, make_response, request
 
-from backend.auth import clear_auth_cookie, set_auth_cookie
+from backend.auth import clear_auth_cookie, get_token_from_request, set_auth_cookie
 from backend.logger import get_logger
 from backend.services.auth_service import AuthService
 
@@ -184,13 +184,10 @@ def create_auth_blueprint(auth_service: AuthService) -> Blueprint:
             return jsonify({"error": "Authentication not available"}), 503
 
         try:
-            # Extract token from Authorization header
-            auth_header = request.headers.get("Authorization", "")
+            token = get_token_from_request()
 
-            if not auth_header.startswith("Bearer "):
-                return jsonify({"error": "Missing or invalid Authorization header"}), 401
-
-            token = auth_header.replace("Bearer ", "")
+            if not token:
+                return jsonify({"error": "Authorization required"}), 401
 
             logger.info("Current user request with token")
 
@@ -227,13 +224,10 @@ def create_auth_blueprint(auth_service: AuthService) -> Blueprint:
             return jsonify({"error": "Authentication not available"}), 503
 
         try:
-            # Extract token from Authorization header
-            auth_header = request.headers.get("Authorization", "")
+            token = get_token_from_request()
 
-            if not auth_header.startswith("Bearer "):
-                return jsonify({"error": "Missing or invalid Authorization header"}), 401
-
-            token = auth_header.replace("Bearer ", "")
+            if not token:
+                return jsonify({"error": "Authorization required"}), 401
 
             # Validate token and get user
             user = auth_service.get_user_by_token(token)

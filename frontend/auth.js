@@ -81,14 +81,15 @@ class AuthManager {
     }
 
     async checkAuth() {
-        if (!this.token) {
-            this.updateUI();
-            return false;
-        }
-
         try {
+            const headers = {};
+            if (this.token) {
+                headers['Authorization'] = `Bearer ${this.token}`;
+            }
+
             const response = await fetch(`${this.API_URL}/api/auth/me`, {
-                headers: {'Authorization': `Bearer ${this.token}`}
+                headers,
+                credentials: 'include',
             });
 
             if (response.ok) {
@@ -96,37 +97,47 @@ class AuthManager {
                 this.user = data.user;
                 this.updateUI();
                 return true;
-            } else {
-                this.logout();
-                return false;
             }
+
+            if (response.status === 401 || response.status === 403) {
+                this.clearLocalSession(false);
+            }
+            return false;
         } catch (error) {
             console.error('Check auth error:', error);
-            this.logout();
             return false;
         }
     }
 
-    async logout() {
+    async logout(showNotification = true) {
         try {
+            const headers = {};
+            if (this.token) {
+                headers['Authorization'] = `Bearer ${this.token}`;
+            }
+
             // Call server logout endpoint to clear HTTP-only cookie
             await fetch(`${this.API_URL}/api/auth/logout`, {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
+                headers,
+                credentials: 'include',
             });
         } catch (error) {
             console.error('Logout API error:', error);
             // Continue with local logout even if server call fails
         }
 
-        // Clear local state
+        this.clearLocalSession(showNotification);
+    }
+
+    clearLocalSession(showNotification = true) {
         this.token = null;
         this.user = null;
         localStorage.removeItem('auth_token');
         this.updateUI();
-        this.showSuccess('Вы вышли из системы');
+        if (showNotification) {
+            this.showSuccess('Вы вышли из системы');
+        }
     }
 
     // ============================================================
