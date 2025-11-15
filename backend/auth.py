@@ -855,11 +855,14 @@ def set_auth_cookie(response: Response, token: str) -> Response:
     # Calculate cookie max age from JWT expiration
     max_age = JWT_EXPIRATION_DAYS * 24 * 60 * 60  # Convert days to seconds
 
+    # Determine if running on localhost (for development)
+    is_localhost = request.host.startswith("localhost") or request.host.startswith("127.0.0.1")
+
     response.set_cookie(
         "auth_token",
         value=token,
         max_age=max_age,
-        secure=True,  # HTTPS only
+        secure=not is_localhost,  # HTTPS only in production, allow HTTP on localhost
         httponly=True,  # No JS access
         samesite="Strict",  # CSRF protection
         path="/",
