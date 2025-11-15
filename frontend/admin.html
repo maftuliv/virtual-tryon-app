@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админ панель - TapToLook</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/admin.css">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Header -->
+        <header class="admin-header">
+            <div class="admin-header-content">
+                <h1>🛡️ Админ панель</h1>
+                <div class="admin-header-actions">
+                    <span class="admin-user-info" id="adminUserInfo"></span>
+                    <a href="/" class="btn btn-secondary">← На главную</a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="admin-tabs">
+            <button class="admin-tab active" data-tab="dashboard">📊 Дашборд</button>
+            <button class="admin-tab" data-tab="users">👥 Пользователи</button>
+            <button class="admin-tab" data-tab="feedback">💬 Обратная связь</button>
+            <button class="admin-tab" data-tab="audit">📋 Аудит</button>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="admin-content">
+            <!-- Dashboard Tab -->
+            <section class="admin-section active" id="dashboard-section">
+                <h2>Статистика</h2>
+                <div class="stats-grid" id="statsGrid">
+                    <div class="stat-card">
+                        <div class="stat-icon">👥</div>
+                        <div class="stat-value" id="usersTotal">-</div>
+                        <div class="stat-label">Всего пользователей</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⭐</div>
+                        <div class="stat-value" id="premiumTotal">-</div>
+                        <div class="stat-label">Premium пользователей</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🎨</div>
+                        <div class="stat-value" id="generationsToday">-</div>
+                        <div class="stat-label">Генераций сегодня</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">💬</div>
+                        <div class="stat-value" id="feedbackPending">-</div>
+                        <div class="stat-label">Новых обращений</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Users Tab -->
+            <section class="admin-section" id="users-section">
+                <div class="section-header">
+                    <h2>Управление пользователями</h2>
+                    <div class="search-box">
+                        <input type="text" id="userSearch" placeholder="Поиск по email или имени...">
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="admin-table" id="usersTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Email</th>
+                                <th>Имя</th>
+                                <th>Провайдер</th>
+                                <th>Роль</th>
+                                <th>Premium</th>
+                                <th>Генераций</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <tr><td colspan="8" class="loading">Загрузка...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="pagination" id="usersPagination"></div>
+            </section>
+
+            <!-- Feedback Tab -->
+            <section class="admin-section" id="feedback-section">
+                <h2>Обратная связь</h2>
+                <div class="feedback-list" id="feedbackList">
+                    <div class="loading">Загрузка...</div>
+                </div>
+            </section>
+
+            <!-- Audit Tab -->
+            <section class="admin-section" id="audit-section">
+                <h2>Журнал действий администраторов</h2>
+                <div class="table-container">
+                    <table class="admin-table" id="auditTable">
+                        <thead>
+                            <tr>
+                                <th>Время</th>
+                                <th>Администратор</th>
+                                <th>Действие</th>
+                                <th>Цель</th>
+                                <th>IP</th>
+                                <th>Детали</th>
+                            </tr>
+                        </thead>
+                        <tbody id="auditTableBody">
+                            <tr><td colspan="6" class="loading">Загрузка...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="/auth.js"></script>
+    <script src="/admin.js"></script>
+</body>
+</html>
