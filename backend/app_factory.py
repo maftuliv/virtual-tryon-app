@@ -15,7 +15,6 @@ from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
-from backend.api.admin import create_admin_blueprint
 from backend.api.auth import create_auth_blueprint
 from backend.api.feedback import create_feedback_blueprint
 from backend.api.fingerprint import create_fingerprint_blueprint
@@ -249,11 +248,6 @@ def create_app(config: Optional[Settings] = None) -> Flask:
         logger.info("  - Google OAuth blueprint registered (OAuth enabled)")
     else:
         logger.info("  - Google OAuth blueprint registered (OAuth disabled - will return 503)")
-
-    # Admin blueprint
-    admin_bp = create_admin_blueprint(generation_repo, user_repository, db_conn)
-    app.register_blueprint(admin_bp)
-    logger.info("  - Admin blueprint registered")
 
     # Static files blueprint (must be last for SPA fallback)
     static_bp = create_static_blueprint(upload_folder, results_folder, frontend_folder)
