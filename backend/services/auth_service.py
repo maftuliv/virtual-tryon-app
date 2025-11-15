@@ -164,7 +164,7 @@ class AuthService:
 
         self.logger.info("Validating token...")
 
-        user = self.user_repository.get_user_by_token(token.strip())
+        user = self.user_repository.get_by_token(token.strip())
 
         if user:
             self.logger.info(f"Token valid: user_id={user['id']}")

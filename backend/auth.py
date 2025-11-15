@@ -95,6 +95,22 @@ class AuthManager:
         except jwt.InvalidTokenError:
             return None
 
+    def validate_token(self, token: str) -> Optional[Dict[str, Any]]:
+        """
+        Validate JWT token and return full user information.
+
+        Args:
+            token: JWT token string
+
+        Returns:
+            User dictionary if token is valid, None if invalid/expired
+        """
+        user_id = self.verify_token(token)
+        if not user_id:
+            return None
+
+        return self.get_user_by_id(user_id)
+
     # ============================================================
     # User Registration and Login
     # ============================================================
