@@ -1,5 +1,7 @@
 """Google OAuth 2.0 API endpoints."""
 
+from urllib.parse import urlencode
+
 from flask import Blueprint, jsonify, redirect, request, session
 
 from backend.logger import get_logger
@@ -102,14 +104,16 @@ def create_google_auth_blueprint(google_auth_service: GoogleAuthService) -> Blue
             # Check if Google OAuth is enabled
             if not google_auth_service.is_enabled():
                 logger.error("[GOOGLE-AUTH-API] Callback received but OAuth is disabled")
-                return redirect("/#google_auth_error&message=OAuth+не+настроен.+Обратитесь+к+администратору")
+                fragment = urlencode({"google_auth_error": "1", "message": "OAuth не настроен. Обратитесь к администратору"})
+                return redirect(f"/#{fragment}")
 
             # Check for error in callback
             error = request.args.get("error")
             if error:
                 error_description = request.args.get("error_description", "Unknown error")
                 logger.warning(f"[GOOGLE-AUTH-API] OAuth error: {error} - {error_description}")
-                return redirect(f"/#google_auth_error&message={error}+-+{error_description}")
+                fragment = urlencode({"google_auth_error": "1", "message": f"{error} - {error_description}"})
+                return redirect(f"/#{fragment}")
 
             # Get authorization code and state
             authorization_code = request.args.get("code")
@@ -117,13 +121,15 @@ def create_google_auth_blueprint(google_auth_service: GoogleAuthService) -> Blue
 
             if not authorization_code or not state:
                 logger.error("[GOOGLE-AUTH-API] Missing code or state in callback")
-                return redirect("/#google_auth_error&message=Missing+authorization+code+or+state")
+                fragment = urlencode({"google_auth_error": "1", "message": "Missing authorization code or state"})
+                return redirect(f"/#{fragment}")
 
             # Get expected state from session
             expected_state = session.get("google_oauth_state")
             if not expected_state:
                 logger.error("[GOOGLE-AUTH-API] No state found in session")
-                return redirect("/#google_auth_error&message=Invalid+session+state")
+                fragment = urlencode({"google_auth_error": "1", "message": "Invalid session state"})
+                return redirect(f"/#{fragment}")
 
             # Clear state from session (one-time use)
             session.pop("google_oauth_state", None)
@@ -138,7 +144,8 @@ def create_google_auth_blueprint(google_auth_service: GoogleAuthService) -> Blue
             if not result.get("success"):
                 error_msg = result.get("error", "Authentication failed")
                 logger.error(f"[GOOGLE-AUTH-API] Authentication failed: {error_msg}")
-                return redirect(f"/#google_auth_error&message={error_msg}")
+                fragment = urlencode({"google_auth_error": "1", "message": error_msg})
+                return redirect(f"/#{fragment}")
 
             # Get JWT token from result
             token = result.get("token")
@@ -146,26 +153,30 @@ def create_google_auth_blueprint(google_auth_service: GoogleAuthService) -> Blue
 
             if not token:
                 logger.error("[GOOGLE-AUTH-API] No token in authentication result")
-                return redirect("/#google_auth_error&message=Failed+to+generate+token")
+                fragment = urlencode({"google_auth_error": "1", "message": "Failed to generate token"})
+                return redirect(f"/#{fragment}")
 
             logger.info(
                 f"[GOOGLE-AUTH-API] User authenticated: user_id={user.get('id')}, "
                 f"email={user.get('email')}"
             )
 
-            # Redirect to frontend with token in URL hash
+            # Redirect to frontend with token in URL hash (URL-encoded to preserve +, /, = chars)
             # Frontend will extract token and store it
-            return redirect(f"/#google_auth_success&token={token}")
+            fragment = urlencode({"google_auth_success": "1", "token": token})
+            return redirect(f"/#{fragment}")
 
         except ValueError as e:
             # Validation error (state mismatch, invalid token, etc.)
             logger.error(f"[GOOGLE-AUTH-API] Validation error: {e}")
-            return redirect(f"/#google_auth_error&message=Validation+failed:+{str(e)}")
+            fragment = urlencode({"google_auth_error": "1", "message": f"Validation failed: {str(e)}"})
+            return redirect(f"/#{fragment}")
 
         except Exception as e:
             # Unexpected error
             logger.error(f"[GOOGLE-AUTH-API] Callback failed: {e}", exc_info=True)
-            return redirect(f"/#google_auth_error&message=Internal+error:+{str(e)}")
+            fragment = urlencode({"google_auth_error": "1", "message": f"Internal error: {str(e)}"})
+            return redirect(f"/#{fragment}")
 
     @google_auth_bp.route("/api/auth/google/status", methods=["GET"])
     def google_status():
