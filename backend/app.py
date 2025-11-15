@@ -4,9 +4,6 @@ import base64
 import json
 import requests
 import psycopg2
-import threading
-import queue
-import uuid
 from datetime import datetime
 from flask import Flask, request, jsonify, send_file, send_from_directory
 from flask_cors import CORS
@@ -281,55 +278,6 @@ validate_environment()
 # ==================== END VALIDATION ====================
 
 
-class TryOnTaskManager:
-    def __init__(self):
-        self.jobs = {}
-        self.queue = queue.Queue()
-        self.lock = threading.Lock()
-        worker = threading.Thread(target=self._worker_loop, daemon=True)
-        worker.start()
-
-    def submit(self, payload):
-        job_id = str(uuid.uuid4())
-        with self.lock:
-            self.jobs[job_id] = {
-                'status': 'pending',
-                'result': None,
-                'error': None,
-                'created_at': time.time()
-            }
-        self.queue.put((job_id, payload))
-        return job_id
-
-    def get_job(self, job_id):
-        with self.lock:
-            return self.jobs.get(job_id)
-
-    def _update_job(self, job_id, status, result=None, error=None):
-        with self.lock:
-            job = self.jobs.get(job_id)
-            if not job:
-                return
-            job['status'] = status
-            job['result'] = result
-            job['error'] = error
-            job['updated_at'] = time.time()
-
-    def _worker_loop(self):
-        while True:
-            job_id, payload = self.queue.get()
-            try:
-                self._update_job(job_id, 'processing')
-                result = perform_tryon_job(payload)
-                self._update_job(job_id, 'completed', result=result)
-            except Exception as e:
-                error_message = str(e)
-                print(f"[TRYON QUEUE] Error processing job {job_id}: {error_message}")
-                self._update_job(job_id, 'failed', error=error_message)
-            finally:
-                self.queue.task_done()
-
-
 def get_client_ip():
     """Return client IP, respecting X-Forwarded-For."""
     client_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
@@ -446,151 +394,6 @@ def increment_device_usage(device_fingerprint, client_ip, user_agent, increment=
     db_conn.commit()
     cursor.close()
     return calculate_device_usage(device_fingerprint, client_ip)
-
-
-def perform_tryon_job(payload):
-    """
-    Execute the heavy try-on job synchronously inside a worker thread.
-    Returns the same structure that was previously returned directly to clients.
-    """
-    data = payload['request_data']
-    user_id = payload.get('user_id')
-    client_ip = payload.get('client_ip', 'Unknown')
-    user_agent = payload.get('user_agent', '')
-    host_header = payload.get('host')
-    device_fingerprint = data.get('device_fingerprint')
-
-    person_images = data.get('person_images')
-    garment_image = data.get('garment_image')
-    garment_category = data.get('garment_category', 'auto')
-
-    if not person_images or not garment_image:
-        raise ValueError('Invalid image paths')
-
-    print(f"[TRYON-JOB] Processing with category: {garment_category}, AI model: nanobanana")
-
-    if not NANOBANANA_API_KEY or NANOBANANA_API_KEY.strip() == '':
-        raise ValueError(
-            'NANOBANANA_API_KEY_MISSING: Добавьте ключ в переменные окружения, чтобы продолжить.'
-        )
-
-    results = []
-    domain_override = host_header.split(':')[0] if host_header else None
-
-    for person_image in person_images:
-        if not os.path.exists(person_image):
-            continue
-
-        try:
-            result_path = process_with_nanobanana(person_image, garment_image, garment_category)
-            result_filename = os.path.basename(result_path)
-
-            if domain_override:
-                domain = domain_override
-            else:
-                domain = os.environ.get('RAILWAY_PUBLIC_DOMAIN', 'taptolook.net')
-
-            result_url = f"https://{domain}/api/result/{result_filename}"
-
-            with open(result_path, 'rb') as img_file:
-                img_data = base64.b64encode(img_file.read()).decode('utf-8')
-
-            results.append({
-                'original': os.path.basename(person_image),
-                'result_path': result_path,
-                'result_image': f'data:image/png;base64,{img_data}',
-                'result_url': result_url,
-                'result_filename': result_filename
-            })
-
-            try:
-                telegram_bot_token = (
-                    os.environ.get('TELEGRAM_BOT_TOKEN', '').strip() or
-                    os.environ.get('TELEGRAM_BOT_TOKEN'.lower(), '').strip() or
-                    os.environ.get('telegram_bot_token', '').strip()
-                )
-                telegram_chat_id = (
-                    os.environ.get('TELEGRAM_CHAT_ID', '').strip() or
-                    os.environ.get('TELEGRAM_CHAT_ID'.lower(), '').strip() or
-                    os.environ.get('telegram_chat_id', '').strip()
-                )
-
-                if telegram_bot_token and telegram_chat_id:
-                    ip_address = client_ip or 'Unknown'
-                    caption = f"🎨 <b>Новый результат примерки</b>\n\n"
-                    caption += f"📸 Оригинал: {os.path.basename(person_image)}\n"
-                    caption += f"👕 Категория: {garment_category}\n"
-                    caption += f"🌐 IP: {ip_address}\n"
-                    caption += f"⏰ {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-
-                    success, error = send_telegram_photo_with_retry(
-                        telegram_bot_token,
-                        telegram_chat_id,
-                        result_path,
-                        caption
-                    )
-                    if success:
-                        print(f"[TELEGRAM] ✅ Result photo sent successfully")
-                    else:
-                        print(f"[TELEGRAM] ⚠️ Failed to send result photo: {error}")
-                else:
-                    print(f"[TELEGRAM] ⚠️ Telegram not configured (missing token or chat_id)")
-            except Exception as e:
-                print(f"[TELEGRAM] ⚠️ Error sending result to Telegram: {e}")
-        except Exception as e:
-            print(f"[TRYON-JOB] Error processing {person_image}: {e}")
-            import traceback
-            traceback.print_exc()
-            results.append({
-                'original': os.path.basename(person_image),
-                'error': str(e)
-            })
-
-    successful_results = [r for r in results if 'error' not in r]
-
-    if auth_available and user_id and successful_results:
-        try:
-            auth_manager.increment_daily_limit(user_id)
-            print(f"[TRYON-JOB] Daily limit incremented for user {user_id}")
-        except Exception as e:
-            print(f"[TRYON-JOB] Warning: Failed to increment daily limit: {e}")
-
-    anonymous_limit_update = None
-    if not user_id and successful_results and device_fingerprint:
-        try:
-            anonymous_limit_update = increment_device_usage(
-                device_fingerprint,
-                client_ip or 'Unknown',
-                user_agent,
-                increment=1
-            )
-            print(f"[TRYON-JOB] Anonymous device limit incremented: {anonymous_limit_update['used']}/{anonymous_limit_update['limit']}")
-        except RuntimeError:
-            anonymous_limit_update = None
-        except Exception as e:
-            print(f"[TRYON-JOB] Warning: Failed to increment anonymous limit: {e}")
-
-    updated_limit = {'can_generate': True, 'used': -1, 'remaining': -1, 'limit': -1}
-    if auth_available and user_id:
-        try:
-            can_gen, used_count, lim = auth_manager.check_daily_limit(user_id)
-            rem = lim - used_count if lim >= 0 else -1
-            updated_limit = {'can_generate': can_gen, 'used': used_count, 'remaining': rem, 'limit': lim}
-        except Exception as e:
-            print(f"[TRYON-JOB] Warning: Failed to get updated limit: {e}")
-
-    response_payload = {
-        'results': results,
-        'daily_limit': updated_limit
-    }
-
-    if anonymous_limit_update is not None:
-        response_payload['anonymous_limit'] = anonymous_limit_update
-
-    return response_payload
-
-
-tryon_task_manager = TryOnTaskManager()
 
 
 def allowed_file(filename):
@@ -1295,40 +1098,25 @@ def increment_device_limit():
 @app.route('/api/tryon', methods=['POST'])
 def virtual_tryon():
     """
-    Submit a try-on job to the background queue
+    Perform virtual try-on using NanoBanana API (synchronous)
+    Expects JSON: {person_images: [], garment_image: "", garment_category: "auto"}
+    Returns: {success: true, results: [...]}
+    Authentication is optional - allows 3 free generations without login
     """
     try:
         data = request.get_json()
         if not data:
             return jsonify({'error': 'Missing request body'}), 400
 
-        if 'person_images' not in data or 'garment_image' not in data:
-            return jsonify({'error': 'Missing required data'}), 400
-
-        person_images = data.get('person_images')
-        garment_image = data.get('garment_image')
-        if not person_images or not garment_image:
-            return jsonify({'error': 'Invalid image paths'}), 400
-
-        if not NANOBANANA_API_KEY or NANOBANANA_API_KEY.strip() == '':
-            return jsonify({
-                'error': 'NANOBANANA_API_KEY_MISSING',
-                'message': '🍌 Nano Banana API ключ не настроен\n\n'
-                          'Пожалуйста, добавьте NANOBANANA_API_KEY в Railway Variables:\n'
-                          '1. Зайдите на https://nanobananaapi.ai/api-key\n'
-                          '2. Создайте API ключ\n'
-                          '3. Добавьте его в Railway Dashboard → Variables'
-            }), 400
-
+        # Check if user is authenticated (optional)
         user_id = None
         auth_header = request.headers.get('Authorization', '')
-        client_ip = get_client_ip()
-        user_agent = request.headers.get('User-Agent', '')
 
         if auth_available and auth_header.startswith('Bearer '):
             token = auth_header.replace('Bearer ', '')
             user_id = auth_manager.verify_token(token)
 
+        # Check daily limit only for authenticated users
         if user_id and auth_available:
             can_generate, used, limit = auth_manager.check_daily_limit(user_id)
 
@@ -1344,6 +1132,7 @@ def virtual_tryon():
             remaining = limit - used if limit >= 0 else -1
             print(f"[TRYON] User {user_id} - Limit check: {used}/{limit} used, {remaining} remaining")
         else:
+            # Enforce anonymous device limit
             device_fingerprint = data.get('device_fingerprint')
             if not device_fingerprint:
                 return jsonify({
@@ -1351,9 +1140,12 @@ def virtual_tryon():
                     'message': 'Обновите страницу или включите JavaScript, чтобы мы могли проверить бесплатный лимит.'
                 }), 400
 
+            client_ip = get_client_ip()
+            user_agent = request.headers.get('User-Agent', '')
+
             try:
                 anonymous_limit = get_device_limit_status(device_fingerprint, client_ip, user_agent)
-            except RuntimeError:
+            except RuntimeError as e:
                 return jsonify({
                     'error': 'LIMIT_SERVICE_UNAVAILABLE',
                     'message': 'Не удалось проверить лимит устройства. Повторите попытку позже или войдите в аккаунт.'
@@ -1368,41 +1160,169 @@ def virtual_tryon():
 
             print(f"[TRYON] Anonymous user - {anonymous_limit['used']}/{anonymous_limit['limit']} used")
 
-        payload = {
-            'request_data': data,
-            'user_id': user_id,
-            'client_ip': client_ip,
-            'user_agent': user_agent,
-            'host': request.headers.get('Host'),
-            'device_fingerprint': data.get('device_fingerprint')
+        if not data or 'person_images' not in data or 'garment_image' not in data:
+            return jsonify({'error': 'Missing required data'}), 400
+
+        person_images = data['person_images']
+        garment_image = data['garment_image']
+        garment_category = data.get('garment_category', 'auto')
+
+        if not person_images or not garment_image:
+            return jsonify({'error': 'Invalid image paths'}), 400
+
+        print(f"[TRYON] Processing with category: {garment_category}, AI model: nanobanana")
+
+        # Validate Nano Banana API key
+        if not NANOBANANA_API_KEY or NANOBANANA_API_KEY.strip() == '':
+            return jsonify({
+                'error': 'NANOBANANA_API_KEY_MISSING',
+                'message': '🍌 Nano Banana API ключ не настроен\n\n'
+                          'Пожалуйста, добавьте NANOBANANA_API_KEY в Railway Variables:\n'
+                          '1. Зайдите на https://nanobananaapi.ai/api-key\n'
+                          '2. Создайте API ключ\n'
+                          '3. Добавьте его в Railway Dashboard → Variables'
+            }), 400
+
+        # Process each person image with the garment using NanoBanana
+        results = []
+
+        for person_image in person_images:
+            if not os.path.exists(person_image):
+                continue
+
+            try:
+                # Always use NanoBanana API (pass request for domain detection)
+                result_path = process_with_nanobanana(person_image, garment_image, garment_category)
+
+                # Generate public URL for result image (use same domain detection logic)
+                result_filename = os.path.basename(result_path)
+                # Try to get domain from request
+                from flask import has_request_context, request as flask_request
+                if has_request_context():
+                    host = flask_request.headers.get('Host', '')
+                    if host:
+                        domain = host.split(':')[0]
+                    else:
+                        domain = os.environ.get('RAILWAY_PUBLIC_DOMAIN', 'taptolook.net')
+                else:
+                    domain = os.environ.get('RAILWAY_PUBLIC_DOMAIN', 'taptolook.net')
+                result_url = f"https://{domain}/api/result/{result_filename}"
+
+                # Read result image and encode to base64 for frontend
+                with open(result_path, 'rb') as img_file:
+                    img_data = base64.b64encode(img_file.read()).decode('utf-8')
+
+                results.append({
+                    'original': os.path.basename(person_image),
+                    'result_path': result_path,
+                    'result_image': f'data:image/png;base64,{img_data}',
+                    'result_url': result_url,  # Add URL for mobile download
+                    'result_filename': result_filename  # Add filename for download
+                })
+                
+                # Send result to Telegram if configured
+                try:
+                    telegram_bot_token = (
+                        os.environ.get('TELEGRAM_BOT_TOKEN', '').strip() or
+                        os.environ.get('TELEGRAM_BOT_TOKEN'.lower(), '').strip() or
+                        os.environ.get('telegram_bot_token', '').strip()
+                    )
+                    telegram_chat_id = (
+                        os.environ.get('TELEGRAM_CHAT_ID', '').strip() or
+                        os.environ.get('TELEGRAM_CHAT_ID'.lower(), '').strip() or
+                        os.environ.get('telegram_chat_id', '').strip()
+                    )
+                    
+                    if telegram_bot_token and telegram_chat_id:
+                        # Get IP address for caption
+                        from flask import has_request_context, request as flask_request
+                        ip_address = 'Unknown'
+                        if has_request_context():
+                            ip_address = flask_request.remote_addr or flask_request.headers.get('X-Forwarded-For', 'Unknown')
+                        
+                        # Create caption with result info
+                        caption = f"🎨 <b>Новый результат примерки</b>\n\n"
+                        caption += f"📸 Оригинал: {os.path.basename(person_image)}\n"
+                        caption += f"👕 Категория: {garment_category}\n"
+                        caption += f"🌐 IP: {ip_address}\n"
+                        caption += f"⏰ {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                        
+                        # Send photo to Telegram
+                        success, error = send_telegram_photo_with_retry(
+                            telegram_bot_token,
+                            telegram_chat_id,
+                            result_path,
+                            caption
+                        )
+                        if success:
+                            print(f"[TELEGRAM] ✅ Result photo sent successfully")
+                        else:
+                            print(f"[TELEGRAM] ⚠️ Failed to send result photo: {error}")
+                    else:
+                        print(f"[TELEGRAM] ⚠️ Telegram not configured (missing token or chat_id)")
+                except Exception as e:
+                    print(f"[TELEGRAM] ⚠️ Error sending result to Telegram: {e}")
+                    # Don't fail the whole request if Telegram send fails
+            except Exception as e:
+                print(f"Error processing {person_image}: {e}")
+                import traceback
+                traceback.print_exc()
+                results.append({
+                    'original': os.path.basename(person_image),
+                    'error': str(e)
+                })
+
+        # Increment daily limit counter after successful generation (only for authenticated users)
+        successful_results = [r for r in results if 'error' not in r]
+
+        if auth_available and user_id and successful_results:
+            try:
+                auth_manager.increment_daily_limit(user_id)
+                print(f"[TRYON] Daily limit incremented for user {user_id}")
+            except Exception as e:
+                print(f"[TRYON] Warning: Failed to increment daily limit: {e}")
+
+        anonymous_limit_update = None
+        if not user_id and successful_results:
+            try:
+                anonymous_limit_update = increment_device_usage(
+                    device_fingerprint,
+                    client_ip,
+                    request.headers.get('User-Agent', ''),
+                    increment=1
+                )
+                print(f"[TRYON] Anonymous device limit incremented: {anonymous_limit_update['used']}/{anonymous_limit_update['limit']}")
+            except RuntimeError:
+                pass
+            except Exception as e:
+                print(f"[TRYON] Warning: Failed to increment anonymous limit: {e}")
+
+        # Get updated limit info (only for authenticated users)
+        updated_limit = {'can_generate': True, 'used': -1, 'remaining': -1, 'limit': -1}
+        if auth_available and user_id:
+            try:
+                can_gen, used_count, lim = auth_manager.check_daily_limit(user_id)
+                rem = lim - used_count if lim >= 0 else -1
+                updated_limit = {'can_generate': can_gen, 'used': used_count, 'remaining': rem, 'limit': lim}
+            except Exception as e:
+                print(f"[TRYON] Warning: Failed to get updated limit: {e}")
+
+        response_payload = {
+            'success': True,
+            'results': results,
+            'daily_limit': updated_limit
         }
 
-        job_id = tryon_task_manager.submit(payload)
+        if not user_id:
+            response_payload['anonymous_limit'] = anonymous_limit_update
 
-        return jsonify({
-            'success': True,
-            'job_id': job_id
-        }), 202
+        return jsonify(response_payload), 200
 
     except Exception as e:
         print(f"[TRYON ERROR] {e}")
         import traceback
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/tryon/status/<job_id>', methods=['GET'])
-def virtual_tryon_status(job_id):
-    job = tryon_task_manager.get_job(job_id)
-    if not job:
-        return jsonify({'error': 'Job not found'}), 404
-
-    return jsonify({
-        'success': True,
-        'status': job['status'],
-        'result': job['result'],
-        'error': job['error']
-    }), 200
 
 @app.route('/api/result/<filename>', methods=['GET'])
 def get_result(filename):
