@@ -5,7 +5,8 @@ Provides type-safe environment variable validation and sensible defaults.
 """
 
 from typing import Optional
-from pydantic import Field, field_validator, PostgresDsn
+
+from pydantic import Field, PostgresDsn, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -18,141 +19,91 @@ class Settings(BaseSettings):
     """
 
     model_config = SettingsConfigDict(
-        env_file='.env',
-        env_file_encoding='utf-8',
-        case_sensitive=False,
-        extra='ignore'  # Ignore unknown env vars
+        env_file=".env", env_file_encoding="utf-8", case_sensitive=False, extra="ignore"  # Ignore unknown env vars
     )
 
     # ==================== DATABASE CONFIGURATION (REQUIRED) ====================
     database_url: PostgresDsn = Field(
-        ...,
-        description="PostgreSQL connection string (postgresql://user:pass@host:port/db)"
+        ..., description="PostgreSQL connection string (postgresql://user:pass@host:port/db)"
     )
 
     # ==================== SECURITY CONFIGURATION (REQUIRED) ====================
     jwt_secret_key: str = Field(
-        ...,
-        min_length=32,
-        description="JWT secret key for token signing (minimum 32 characters)"
+        ..., min_length=32, description="JWT secret key for token signing (minimum 32 characters)"
     )
 
     # ==================== API CONFIGURATION ====================
-    nanobanana_api_key: str = Field(
-        ...,
-        description="Nano Banana API key for virtual try-on"
-    )
+    nanobanana_api_key: str = Field(..., description="Nano Banana API key for virtual try-on")
 
     fashn_api_key: Optional[str] = Field(
-        default=None,
-        description="FASHN API key (optional alternative to Nano Banana)"
+        default=None, description="FASHN API key (optional alternative to Nano Banana)"
     )
 
     huggingface_api_key: Optional[str] = Field(
-        default=None,
-        alias='HF_API_KEY',
-        description="Hugging Face API key for person detection"
+        default=None, alias="HF_API_KEY", description="Hugging Face API key for person detection"
     )
 
     # ==================== NOTIFICATIONS CONFIGURATION (OPTIONAL) ====================
-    telegram_bot_token: Optional[str] = Field(
-        default=None,
-        description="Telegram bot token for feedback notifications"
-    )
+    telegram_bot_token: Optional[str] = Field(default=None, description="Telegram bot token for feedback notifications")
 
-    telegram_chat_id: Optional[str] = Field(
-        default=None,
-        description="Telegram chat ID to receive notifications"
-    )
+    telegram_chat_id: Optional[str] = Field(default=None, description="Telegram chat ID to receive notifications")
 
     # ==================== FLASK CONFIGURATION ====================
     flask_env: str = Field(
-        default='production',
-        pattern='^(development|production|testing)$',
-        description="Flask environment (development, production, testing)"
+        default="production",
+        pattern="^(development|production|testing)$",
+        description="Flask environment (development, production, testing)",
     )
 
-    flask_debug: bool = Field(
-        default=False,
-        description="Enable Flask debug mode (NEVER use in production!)"
-    )
+    flask_debug: bool = Field(default=False, description="Enable Flask debug mode (NEVER use in production!)")
 
     # ==================== SERVER CONFIGURATION ====================
-    host: str = Field(
-        default='0.0.0.0',
-        description="Server host to bind to"
-    )
+    host: str = Field(default="0.0.0.0", description="Server host to bind to")
 
-    port: int = Field(
-        default=5000,
-        ge=1,
-        le=65535,
-        description="Server port to bind to"
-    )
+    port: int = Field(default=5000, ge=1, le=65535, description="Server port to bind to")
 
     # ==================== LOGGING CONFIGURATION ====================
-    log_level: str = Field(
-        default='INFO',
-        pattern='^(DEBUG|INFO|WARNING|ERROR|CRITICAL)$',
-        description="Logging level"
-    )
+    log_level: str = Field(default="INFO", pattern="^(DEBUG|INFO|WARNING|ERROR|CRITICAL)$", description="Logging level")
 
     enable_startup_diagnostics: bool = Field(
-        default=False,
-        description="Enable detailed startup diagnostics (for debugging only)"
+        default=False, description="Enable detailed startup diagnostics (for debugging only)"
     )
 
     # ==================== RATE LIMITING ====================
-    rate_limit_enabled: bool = Field(
-        default=True,
-        description="Enable rate limiting"
-    )
+    rate_limit_enabled: bool = Field(default=True, description="Enable rate limiting")
 
     rate_limit_storage: str = Field(
-        default='memory://',
-        description="Rate limit storage backend (memory:// or redis://)"
+        default="memory://", description="Rate limit storage backend (memory:// or redis://)"
     )
 
     # ==================== FILE CLEANUP ====================
-    cleanup_enabled: bool = Field(
-        default=True,
-        description="Enable automatic file cleanup"
-    )
+    cleanup_enabled: bool = Field(default=True, description="Enable automatic file cleanup")
 
-    cleanup_interval_minutes: int = Field(
-        default=30,
-        ge=1,
-        description="Cleanup interval in minutes"
-    )
+    cleanup_interval_minutes: int = Field(default=30, ge=1, description="Cleanup interval in minutes")
 
-    cleanup_max_age_hours: int = Field(
-        default=1,
-        ge=1,
-        description="Maximum file age in hours before cleanup"
-    )
+    cleanup_max_age_hours: int = Field(default=1, ge=1, description="Maximum file age in hours before cleanup")
 
     # ==================== VALIDATORS ====================
 
-    @field_validator('jwt_secret_key')
+    @field_validator("jwt_secret_key")
     @classmethod
     def validate_jwt_secret(cls, v: str) -> str:
         """Ensure JWT secret is sufficiently random and long."""
         if len(v) < 32:
-            raise ValueError('JWT_SECRET_KEY must be at least 32 characters long')
-        if v in ['your_secure_random_jwt_secret_key_here', 'changeme', 'secret']:
-            raise ValueError('JWT_SECRET_KEY must be changed from default value!')
+            raise ValueError("JWT_SECRET_KEY must be at least 32 characters long")
+        if v in ["your_secure_random_jwt_secret_key_here", "changeme", "secret"]:
+            raise ValueError("JWT_SECRET_KEY must be changed from default value!")
         return v
 
-    @field_validator('flask_debug')
+    @field_validator("flask_debug")
     @classmethod
     def validate_debug_mode(cls, v: bool, info) -> bool:
         """Warn if debug mode is enabled in production."""
-        if v and info.data.get('flask_env') == 'production':
+        if v and info.data.get("flask_env") == "production":
             import warnings
+
             warnings.warn(
-                "DEBUG MODE ENABLED IN PRODUCTION! This is a SECURITY RISK!",
-                category=RuntimeWarning,
-                stacklevel=2
+                "DEBUG MODE ENABLED IN PRODUCTION! This is a SECURITY RISK!", category=RuntimeWarning, stacklevel=2
             )
         return v
 
@@ -182,12 +133,12 @@ class Settings(BaseSettings):
 
         # Mask sensitive fields
         sensitive_keys = [
-            'database_url',
-            'jwt_secret_key',
-            'nanobanana_api_key',
-            'fashn_api_key',
-            'huggingface_api_key',
-            'telegram_bot_token'
+            "database_url",
+            "jwt_secret_key",
+            "nanobanana_api_key",
+            "fashn_api_key",
+            "huggingface_api_key",
+            "telegram_bot_token",
         ]
 
         for key in sensitive_keys:
@@ -244,4 +195,4 @@ def reload_settings() -> Settings:
     return get_settings()
 
 
-__all__ = ['Settings', 'get_settings', 'reload_settings']
+__all__ = ["Settings", "get_settings", "reload_settings"]

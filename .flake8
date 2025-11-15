@@ -21,11 +21,11 @@ exclude =
     project-backups
 
 # Ignore specific errors
-ignore =
-    E203,  # Whitespace before ':' (conflicts with Black)
-    E501,  # Line too long (handled by Black)
-    W503,  # Line break before binary operator (conflicts with Black)
-    E402,  # Module level import not at top of file (sometimes necessary)
+# E203: Whitespace before ':' (conflicts with Black)
+# E501: Line too long (handled by Black)
+# W503: Line break before binary operator (conflicts with Black)
+# E402: Module level import not at top of file (sometimes necessary)
+ignore = E203,E501,W503,E402
 
 # Enable specific warnings
 select = E,F,W,C90

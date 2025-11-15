@@ -4,9 +4,10 @@ All database utilities should import from here instead of hardcoding credentials
 
 Now uses Pydantic settings for type-safe configuration.
 """
+
 import os
+from typing import Any, Dict, Optional
 from urllib.parse import urlparse
-from typing import Dict, Any, Optional
 
 
 def get_database_url() -> str:
@@ -27,18 +28,18 @@ def get_database_url() -> str:
     # Try Pydantic settings first (preferred)
     try:
         from backend.config import get_settings
+
         settings = get_settings()
         return settings.database_url_str
     except Exception:
         # Fallback to direct environment variable (for standalone scripts)
         pass
 
-    db_url = os.getenv('DATABASE_URL')
+    db_url = os.getenv("DATABASE_URL")
 
     if not db_url:
         raise ValueError(
-            "DATABASE_URL environment variable is not set. "
-            "Please configure it in .env file or Railway settings."
+            "DATABASE_URL environment variable is not set. " "Please configure it in .env file or Railway settings."
         )
 
     return db_url

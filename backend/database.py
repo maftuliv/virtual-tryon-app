@@ -5,12 +5,13 @@ Uses PostgreSQL on Railway for persistent storage
 
 import os
 from datetime import datetime
-from typing import Optional, Tuple, List, Dict, Any
-from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Boolean
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
+from typing import Any, Dict, List, Optional, Tuple
+
+from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text, create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import OperationalError
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import Session, sessionmaker
 
 Base = declarative_base()
 
@@ -19,7 +20,8 @@ class Feedback(Base):
     """
     Feedback model for storing user ratings and comments
     """
-    __tablename__ = 'feedback'
+
+    __tablename__ = "feedback"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     rating = Column(Integer, nullable=False)  # 1-5
@@ -38,14 +40,14 @@ class Feedback(Base):
             Dict[str, Any]: Feedback data as dictionary
         """
         return {
-            'id': self.id,
-            'rating': self.rating,
-            'comment': self.comment,
-            'timestamp': self.timestamp.isoformat() if self.timestamp else None,
-            'session_id': self.session_id,
-            'ip_address': self.ip_address,
-            'telegram_sent': self.telegram_sent,
-            'telegram_error': self.telegram_error
+            "id": self.id,
+            "rating": self.rating,
+            "comment": self.comment,
+            "timestamp": self.timestamp.isoformat() if self.timestamp else None,
+            "session_id": self.session_id,
+            "ip_address": self.ip_address,
+            "telegram_sent": self.telegram_sent,
+            "telegram_error": self.telegram_error,
         }
 
 
@@ -69,7 +71,7 @@ def init_database() -> Tuple[Optional[Engine], Optional[sessionmaker], bool]:
     global engine, SessionLocal, db_available
 
     # Get DATABASE_URL from Railway environment
-    database_url = os.environ.get('DATABASE_URL')
+    database_url = os.environ.get("DATABASE_URL")
 
     if not database_url:
         print("\n" + "=" * 80)
@@ -93,15 +95,12 @@ def init_database() -> Tuple[Optional[Engine], Optional[sessionmaker], bool]:
 
         # PostgreSQL URL from Railway
         # Fix: Railway provides postgres:// but SQLAlchemy needs postgresql://
-        if database_url.startswith('postgres://'):
-            database_url = database_url.replace('postgres://', 'postgresql://', 1)
+        if database_url.startswith("postgres://"):
+            database_url = database_url.replace("postgres://", "postgresql://", 1)
 
         # Create engine
         engine = create_engine(
-            database_url,
-            pool_pre_ping=True,  # Verify connections before using
-            pool_size=5,
-            max_overflow=10
+            database_url, pool_pre_ping=True, pool_size=5, max_overflow=10  # Verify connections before using
         )
 
         # Test connection
@@ -132,6 +131,7 @@ def init_database() -> Tuple[Optional[Engine], Optional[sessionmaker], bool]:
     except Exception as e:
         print(f"❌ Unexpected database error: {e}")
         import traceback
+
         traceback.print_exc()
         print("⚠️  Feedback will be saved to files only (temporary storage)")
         print("=" * 80)
@@ -146,7 +146,7 @@ def save_feedback_to_db(
     session_id: Optional[str],
     ip_address: Optional[str],
     telegram_sent: bool = False,
-    telegram_error: Optional[str] = None
+    telegram_error: Optional[str] = None,
 ) -> Tuple[bool, Optional[int], Optional[str]]:
     """
     Save feedback to PostgreSQL database.
@@ -174,7 +174,7 @@ def save_feedback_to_db(
     try:
         # Parse timestamp
         if isinstance(timestamp, str):
-            timestamp_dt = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+            timestamp_dt = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
         else:
             timestamp_dt = timestamp
 
@@ -186,7 +186,7 @@ def save_feedback_to_db(
             session_id=session_id,
             ip_address=ip_address,
             telegram_sent=telegram_sent,
-            telegram_error=telegram_error
+            telegram_error=telegram_error,
         )
 
         db.add(feedback)
@@ -201,6 +201,7 @@ def save_feedback_to_db(
         error_msg = f"Database save failed: {str(e)}"
         print(f"[DATABASE] ❌ {error_msg}")
         import traceback
+
         traceback.print_exc()
         return False, None, error_msg
 

@@ -6,8 +6,8 @@ Provides structured logging with proper levels, formatting, and Railway compatib
 
 import logging
 import sys
-from typing import Optional
 from datetime import datetime
+from typing import Optional
 
 
 class StructuredFormatter(logging.Formatter):
@@ -18,12 +18,12 @@ class StructuredFormatter(logging.Formatter):
 
     # ANSI color codes for console output
     COLORS = {
-        'DEBUG': '\033[36m',      # Cyan
-        'INFO': '\033[32m',       # Green
-        'WARNING': '\033[33m',    # Yellow
-        'ERROR': '\033[31m',      # Red
-        'CRITICAL': '\033[35m',   # Magenta
-        'RESET': '\033[0m'        # Reset
+        "DEBUG": "\033[36m",  # Cyan
+        "INFO": "\033[32m",  # Green
+        "WARNING": "\033[33m",  # Yellow
+        "ERROR": "\033[31m",  # Red
+        "CRITICAL": "\033[35m",  # Magenta
+        "RESET": "\033[0m",  # Reset
     }
 
     def __init__(self, use_colors: bool = True):
@@ -33,19 +33,14 @@ class StructuredFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         """Format log record with structure and optional colors."""
         # Get color for level
-        color = self.COLORS.get(record.levelname, '') if self.use_colors else ''
-        reset = self.COLORS['RESET'] if self.use_colors else ''
+        color = self.COLORS.get(record.levelname, "") if self.use_colors else ""
+        reset = self.COLORS["RESET"] if self.use_colors else ""
 
         # Format timestamp
-        timestamp = datetime.fromtimestamp(record.created).strftime('%Y-%m-%d %H:%M:%S')
+        timestamp = datetime.fromtimestamp(record.created).strftime("%Y-%m-%d %H:%M:%S")
 
         # Build structured message
-        parts = [
-            f"{color}[{record.levelname}]{reset}",
-            f"{timestamp}",
-            f"[{record.name}]",
-            record.getMessage()
-        ]
+        parts = [f"{color}[{record.levelname}]{reset}", f"{timestamp}", f"[{record.name}]", record.getMessage()]
 
         # Add exception info if present
         if record.exc_info:
@@ -54,11 +49,7 @@ class StructuredFormatter(logging.Formatter):
         return " ".join(parts)
 
 
-def setup_logger(
-    name: str,
-    level: Optional[str] = None,
-    use_colors: bool = True
-) -> logging.Logger:
+def setup_logger(name: str, level: Optional[str] = None, use_colors: bool = True) -> logging.Logger:
     """
     Set up a logger with structured formatting.
 
@@ -80,7 +71,7 @@ def setup_logger(
 
     # Determine log level
     if level is None:
-        level = os.getenv('LOG_LEVEL', 'INFO').upper()
+        level = os.getenv("LOG_LEVEL", "INFO").upper()
 
     # Create logger
     logger = logging.getLogger(name)
@@ -129,17 +120,10 @@ def get_logger(name: str) -> logging.Logger:
 
 
 # Pre-configured loggers for common modules
-app_logger = setup_logger('app')
-auth_logger = setup_logger('auth')
-db_logger = setup_logger('database')
-api_logger = setup_logger('api')
+app_logger = setup_logger("app")
+auth_logger = setup_logger("auth")
+db_logger = setup_logger("database")
+api_logger = setup_logger("api")
 
 
-__all__ = [
-    'setup_logger',
-    'get_logger',
-    'app_logger',
-    'auth_logger',
-    'db_logger',
-    'api_logger'
-]
+__all__ = ["setup_logger", "get_logger", "app_logger", "auth_logger", "db_logger", "api_logger"]

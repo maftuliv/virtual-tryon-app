@@ -3,15 +3,16 @@ Authentication and User Management Module
 Handles user registration, login, JWT tokens, and premium features
 """
 
-import os
-import jwt
 import hashlib
+import os
 import secrets
 from datetime import datetime, timedelta
 from functools import wraps
-from typing import Dict, Any, Optional, Tuple, List, Callable
-from flask import request, jsonify, Response
-from werkzeug.security import generate_password_hash, check_password_hash
+from typing import Any, Callable, Dict, List, Optional, Tuple
+
+import jwt
+from flask import Response, jsonify, request
+from werkzeug.security import check_password_hash, generate_password_hash
 
 
 def _load_jwt_secret() -> str:
@@ -22,10 +23,7 @@ def _load_jwt_secret() -> str:
     Returns:
         str: JWT secret key for token signing
     """
-    value = (
-        os.getenv('JWT_SECRET_KEY') or
-        os.getenv('jwt_secret_key')
-    )
+    value = os.getenv("JWT_SECRET_KEY") or os.getenv("jwt_secret_key")
     if value:
         return value
 
@@ -37,7 +35,7 @@ def _load_jwt_secret() -> str:
 
 # JWT Configuration
 JWT_SECRET_KEY = _load_jwt_secret()
-JWT_ALGORITHM = 'HS256'
+JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_DAYS = 7
 
 # Premium Configuration
@@ -72,9 +70,9 @@ class AuthManager:
             str: Encoded JWT token
         """
         payload = {
-            'user_id': user_id,
-            'exp': datetime.utcnow() + timedelta(days=JWT_EXPIRATION_DAYS),
-            'iat': datetime.utcnow()
+            "user_id": user_id,
+            "exp": datetime.utcnow() + timedelta(days=JWT_EXPIRATION_DAYS),
+            "iat": datetime.utcnow(),
         }
         token = jwt.encode(payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
         return token
@@ -91,7 +89,7 @@ class AuthManager:
         """
         try:
             payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
-            return payload['user_id']
+            return payload["user_id"]
         except jwt.ExpiredSignatureError:
             return None
         except jwt.InvalidTokenError:
@@ -116,24 +114,27 @@ class AuthManager:
         try:
             # Validate email format
             email = email.lower().strip()
-            if '@' not in email or '.' not in email.split('@')[1]:
-                return {'success': False, 'error': 'Invalid email format'}
+            if "@" not in email or "." not in email.split("@")[1]:
+                return {"success": False, "error": "Invalid email format"}
 
             # Check if user already exists
             cursor = self.db.cursor()
             cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
             if cursor.fetchone():
-                return {'success': False, 'error': 'User with this email already exists'}
+                return {"success": False, "error": "User with this email already exists"}
 
             # Hash password
-            password_hash = generate_password_hash(password, method='pbkdf2:sha256')
+            password_hash = generate_password_hash(password, method="pbkdf2:sha256")
 
             # Insert user
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO users (email, password_hash, full_name, provider, created_at, last_login)
                 VALUES (%s, %s, %s, 'email', NOW(), NOW())
                 RETURNING id, email, full_name, is_premium, created_at
-            """, (email, password_hash, full_name))
+            """,
+                (email, password_hash, full_name),
+            )
 
             user = cursor.fetchone()
             self.db.commit()
@@ -141,28 +142,24 @@ class AuthManager:
 
             if user:
                 user_data = {
-                    'id': user[0],
-                    'email': user[1],
-                    'full_name': user[2],
-                    'is_premium': user[3],
-                    'created_at': user[4].isoformat() if user[4] else None
+                    "id": user[0],
+                    "email": user[1],
+                    "full_name": user[2],
+                    "is_premium": user[3],
+                    "created_at": user[4].isoformat() if user[4] else None,
                 }
 
                 # Generate token
-                token = self.generate_token(user_data['id'])
+                token = self.generate_token(user_data["id"])
 
-                return {
-                    'success': True,
-                    'user': user_data,
-                    'token': token
-                }
+                return {"success": True, "user": user_data, "token": token}
 
-            return {'success': False, 'error': 'Failed to create user'}
+            return {"success": False, "error": "Failed to create user"}
 
         except Exception as e:
             self.db.rollback()
             print(f"Registration error: {e}")
-            return {'success': False, 'error': str(e)}
+            return {"success": False, "error": str(e)}
 
     def login_user(self, email: str, password: str) -> Dict[str, Any]:
         """
@@ -179,62 +176,59 @@ class AuthManager:
             email = email.lower().strip()
 
             cursor = self.db.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT id, email, password_hash, full_name, avatar_url, is_premium, premium_until
                 FROM users
                 WHERE email = %s AND provider = 'email'
-            """, (email,))
+            """,
+                (email,),
+            )
 
             user = cursor.fetchone()
 
             if not user:
-                return {'success': False, 'error': 'Invalid email or password'}
+                return {"success": False, "error": "Invalid email or password"}
 
             # Verify password
             if not check_password_hash(user[2], password):
-                return {'success': False, 'error': 'Invalid email or password'}
+                return {"success": False, "error": "Invalid email or password"}
 
             # Update last login
-            cursor.execute("""
+            cursor.execute(
+                """
                 UPDATE users SET last_login = NOW() WHERE id = %s
-            """, (user[0],))
+            """,
+                (user[0],),
+            )
             self.db.commit()
             cursor.close()
 
             user_data = {
-                'id': user[0],
-                'email': user[1],
-                'full_name': user[3],
-                'avatar_url': user[4],
-                'is_premium': user[5],
-                'premium_until': user[6].isoformat() if user[6] else None
+                "id": user[0],
+                "email": user[1],
+                "full_name": user[3],
+                "avatar_url": user[4],
+                "is_premium": user[5],
+                "premium_until": user[6].isoformat() if user[6] else None,
             }
 
             # Generate token
-            token = self.generate_token(user_data['id'])
+            token = self.generate_token(user_data["id"])
 
-            return {
-                'success': True,
-                'user': user_data,
-                'token': token
-            }
+            return {"success": True, "user": user_data, "token": token}
 
         except Exception as e:
             self.db.rollback()
             print(f"Login error: {e}")
-            return {'success': False, 'error': str(e)}
+            return {"success": False, "error": str(e)}
 
     # ============================================================
     # OAuth User Management
     # ============================================================
 
     def find_or_create_oauth_user(
-        self,
-        email: str,
-        full_name: str,
-        avatar_url: Optional[str],
-        provider: str,
-        provider_id: str
+        self, email: str, full_name: str, avatar_url: Optional[str], provider: str, provider_id: str
     ) -> Dict[str, Any]:
         """
         Find existing OAuth user or create new one.
@@ -255,66 +249,71 @@ class AuthManager:
             cursor = self.db.cursor()
 
             # Try to find existing user by email or provider_id
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT id, email, full_name, avatar_url, is_premium, premium_until
                 FROM users
                 WHERE email = %s OR (provider = %s AND provider_id = %s)
-            """, (email, provider, provider_id))
+            """,
+                (email, provider, provider_id),
+            )
 
             user = cursor.fetchone()
 
             if user:
                 # Update last login and OAuth info
-                cursor.execute("""
+                cursor.execute(
+                    """
                     UPDATE users
                     SET last_login = NOW(), provider = %s, provider_id = %s, avatar_url = %s
                     WHERE id = %s
-                """, (provider, provider_id, avatar_url, user[0]))
+                """,
+                    (provider, provider_id, avatar_url, user[0]),
+                )
                 self.db.commit()
 
                 user_data = {
-                    'id': user[0],
-                    'email': user[1],
-                    'full_name': user[2],
-                    'avatar_url': avatar_url or user[3],
-                    'is_premium': user[4],
-                    'premium_until': user[5].isoformat() if user[5] else None
+                    "id": user[0],
+                    "email": user[1],
+                    "full_name": user[2],
+                    "avatar_url": avatar_url or user[3],
+                    "is_premium": user[4],
+                    "premium_until": user[5].isoformat() if user[5] else None,
                 }
             else:
                 # Create new OAuth user
-                cursor.execute("""
+                cursor.execute(
+                    """
                     INSERT INTO users (email, full_name, avatar_url, provider, provider_id, created_at, last_login)
                     VALUES (%s, %s, %s, %s, %s, NOW(), NOW())
                     RETURNING id, email, full_name, avatar_url, is_premium
-                """, (email, full_name, avatar_url, provider, provider_id))
+                """,
+                    (email, full_name, avatar_url, provider, provider_id),
+                )
 
                 new_user = cursor.fetchone()
                 self.db.commit()
 
                 user_data = {
-                    'id': new_user[0],
-                    'email': new_user[1],
-                    'full_name': new_user[2],
-                    'avatar_url': new_user[3],
-                    'is_premium': new_user[4],
-                    'premium_until': None
+                    "id": new_user[0],
+                    "email": new_user[1],
+                    "full_name": new_user[2],
+                    "avatar_url": new_user[3],
+                    "is_premium": new_user[4],
+                    "premium_until": None,
                 }
 
             cursor.close()
 
             # Generate token
-            token = self.generate_token(user_data['id'])
+            token = self.generate_token(user_data["id"])
 
-            return {
-                'success': True,
-                'user': user_data,
-                'token': token
-            }
+            return {"success": True, "user": user_data, "token": token}
 
         except Exception as e:
             self.db.rollback()
             print(f"OAuth user creation error: {e}")
-            return {'success': False, 'error': str(e)}
+            return {"success": False, "error": str(e)}
 
     # ============================================================
     # User Information
@@ -332,26 +331,29 @@ class AuthManager:
         """
         try:
             cursor = self.db.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT id, email, full_name, avatar_url, provider, is_premium, premium_until, created_at, role
                 FROM users
                 WHERE id = %s
-            """, (user_id,))
+            """,
+                (user_id,),
+            )
 
             user = cursor.fetchone()
             cursor.close()
 
             if user:
                 return {
-                    'id': user[0],
-                    'email': user[1],
-                    'full_name': user[2],
-                    'avatar_url': user[3],
-                    'provider': user[4],
-                    'is_premium': user[5],
-                    'premium_until': user[6].isoformat() if user[6] else None,
-                    'created_at': user[7].isoformat() if user[7] else None,
-                    'role': user[8] if len(user) > 8 else 'user'
+                    "id": user[0],
+                    "email": user[1],
+                    "full_name": user[2],
+                    "avatar_url": user[3],
+                    "provider": user[4],
+                    "is_premium": user[5],
+                    "premium_until": user[6].isoformat() if user[6] else None,
+                    "created_at": user[7].isoformat() if user[7] else None,
+                    "role": user[8] if len(user) > 8 else "user",
                 }
 
             return None
@@ -395,10 +397,13 @@ class AuthManager:
 
             # Check today's usage
             today = datetime.now().date()
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT generations_count FROM daily_limits
                 WHERE user_id = %s AND date = %s
-            """, (user_id, today))
+            """,
+                (user_id, today),
+            )
 
             limit_record = cursor.fetchone()
             cursor.close()
@@ -433,14 +438,17 @@ class AuthManager:
             cursor = self.db.cursor()
 
             # Insert or update daily limit
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO daily_limits (user_id, date, generations_count)
                 VALUES (%s, %s, 1)
                 ON CONFLICT (user_id, date)
                 DO UPDATE SET
                     generations_count = daily_limits.generations_count + 1,
                     updated_at = NOW()
-            """, (user_id, today))
+            """,
+                (user_id, today),
+            )
 
             self.db.commit()
             cursor.close()
@@ -466,11 +474,14 @@ class AuthManager:
             premium_until = datetime.now() + timedelta(days=days)
 
             cursor = self.db.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 UPDATE users
                 SET is_premium = TRUE, premium_until = %s
                 WHERE id = %s
-            """, (premium_until, user_id))
+            """,
+                (premium_until, user_id),
+            )
 
             self.db.commit()
             cursor.close()
@@ -492,7 +503,7 @@ class AuthManager:
         garment_image_url: str,
         result_image_url: str,
         category: str,
-        session_id: Optional[str] = None
+        session_id: Optional[str] = None,
     ) -> Optional[int]:
         """
         Save generation to history.
@@ -510,11 +521,14 @@ class AuthManager:
         """
         try:
             cursor = self.db.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO generations (user_id, session_id, person_image_url, garment_image_url, result_image_url, category, status, created_at)
                 VALUES (%s, %s, %s, %s, %s, %s, 'completed', NOW())
                 RETURNING id
-            """, (user_id, session_id, person_image_url, garment_image_url, result_image_url, category))
+            """,
+                (user_id, session_id, person_image_url, garment_image_url, result_image_url, category),
+            )
 
             generation_id = cursor.fetchone()[0]
             self.db.commit()
@@ -541,25 +555,31 @@ class AuthManager:
         """
         try:
             cursor = self.db.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT id, person_image_url, garment_image_url, result_image_url, category, created_at
                 FROM generations
                 WHERE user_id = %s
                 ORDER BY created_at DESC
                 LIMIT %s OFFSET %s
-            """, (user_id, limit, offset))
+            """,
+                (user_id, limit, offset),
+            )
 
             generations = cursor.fetchall()
             cursor.close()
 
-            return [{
-                'id': g[0],
-                'person_image_url': g[1],
-                'garment_image_url': g[2],
-                'result_image_url': g[3],
-                'category': g[4],
-                'created_at': g[5].isoformat() if g[5] else None
-            } for g in generations]
+            return [
+                {
+                    "id": g[0],
+                    "person_image_url": g[1],
+                    "garment_image_url": g[2],
+                    "result_image_url": g[3],
+                    "category": g[4],
+                    "created_at": g[5].isoformat() if g[5] else None,
+                }
+                for g in generations
+            ]
 
         except Exception as e:
             print(f"Get generations error: {e}")
@@ -569,6 +589,7 @@ class AuthManager:
 # ============================================================
 # Flask Decorators for Route Protection
 # ============================================================
+
 
 def create_auth_decorator(auth_manager: AuthManager) -> Tuple[Callable, Callable]:
     """
@@ -591,19 +612,20 @@ def create_auth_decorator(auth_manager: AuthManager) -> Tuple[Callable, Callable
         Returns:
             Callable: Decorated function that checks JWT token
         """
+
         @wraps(f)
         def decorated_function(*args: Any, **kwargs: Any) -> Any:
             # Get token from Authorization header
-            auth_header = request.headers.get('Authorization', '')
+            auth_header = request.headers.get("Authorization", "")
 
-            if not auth_header.startswith('Bearer '):
-                return jsonify({'error': 'No authorization token provided'}), 401
+            if not auth_header.startswith("Bearer "):
+                return jsonify({"error": "No authorization token provided"}), 401
 
-            token = auth_header.replace('Bearer ', '')
+            token = auth_header.replace("Bearer ", "")
             user_id = auth_manager.verify_token(token)
 
             if not user_id:
-                return jsonify({'error': 'Invalid or expired token'}), 401
+                return jsonify({"error": "Invalid or expired token"}), 401
 
             # Attach user_id to request for use in route
             request.user_id = user_id
@@ -622,31 +644,35 @@ def create_auth_decorator(auth_manager: AuthManager) -> Tuple[Callable, Callable
         Returns:
             Callable: Decorated function that checks JWT token and admin role
         """
+
         @wraps(f)
         def decorated_function(*args: Any, **kwargs: Any) -> Any:
             # Get token from Authorization header
-            auth_header = request.headers.get('Authorization', '')
+            auth_header = request.headers.get("Authorization", "")
 
-            if not auth_header.startswith('Bearer '):
-                return jsonify({'error': 'No authorization token provided'}), 401
+            if not auth_header.startswith("Bearer "):
+                return jsonify({"error": "No authorization token provided"}), 401
 
-            token = auth_header.replace('Bearer ', '')
+            token = auth_header.replace("Bearer ", "")
             user_id = auth_manager.verify_token(token)
 
             if not user_id:
-                return jsonify({'error': 'Invalid or expired token'}), 401
+                return jsonify({"error": "Invalid or expired token"}), 401
 
             # Check if user is admin
             cursor = auth_manager.db.cursor()
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT role FROM users WHERE id = %s
-            """, (user_id,))
+            """,
+                (user_id,),
+            )
 
             user = cursor.fetchone()
             cursor.close()
 
-            if not user or user[0] != 'admin':
-                return jsonify({'error': 'Access denied. Admin privileges required'}), 403
+            if not user or user[0] != "admin":
+                return jsonify({"error": "Access denied. Admin privileges required"}), 403
 
             # Attach user_id to request for use in route
             request.user_id = user_id
