@@ -197,6 +197,10 @@ jobs:
           python -c "import backend.db_config; print('✅ backend.db_config imports successfully')"
           python -c "from backend.database import Feedback; print('✅ backend.database imports successfully')"
           python -c "from backend.auth import AuthManager; print('✅ backend.auth imports successfully')"
+          python -c "from backend.clients import NanoBananaClient, TelegramClient; print('✅ backend.clients imports successfully')"
+          python -c "from backend.repositories import DeviceLimitRepository, FeedbackRepository, GenerationRepository; print('✅ backend.repositories imports successfully')"
+          python -c "from backend.services import ImageService, LimitService, NotificationService, FeedbackService, TryonService; print('✅ backend.services imports successfully')"
+          python -c "from backend.app import app; print('✅ Flask app creates successfully')"
 
   summary:
     name: CI Summary
