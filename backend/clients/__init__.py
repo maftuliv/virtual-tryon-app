@@ -10,4 +10,10 @@ Each client encapsulates communication with an external service:
 Clients return domain objects or DTOs, never raw API responses.
 """
 
-__all__ = []
+from backend.clients.nanobanana_client import NanoBananaClient
+from backend.clients.telegram_client import TelegramClient
+
+__all__ = [
+    "NanoBananaClient",
+    "TelegramClient",
+]
