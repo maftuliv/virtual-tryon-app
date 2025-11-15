@@ -271,6 +271,61 @@ class AuthManager {
     // Google OAuth
     // ============================================================
 
+    /**
+     * Check if Google OAuth is enabled on the server
+     * Returns true if enabled, false otherwise
+     */
+    async checkGoogleOAuthStatus() {
+        try {
+            const response = await fetch(`${this.API_URL}/api/auth/google/status`, {
+                method: 'GET',
+            });
+
+            if (!response.ok) {
+                console.warn('[GOOGLE-AUTH] Status check failed, assuming OAuth disabled');
+                return false;
+            }
+
+            const data = await response.json();
+            console.log('[GOOGLE-AUTH] Status:', data);
+
+            return data.enabled === true;
+
+        } catch (error) {
+            console.warn('[GOOGLE-AUTH] Status check error, assuming OAuth disabled:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Update Google Sign-In button visibility based on OAuth status
+     */
+    async updateGoogleButtonVisibility() {
+        const googleButton = document.querySelector('.google-btn');
+        const socialAuth = document.querySelector('.social-auth');
+
+        if (!googleButton) {
+            console.log('[GOOGLE-AUTH] Google button not found in DOM');
+            return;
+        }
+
+        const isEnabled = await this.checkGoogleOAuthStatus();
+
+        if (isEnabled) {
+            console.log('[GOOGLE-AUTH] OAuth enabled, showing button');
+            googleButton.style.display = 'flex';
+            if (socialAuth) socialAuth.style.display = 'block';
+        } else {
+            console.log('[GOOGLE-AUTH] OAuth disabled, hiding button');
+            googleButton.style.display = 'none';
+            // Hide entire social auth section if no other buttons
+            const otherButtons = socialAuth?.querySelectorAll('.social-btn:not(.google-btn)');
+            if (socialAuth && (!otherButtons || otherButtons.length === 0)) {
+                socialAuth.style.display = 'none';
+            }
+        }
+    }
+
     async googleLogin() {
         try {
             console.log('[GOOGLE-AUTH] Initiating Google OAuth flow...');
@@ -370,6 +425,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Then check normal authentication
     auth.checkAuth();
+
+    // Check Google OAuth availability and update button visibility
+    auth.updateGoogleButtonVisibility();
 
     // Check for token in URL (from OAuth callback - legacy)
     const urlParams = new URLSearchParams(window.location.search);

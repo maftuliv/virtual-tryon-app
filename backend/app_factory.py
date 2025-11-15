@@ -237,13 +237,13 @@ def create_app(config: Optional[Settings] = None) -> Flask:
     else:
         logger.warning("  - Auth blueprint skipped (auth not available)")
 
-    # Google OAuth blueprint
+    # Google OAuth blueprint (always register to return proper 503 when disabled)
+    google_auth_bp = create_google_auth_blueprint(google_auth_service)
+    app.register_blueprint(google_auth_bp)
     if google_auth_service.is_enabled():
-        google_auth_bp = create_google_auth_blueprint(google_auth_service)
-        app.register_blueprint(google_auth_bp)
-        logger.info("  - Google OAuth blueprint registered")
+        logger.info("  - Google OAuth blueprint registered (OAuth enabled)")
     else:
-        logger.info("  - Google OAuth blueprint skipped (not enabled)")
+        logger.info("  - Google OAuth blueprint registered (OAuth disabled - will return 503)")
 
     # Admin blueprint
     admin_bp = create_admin_blueprint(generation_repo, user_repository, db_conn)

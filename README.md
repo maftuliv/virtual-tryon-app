@@ -134,6 +134,44 @@ python apply_migration.py
 - Требуется интернет-соединение для работы с моделью
 - Качество результата зависит от качества входных изображений
 
+## 🔐 Google OAuth 2.0 (Опционально)
+
+Приложение поддерживает вход через Google для упрощенной регистрации пользователей.
+
+### Быстрая настройка
+
+1. **Получите учетные данные OAuth**:
+   - Создайте проект в [Google Cloud Console](https://console.cloud.google.com/)
+   - Настройте OAuth Consent Screen
+   - Создайте OAuth 2.0 Client ID (Web application)
+   - Добавьте redirect URI: `https://your-domain.com/api/auth/google/callback`
+
+2. **Добавьте переменные окружения**:
+   ```bash
+   GOOGLE_OAUTH_ENABLED=true
+   GOOGLE_CLIENT_ID=your_client_id.apps.googleusercontent.com
+   GOOGLE_CLIENT_SECRET=GOCSPX-your_secret_here
+   GOOGLE_REDIRECT_URI=https://your-domain.com/api/auth/google/callback
+   ```
+
+3. **Перезапустите приложение** - кнопка "Войти через Google" появится автоматически
+
+📖 **Подробная инструкция**: см. [GOOGLE_OAUTH_SETUP.md](GOOGLE_OAUTH_SETUP.md)
+
+### Railway Production Setup
+
+В Railway Dashboard → Variables добавьте:
+```
+GOOGLE_OAUTH_ENABLED=true
+GOOGLE_CLIENT_ID=<your_client_id>
+GOOGLE_CLIENT_SECRET=<your_secret>
+GOOGLE_REDIRECT_URI=https://taptolook.net/api/auth/google/callback
+```
+
+Railway автоматически передеплоит приложение с OAuth поддержкой.
+
+**Важно**: Если OAuth переменные не заданы, функция будет отключена, приложение работает в режиме email/password.
+
 ## 📚 Документация
 
 - [ENV_SETUP_GUIDE.md](ENV_SETUP_GUIDE.md) - **Настройка переменных окружения**
@@ -141,6 +179,7 @@ python apply_migration.py
 - [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) - Деплой на Railway
 - [POSTGRESQL_SETUP.md](POSTGRESQL_SETUP.md) - Настройка PostgreSQL
 - [TELEGRAM_SETUP.md](TELEGRAM_SETUP.md) - Настройка Telegram бота
+- [GOOGLE_OAUTH_SETUP.md](GOOGLE_OAUTH_SETUP.md) - **Настройка Google OAuth 2.0**
 - [BACKUP_GUIDE.md](BACKUP_GUIDE.md) - Резервное копирование
 
 ## 🔒 Безопасность

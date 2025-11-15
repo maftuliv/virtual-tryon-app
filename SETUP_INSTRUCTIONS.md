@@ -98,6 +98,38 @@ mkdir results
 - `TELEGRAM_BOT_TOKEN` и `TELEGRAM_CHAT_ID` — чтобы получать отзывы в Telegram (см. TELEGRAM_SETUP.md).
 - `ENABLE_STARTUP_DIAGNOSTICS` — оставьте пустым/`0` на проде. Установите в `1`, только если нужно локально вывести диагностику (ключи будут замаскированы).
 
+### 4.3 Google OAuth 2.0 переменные (опционально)
+
+Для включения входа через Google добавьте:
+
+| Переменная | Назначение | Где взять |
+|-----------|------------|-----------|
+| `GOOGLE_OAUTH_ENABLED` | Включить/выключить OAuth (`true` или `false`) | Установите `true` для активации |
+| `GOOGLE_CLIENT_ID` | OAuth Client ID от Google | [Google Cloud Console](https://console.cloud.google.com/) → Credentials |
+| `GOOGLE_CLIENT_SECRET` | OAuth Client Secret | Google Cloud Console → Credentials |
+| `GOOGLE_REDIRECT_URI` | Callback URL для OAuth | Локально: `http://localhost:5000/api/auth/google/callback`<br>Production: `https://your-domain.com/api/auth/google/callback` |
+
+**Пример для локальной разработки:**
+```bash
+GOOGLE_OAUTH_ENABLED=true
+GOOGLE_CLIENT_ID=123456789-abc.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=GOCSPX-your_secret_here
+GOOGLE_REDIRECT_URI=http://localhost:5000/api/auth/google/callback
+```
+
+**Пример для Railway production:**
+```bash
+GOOGLE_OAUTH_ENABLED=true
+GOOGLE_CLIENT_ID=123456789-abc.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=GOCSPX-your_secret_here
+GOOGLE_REDIRECT_URI=https://taptolook.net/api/auth/google/callback
+```
+
+**Важно:**
+- Если переменные не заданы или `GOOGLE_OAUTH_ENABLED=false`, вход через Google будет отключен
+- Кнопка "Войти через Google" автоматически скроется, если OAuth не настроен
+- Подробная инструкция: см. [GOOGLE_OAUTH_SETUP.md](GOOGLE_OAUTH_SETUP.md)
+
 После задания переменных **перезапустите backend**. В логах не должно быть предупреждения `[AUTH] ⚠️ JWT_SECRET_KEY not set...`. Для fingerprint-сервиса вы увидите только `[INFO] DEVICE_FINGERPRINT_SECRET not set; derived from JWT secret`, если забыли задать переменную (нежелательно на проде).
 
 ## Шаг 5: (Опционально) Настройка Hugging Face API Token

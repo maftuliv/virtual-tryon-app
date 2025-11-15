@@ -45,9 +45,10 @@ def create_google_auth_blueprint(google_auth_service: GoogleAuthService) -> Blue
                         {
                             "success": False,
                             "error": "Google OAuth не настроен. Обратитесь к администратору.",
+                            "hint": "Установите GOOGLE_OAUTH_ENABLED=true и добавьте учетные данные OAuth.",
                         }
                     ),
-                    503,
+                    503,  # Service Unavailable
                 )
 
             # Generate authorization URL with state token
@@ -101,7 +102,7 @@ def create_google_auth_blueprint(google_auth_service: GoogleAuthService) -> Blue
             # Check if Google OAuth is enabled
             if not google_auth_service.is_enabled():
                 logger.error("[GOOGLE-AUTH-API] Callback received but OAuth is disabled")
-                return redirect("/#google_auth_error&message=OAuth+not+configured")
+                return redirect("/#google_auth_error&message=OAuth+не+настроен.+Обратитесь+к+администратору")
 
             # Check for error in callback
             error = request.args.get("error")
