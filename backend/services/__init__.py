@@ -15,6 +15,7 @@ from backend.services.feedback_service import FeedbackService
 from backend.services.image_service import ImageService
 from backend.services.limit_service import LimitService
 from backend.services.notification_service import NotificationService
+from backend.services.tryon_service import TryonService
 
 __all__ = [
     "AuthService",
@@ -22,4 +23,5 @@ __all__ = [
     "ImageService",
     "LimitService",
     "NotificationService",
+    "TryonService",
 ]
