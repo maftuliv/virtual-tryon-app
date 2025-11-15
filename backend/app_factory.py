@@ -130,14 +130,23 @@ def create_app(config: Optional[Settings] = None) -> Flask:
     feedback_repo = FeedbackRepository(db_conn, feedback_folder)
     generation_repo = GenerationRepository(db_conn) if db_conn else None
 
+    # Initialize AuthManager first (needed by UserRepository and GoogleAuthService)
+    auth_manager = None
+    if db_conn:
+        try:
+            auth_manager = AuthManager(db_connection=db_conn)
+            logger.info("[OK] AuthManager initialized")
+        except Exception as e:
+            logger.warning(f"[SKIP] AuthManager not available: {e}")
+
     # Initialize user repository (optional, may have emoji issues on Windows)
     user_repository = None
-    if db_conn:
+    if db_conn and auth_manager:
         try:
             from backend.repositories.user_repository import UserRepository
 
-            user_repository = UserRepository()
-            logger.info("[OK] UserRepository initialized")
+            user_repository = UserRepository(auth_manager=auth_manager)
+            logger.info("[OK] UserRepository initialized with AuthManager")
         except Exception as e:
             logger.warning(f"[SKIP] UserRepository not available: {e}")
 
@@ -175,16 +184,7 @@ def create_app(config: Optional[Settings] = None) -> Flask:
 
     auth_service = AuthService(user_repository=user_repository) if user_repository else None
 
-    # Initialize AuthManager for Google OAuth service
-    # AuthManager requires database connection for OAuth user creation
-    auth_manager = None
-    if db_conn:
-        try:
-            auth_manager = AuthManager(db_connection=db_conn)
-            logger.info("[OK] AuthManager initialized for OAuth")
-        except Exception as e:
-            logger.warning(f"[SKIP] AuthManager not available for OAuth: {e}")
-
+    # Initialize Google OAuth service (uses auth_manager created earlier)
     google_auth_service = GoogleAuthService(settings=config, auth_manager=auth_manager)
     if google_auth_service.is_enabled():
         logger.info("[OK] GoogleAuthService initialized and enabled")
