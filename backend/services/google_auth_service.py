@@ -203,7 +203,7 @@ class GoogleAuthService:
                 "refresh_token": credentials.refresh_token,
                 "id_token": credentials.id_token,
                 "expires_in": credentials.expiry.timestamp() if credentials.expiry else None,
-                "token_type": credentials.token_type or "Bearer",
+                "token_type": getattr(credentials, "token_type", "Bearer"),
             }
 
             self.logger.info("[GOOGLE-AUTH] Successfully exchanged code for tokens")
