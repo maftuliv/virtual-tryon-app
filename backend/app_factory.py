@@ -79,13 +79,22 @@ def create_app(config: Optional[Settings] = None) -> Flask:
     app.config["db_connection"] = None  # Will be set later after DB connection is established
 
     # Configure CORS
+    # Note: supports_credentials=True requires specific origins (cannot use "*")
+    allowed_origins = [
+        "http://localhost:5000",
+        "http://127.0.0.1:5000",
+        "https://taptolook.net",
+        "https://www.taptolook.net",
+    ]
+
     CORS(
         app,
         resources={
             r"/*": {
-                "origins": "*",
-                "methods": ["GET", "POST", "OPTIONS"],
+                "origins": allowed_origins,
+                "methods": ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
                 "allow_headers": ["Content-Type", "Authorization"],
+                "supports_credentials": True,  # CRITICAL: Allow cookies in CORS requests
             }
         },
     )

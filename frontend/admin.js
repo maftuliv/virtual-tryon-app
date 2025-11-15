@@ -81,6 +81,7 @@ class AdminPanel {
 
         const response = await fetch(`${this.API_URL}${endpoint}`, {
             ...options,
+            credentials: 'include',  // CRITICAL: Include cookies in request
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
