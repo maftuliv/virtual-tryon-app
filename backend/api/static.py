@@ -97,6 +97,19 @@ def create_static_blueprint(
             logger.error(f"Error serving frontend: {e}", exc_info=True)
             return jsonify({"error": "Frontend not found"}), 404
 
+    @static_bp.route("/admin", methods=["GET"])
+    def serve_admin():
+        """
+        Serve admin panel HTML.
+        """
+        try:
+            response = send_from_directory(frontend_folder, "admin.html")
+            response.headers["Cache-Control"] = "no-cache, must-revalidate"
+            return response
+        except Exception as e:
+            logger.error(f"Error serving admin panel: {e}", exc_info=True)
+            return jsonify({"error": "Admin panel not found"}), 404
+
     @static_bp.route("/<path:path>", methods=["GET"])
     def serve_static(path):
         """
