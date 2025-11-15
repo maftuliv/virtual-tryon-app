@@ -23,6 +23,7 @@ from backend.api.google_auth import create_google_auth_blueprint
 from backend.api.static import create_static_blueprint
 from backend.api.tryon import create_tryon_blueprint
 from backend.api.upload import create_upload_blueprint
+from backend.auth import AuthManager
 from backend.clients.nanobanana_client import NanoBananaClient
 from backend.clients.telegram_client import TelegramClient
 from backend.config import Settings
@@ -174,11 +175,15 @@ def create_app(config: Optional[Settings] = None) -> Flask:
 
     auth_service = AuthService(user_repository=user_repository) if user_repository else None
 
-    # Initialize Google OAuth service
-    # Need to get auth_manager from user_repository for OAuth user creation
+    # Initialize AuthManager for Google OAuth service
+    # AuthManager requires database connection for OAuth user creation
     auth_manager = None
-    if user_repository and hasattr(user_repository, "auth_manager"):
-        auth_manager = user_repository.auth_manager
+    if db_conn:
+        try:
+            auth_manager = AuthManager(db_connection=db_conn)
+            logger.info("[OK] AuthManager initialized for OAuth")
+        except Exception as e:
+            logger.warning(f"[SKIP] AuthManager not available for OAuth: {e}")
 
     google_auth_service = GoogleAuthService(settings=config, auth_manager=auth_manager)
     if google_auth_service.is_enabled():
