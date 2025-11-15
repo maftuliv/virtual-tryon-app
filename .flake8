@@ -1,0 +1,36 @@
+[flake8]
+# Flake8 configuration for Python linting
+
+max-line-length = 120
+max-complexity = 15
+
+# Exclude common directories
+exclude =
+    .git,
+    __pycache__,
+    .venv,
+    venv,
+    env,
+    node_modules,
+    .pytest_cache,
+    .mypy_cache,
+    build,
+    dist,
+    *.egg-info,
+    migrations,
+    project-backups
+
+# Ignore specific errors
+ignore =
+    E203,  # Whitespace before ':' (conflicts with Black)
+    E501,  # Line too long (handled by Black)
+    W503,  # Line break before binary operator (conflicts with Black)
+    E402,  # Module level import not at top of file (sometimes necessary)
+
+# Enable specific warnings
+select = E,F,W,C90
+
+# Count errors
+count = True
+statistics = True
+show-source = True

@@ -14,6 +14,10 @@ from werkzeug.utils import secure_filename
 from PIL import Image
 import io
 
+# Setup logging
+from backend.logger import get_logger
+logger = get_logger(__name__)
+
 # Database imports
 try:
     from database import (
@@ -22,9 +26,9 @@ try:
         get_unsent_telegram_feedbacks,
         mark_telegram_sent
     )
-    print("[DATABASE] ✅ Database module loaded successfully")
+    logger.info("Database module loaded successfully")
 except ImportError as e:
-    print(f"[DATABASE] ⚠️ Database module not available: {e}")
+    logger.warning(f"Database module not available: {e}")
     db_available = False
 
 # Auth imports
@@ -41,7 +45,7 @@ db_conn = None
 
 try:
     from backend.auth import AuthManager, create_auth_decorator
-    print("[AUTH] ✅ Auth module loaded successfully")
+    logger.info("Auth module loaded successfully")
 
     # Initialize PostgreSQL connection for auth
     DATABASE_URL = os.getenv('DATABASE_URL')
@@ -50,14 +54,14 @@ try:
         auth_manager = AuthManager(db_conn)
         require_auth, require_admin = create_auth_decorator(auth_manager)
         auth_available = True
-        print("[AUTH] ✅ Auth manager initialized")
+        logger.info("Auth manager initialized successfully")
     else:
         auth_available = False
         require_auth = dummy_auth_decorator
         require_admin = dummy_auth_decorator
-        print("[AUTH] ⚠️ DATABASE_URL not found, auth disabled")
+        logger.warning("DATABASE_URL not found, auth disabled")
 except Exception as e:
-    print(f"[AUTH] ⚠️ Auth module not available: {e}")
+    logger.warning(f"Auth module not available: {e}")
     auth_available = False
     require_auth = dummy_auth_decorator
     require_admin = dummy_auth_decorator
@@ -1945,13 +1949,13 @@ def cleanup_old_files():
                             os.remove(file_path)
                             cleanup_count += 1
                         except Exception as e:
-                            print(f"[CLEANUP] Failed to remove {filename}: {e}")
+                            logger.error(f"Failed to remove {filename}: {e}")
 
         if cleanup_count > 0:
-            print(f"[CLEANUP] ✅ Removed {cleanup_count} old files")
+            logger.info(f"Removed {cleanup_count} old files")
 
     except Exception as e:
-        print(f"[CLEANUP] ❌ Error: {e}")
+        logger.error(f"Cleanup error: {e}", exc_info=True)
 
 
 def start_cleanup_scheduler():
@@ -1966,7 +1970,7 @@ def start_cleanup_scheduler():
 
     cleanup_thread = threading.Thread(target=run_cleanup_loop, daemon=True)
     cleanup_thread.start()
-    print("[CLEANUP] ✅ Background cleanup scheduler started (runs every 30 minutes)")
+    logger.info("Background cleanup scheduler started (runs every 30 minutes)")
 
 
 @app.route('/api/cleanup', methods=['POST'])

@@ -9,14 +9,18 @@ import hashlib
 import secrets
 from datetime import datetime, timedelta
 from functools import wraps
-from flask import request, jsonify
+from typing import Dict, Any, Optional, Tuple, List, Callable
+from flask import request, jsonify, Response
 from werkzeug.security import generate_password_hash, check_password_hash
 
 
-def _load_jwt_secret():
+def _load_jwt_secret() -> str:
     """
     Load JWT secret key from environment variables.
     Falls back to a generated secret for local/dev usage to avoid weak defaults.
+
+    Returns:
+        str: JWT secret key for token signing
     """
     value = (
         os.getenv('JWT_SECRET_KEY') or
@@ -44,15 +48,29 @@ PREMIUM_PRICE = 4.99
 class AuthManager:
     """Manages authentication and user operations"""
 
-    def __init__(self, db_connection):
+    def __init__(self, db_connection: Any) -> None:
+        """
+        Initialize AuthManager with database connection.
+
+        Args:
+            db_connection: psycopg2 database connection object
+        """
         self.db = db_connection
 
     # ============================================================
     # JWT Token Management
     # ============================================================
 
-    def generate_token(self, user_id):
-        """Generate JWT token for user"""
+    def generate_token(self, user_id: int) -> str:
+        """
+        Generate JWT token for user.
+
+        Args:
+            user_id: User ID to encode in token
+
+        Returns:
+            str: Encoded JWT token
+        """
         payload = {
             'user_id': user_id,
             'exp': datetime.utcnow() + timedelta(days=JWT_EXPIRATION_DAYS),
@@ -61,8 +79,16 @@ class AuthManager:
         token = jwt.encode(payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
         return token
 
-    def verify_token(self, token):
-        """Verify JWT token and return user_id"""
+    def verify_token(self, token: str) -> Optional[int]:
+        """
+        Verify JWT token and return user_id.
+
+        Args:
+            token: JWT token string
+
+        Returns:
+            Optional[int]: User ID if valid, None if invalid/expired
+        """
         try:
             payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
             return payload['user_id']
@@ -75,8 +101,18 @@ class AuthManager:
     # User Registration and Login
     # ============================================================
 
-    def register_user(self, email, password, full_name):
-        """Register new user with email and password"""
+    def register_user(self, email: str, password: str, full_name: str) -> Dict[str, Any]:
+        """
+        Register new user with email and password.
+
+        Args:
+            email: User email address
+            password: Plain text password (will be hashed)
+            full_name: User's full name
+
+        Returns:
+            Dict containing success status, user data, and token
+        """
         try:
             # Validate email format
             email = email.lower().strip()
@@ -128,8 +164,17 @@ class AuthManager:
             print(f"Registration error: {e}")
             return {'success': False, 'error': str(e)}
 
-    def login_user(self, email, password):
-        """Login user with email and password"""
+    def login_user(self, email: str, password: str) -> Dict[str, Any]:
+        """
+        Login user with email and password.
+
+        Args:
+            email: User email address
+            password: Plain text password to verify
+
+        Returns:
+            Dict containing success status, user data, and token
+        """
         try:
             email = email.lower().strip()
 
@@ -183,8 +228,27 @@ class AuthManager:
     # OAuth User Management
     # ============================================================
 
-    def find_or_create_oauth_user(self, email, full_name, avatar_url, provider, provider_id):
-        """Find existing OAuth user or create new one"""
+    def find_or_create_oauth_user(
+        self,
+        email: str,
+        full_name: str,
+        avatar_url: Optional[str],
+        provider: str,
+        provider_id: str
+    ) -> Dict[str, Any]:
+        """
+        Find existing OAuth user or create new one.
+
+        Args:
+            email: User email address
+            full_name: User's full name
+            avatar_url: URL to user's avatar image (optional)
+            provider: OAuth provider name (e.g., 'google')
+            provider_id: Unique ID from OAuth provider
+
+        Returns:
+            Dict containing success status, user data, and token
+        """
         try:
             email = email.lower().strip()
 
@@ -256,8 +320,16 @@ class AuthManager:
     # User Information
     # ============================================================
 
-    def get_user_by_id(self, user_id):
-        """Get user information by ID"""
+    def get_user_by_id(self, user_id: int) -> Optional[Dict[str, Any]]:
+        """
+        Get user information by ID.
+
+        Args:
+            user_id: User ID to retrieve
+
+        Returns:
+            Optional[Dict]: User data if found, None otherwise
+        """
         try:
             cursor = self.db.cursor()
             cursor.execute("""
@@ -292,8 +364,19 @@ class AuthManager:
     # Premium and Limits Management
     # ============================================================
 
-    def check_daily_limit(self, user_id):
-        """Check if user can generate (returns can_generate, used, limit)"""
+    def check_daily_limit(self, user_id: int) -> Tuple[bool, int, int]:
+        """
+        Check if user can generate (returns can_generate, used, limit).
+
+        Args:
+            user_id: User ID to check limits for
+
+        Returns:
+            Tuple[bool, int, int]: (can_generate, generations_used, generation_limit)
+                - can_generate: Whether user can make another generation
+                - generations_used: Number of generations used today (-1 for unlimited)
+                - generation_limit: Daily limit (-1 for unlimited/premium)
+        """
         try:
             cursor = self.db.cursor()
 
@@ -335,8 +418,16 @@ class AuthManager:
             print(f"Check limit error: {e}")
             return False, 0, FREE_DAILY_LIMIT
 
-    def increment_daily_limit(self, user_id):
-        """Increment user's daily generation count"""
+    def increment_daily_limit(self, user_id: int) -> bool:
+        """
+        Increment user's daily generation count.
+
+        Args:
+            user_id: User ID to increment counter for
+
+        Returns:
+            bool: True if successful, False on error
+        """
         try:
             today = datetime.now().date()
             cursor = self.db.cursor()
@@ -360,8 +451,17 @@ class AuthManager:
             print(f"Increment limit error: {e}")
             return False
 
-    def set_premium(self, user_id, days=30):
-        """Set user as premium for specified days"""
+    def set_premium(self, user_id: int, days: int = 30) -> bool:
+        """
+        Set user as premium for specified days.
+
+        Args:
+            user_id: User ID to grant premium to
+            days: Number of days to grant premium (default: 30)
+
+        Returns:
+            bool: True if successful, False on error
+        """
         try:
             premium_until = datetime.now() + timedelta(days=days)
 
@@ -385,8 +485,29 @@ class AuthManager:
     # Generation History
     # ============================================================
 
-    def save_generation(self, user_id, person_image_url, garment_image_url, result_image_url, category, session_id=None):
-        """Save generation to history"""
+    def save_generation(
+        self,
+        user_id: int,
+        person_image_url: str,
+        garment_image_url: str,
+        result_image_url: str,
+        category: str,
+        session_id: Optional[str] = None
+    ) -> Optional[int]:
+        """
+        Save generation to history.
+
+        Args:
+            user_id: User ID who created the generation
+            person_image_url: URL/path to person image
+            garment_image_url: URL/path to garment image
+            result_image_url: URL/path to result image
+            category: Garment category
+            session_id: Optional session identifier
+
+        Returns:
+            Optional[int]: Generation ID if successful, None on error
+        """
         try:
             cursor = self.db.cursor()
             cursor.execute("""
@@ -406,8 +527,18 @@ class AuthManager:
             print(f"Save generation error: {e}")
             return None
 
-    def get_user_generations(self, user_id, limit=50, offset=0):
-        """Get user's generation history"""
+    def get_user_generations(self, user_id: int, limit: int = 50, offset: int = 0) -> List[Dict[str, Any]]:
+        """
+        Get user's generation history.
+
+        Args:
+            user_id: User ID to retrieve generations for
+            limit: Maximum number of generations to return (default: 50)
+            offset: Number of records to skip for pagination (default: 0)
+
+        Returns:
+            List[Dict]: List of generation records
+        """
         try:
             cursor = self.db.cursor()
             cursor.execute("""
@@ -439,13 +570,29 @@ class AuthManager:
 # Flask Decorators for Route Protection
 # ============================================================
 
-def create_auth_decorator(auth_manager):
-    """Create decorator for protecting routes"""
+def create_auth_decorator(auth_manager: AuthManager) -> Tuple[Callable, Callable]:
+    """
+    Create decorators for protecting routes.
 
-    def require_auth(f):
-        """Decorator to require authentication"""
+    Args:
+        auth_manager: AuthManager instance for token verification
+
+    Returns:
+        Tuple[Callable, Callable]: (require_auth, require_admin) decorators
+    """
+
+    def require_auth(f: Callable) -> Callable:
+        """
+        Decorator to require authentication.
+
+        Args:
+            f: Flask route function to protect
+
+        Returns:
+            Callable: Decorated function that checks JWT token
+        """
         @wraps(f)
-        def decorated_function(*args, **kwargs):
+        def decorated_function(*args: Any, **kwargs: Any) -> Any:
             # Get token from Authorization header
             auth_header = request.headers.get('Authorization', '')
 
@@ -465,10 +612,18 @@ def create_auth_decorator(auth_manager):
 
         return decorated_function
 
-    def require_admin(f):
-        """Decorator to require admin role"""
+    def require_admin(f: Callable) -> Callable:
+        """
+        Decorator to require admin role.
+
+        Args:
+            f: Flask route function to protect
+
+        Returns:
+            Callable: Decorated function that checks JWT token and admin role
+        """
         @wraps(f)
-        def decorated_function(*args, **kwargs):
+        def decorated_function(*args: Any, **kwargs: Any) -> Any:
             # Get token from Authorization header
             auth_header = request.headers.get('Authorization', '')
 

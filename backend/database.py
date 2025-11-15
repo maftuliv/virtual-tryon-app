@@ -5,9 +5,11 @@ Uses PostgreSQL on Railway for persistent storage
 
 import os
 from datetime import datetime
+from typing import Optional, Tuple, List, Dict, Any
 from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Boolean
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.engine import Engine
 from sqlalchemy.exc import OperationalError
 
 Base = declarative_base()
@@ -28,8 +30,13 @@ class Feedback(Base):
     telegram_sent = Column(Boolean, default=False, nullable=False)  # Track if sent to Telegram
     telegram_error = Column(Text, nullable=True)  # Store error if Telegram failed
 
-    def to_dict(self):
-        """Convert to dictionary for JSON serialization"""
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Convert to dictionary for JSON serialization.
+
+        Returns:
+            Dict[str, Any]: Feedback data as dictionary
+        """
         return {
             'id': self.id,
             'rating': self.rating,
@@ -43,15 +50,21 @@ class Feedback(Base):
 
 
 # Database connection
-engine = None
-SessionLocal = None
-db_available = False
+engine: Optional[Engine] = None
+SessionLocal: Optional[sessionmaker] = None
+db_available: bool = False
 
 
-def init_database():
+def init_database() -> Tuple[Optional[Engine], Optional[sessionmaker], bool]:
     """
-    Initialize database connection
-    Returns: (engine, SessionLocal, db_available)
+    Initialize database connection.
+
+    Returns:
+        Tuple[Optional[Engine], Optional[sessionmaker], bool]:
+            (engine, SessionLocal, db_available)
+            - engine: SQLAlchemy engine or None if connection failed
+            - SessionLocal: Session factory or None if connection failed
+            - db_available: True if database is ready, False otherwise
     """
     global engine, SessionLocal, db_available
 
@@ -126,21 +139,33 @@ def init_database():
         return None, None, False
 
 
-def save_feedback_to_db(rating, comment, timestamp, session_id, ip_address, telegram_sent=False, telegram_error=None):
+def save_feedback_to_db(
+    rating: int,
+    comment: Optional[str],
+    timestamp: Any,
+    session_id: Optional[str],
+    ip_address: Optional[str],
+    telegram_sent: bool = False,
+    telegram_error: Optional[str] = None
+) -> Tuple[bool, Optional[int], Optional[str]]:
     """
-    Save feedback to PostgreSQL database
+    Save feedback to PostgreSQL database.
 
     Args:
         rating: User rating (1-5)
         comment: User comment (optional)
-        timestamp: ISO format timestamp
+        timestamp: ISO format timestamp string or datetime object
         session_id: Session ID (optional)
         ip_address: User IP address
         telegram_sent: Whether Telegram notification was sent successfully
         telegram_error: Error message if Telegram failed
 
     Returns:
-        tuple: (success: bool, feedback_id: int or None, error: str or None)
+        Tuple[bool, Optional[int], Optional[str]]:
+            (success, feedback_id, error_message)
+            - success: True if saved successfully
+            - feedback_id: Database ID of saved feedback, or None on error
+            - error_message: Error message if failed, or None on success
     """
     if not db_available or not SessionLocal:
         return False, None, "Database not available"
@@ -183,13 +208,13 @@ def save_feedback_to_db(rating, comment, timestamp, session_id, ip_address, tele
         db.close()
 
 
-def get_unsent_telegram_feedbacks():
+def get_unsent_telegram_feedbacks() -> List[Feedback]:
     """
-    Get all feedbacks that weren't successfully sent to Telegram
-    Useful for retry mechanism or manual review
+    Get all feedbacks that weren't successfully sent to Telegram.
+    Useful for retry mechanism or manual review.
 
     Returns:
-        list: List of Feedback objects
+        List[Feedback]: List of Feedback objects that haven't been sent
     """
     if not db_available or not SessionLocal:
         return []
@@ -205,14 +230,17 @@ def get_unsent_telegram_feedbacks():
         db.close()
 
 
-def mark_telegram_sent(feedback_id, success=True, error=None):
+def mark_telegram_sent(feedback_id: int, success: bool = True, error: Optional[str] = None) -> None:
     """
-    Mark a feedback as sent to Telegram
+    Mark a feedback as sent to Telegram.
 
     Args:
-        feedback_id: ID of feedback record
-        success: Whether send was successful
-        error: Error message if failed
+        feedback_id: ID of feedback record to update
+        success: Whether send was successful (default: True)
+        error: Error message if failed (optional)
+
+    Returns:
+        None
     """
     if not db_available or not SessionLocal:
         return
