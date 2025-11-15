@@ -40,7 +40,10 @@ class Settings(BaseSettings):
     )
 
     huggingface_api_key: Optional[str] = Field(
-        default=None, alias="HF_API_KEY", description="Hugging Face API key for person detection"
+        default=None,
+        alias="HF_API_KEY",
+        description="Hugging Face API key for person detection (also accepts HF_API_TOKEN)",
+        validation_alias="HF_API_TOKEN",
     )
 
     # ==================== NOTIFICATIONS CONFIGURATION (OPTIONAL) ====================
