@@ -708,10 +708,10 @@ def create_auth_decorator(auth_manager: AuthManager) -> Tuple[Callable, Callable
 
 def require_admin(f: Callable) -> Callable:
     """
-    Standalone decorator to require admin role.
+    Standalone decorator to require admin role for API endpoints.
 
-    This is a simplified version that doesn't require auth_manager parameter.
-    It verifies token and checks admin role directly.
+    Supports tokens from Authorization header OR auth_token cookie.
+    Use this for protecting admin API endpoints (returns JSON).
 
     Args:
         f: Flask route function to protect
@@ -721,31 +721,60 @@ def require_admin(f: Callable) -> Callable:
     """
     @wraps(f)
     def decorated_function(*args: Any, **kwargs: Any) -> Response:
-        # Get token from Authorization header
-        auth_header = request.headers.get("Authorization", "")
+        # Get token from header or cookie
+        token = get_token_from_request()
 
-        if not auth_header.startswith("Bearer "):
+        if not token:
             return jsonify({"error": "No authorization token provided"}), 401
 
-        token = auth_header.replace("Bearer ", "")
+        # Decode and validate token with admin check
+        user = decode_token(token, require_admin=True)
 
-        # Verify token
-        try:
-            payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
-            user_id = payload["user_id"]
-        except jwt.ExpiredSignatureError:
-            return jsonify({"error": "Token expired"}), 401
-        except jwt.InvalidTokenError:
-            return jsonify({"error": "Invalid token"}), 401
+        if not user:
+            return jsonify({"error": "Access denied. Admin privileges required"}), 403
+
+        # Valid admin token → call route handler
+        return f(current_user=user, *args, **kwargs)
+
+    return decorated_function
+
+
+# ============================================================
+# Enhanced Token Utilities (Cookie + Header Support)
+# ============================================================
+
+
+def decode_token(token: str, require_admin: bool = False) -> Optional[Dict[str, Any]]:
+    """
+    Decode and validate JWT token, optionally checking admin role.
+
+    Args:
+        token: JWT token string
+        require_admin: If True, verify user has admin role
+
+    Returns:
+        Dict with user data if valid, None otherwise
+    """
+    if not token or not token.strip():
+        return None
+
+    try:
+        # Decode JWT
+        payload = jwt.decode(token.strip(), JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+        user_id = payload.get("user_id")
+
+        if not user_id:
+            return None
 
         # Get database connection from app config
         from flask import current_app
         db = current_app.config.get('db_connection')
 
         if not db:
-            return jsonify({"error": "Database not available"}), 500
+            print("[AUTH] Database not available for token validation")
+            return None
 
-        # Check if user is admin
+        # Fetch user from database
         cursor = db.cursor()
         try:
             cursor.execute(
@@ -757,30 +786,140 @@ def require_admin(f: Callable) -> Callable:
                 (user_id,),
             )
 
-            user = cursor.fetchone()
+            user_row = cursor.fetchone()
             cursor.close()
 
-            if not user:
-                return jsonify({"error": "User not found"}), 404
+            if not user_row:
+                return None
 
-            if user[3] != "admin":  # role column
-                return jsonify({"error": "Access denied. Admin privileges required"}), 403
-
-            # Build current_user dict and pass to route
-            current_user = {
-                "id": user[0],
-                "email": user[1],
-                "full_name": user[2],
-                "role": user[3],
-                "is_premium": user[4],
-                "avatar_url": user[5],
-                "provider": user[6],
+            user = {
+                "id": user_row[0],
+                "email": user_row[1],
+                "full_name": user_row[2],
+                "role": user_row[3],
+                "is_premium": user_row[4],
+                "avatar_url": user_row[5],
+                "provider": user_row[6],
             }
 
-            return f(current_user, *args, **kwargs)
+            # Check admin role if required
+            if require_admin and user["role"] != "admin":
+                return None
+
+            return user
 
         except Exception as e:
-            print(f"Admin auth error: {e}")
-            return jsonify({"error": "Authentication failed"}), 500
+            print(f"[AUTH] Error fetching user during token decode: {e}")
+            return None
+
+    except jwt.ExpiredSignatureError:
+        return None
+    except jwt.InvalidTokenError:
+        return None
+    except Exception as e:
+        print(f"[AUTH] Unexpected error decoding token: {e}")
+        return None
+
+
+def get_token_from_request() -> Optional[str]:
+    """
+    Extract JWT token from request (Authorization header or auth_token cookie).
+
+    Returns:
+        Token string or None
+    """
+    # Try Authorization header first
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        return auth_header.replace("Bearer ", "").strip()
+
+    # Fall back to cookie
+    token = request.cookies.get("auth_token")
+    if token:
+        return token.strip()
+
+    return None
+
+
+def set_auth_cookie(response: Response, token: str) -> Response:
+    """
+    Set HTTP-only auth cookie on response.
+
+    Args:
+        response: Flask Response object
+        token: JWT token to store
+
+    Returns:
+        Modified Response object
+    """
+    # Calculate cookie max age from JWT expiration
+    max_age = JWT_EXPIRATION_DAYS * 24 * 60 * 60  # Convert days to seconds
+
+    response.set_cookie(
+        "auth_token",
+        value=token,
+        max_age=max_age,
+        secure=True,  # HTTPS only
+        httponly=True,  # No JS access
+        samesite="Strict",  # CSRF protection
+        path="/",
+    )
+
+    return response
+
+
+def clear_auth_cookie(response: Response) -> Response:
+    """
+    Clear auth cookie on logout.
+
+    Args:
+        response: Flask Response object
+
+    Returns:
+        Modified Response object
+    """
+    response.delete_cookie("auth_token", path="/")
+    return response
+
+
+# ============================================================
+# Admin Page Decorator (Server-Side HTML Protection)
+# ============================================================
+
+
+def require_admin_page(f: Callable) -> Callable:
+    """
+    Decorator for admin HTML pages (not API endpoints).
+
+    Checks auth_token cookie for admin role, redirects to / if unauthorized.
+    Use this for serving admin.html and other admin UI pages.
+
+    Args:
+        f: Flask route function that returns HTML
+
+    Returns:
+        Callable: Decorated function that checks admin session
+    """
+    @wraps(f)
+    def decorated_function(*args: Any, **kwargs: Any) -> Response:
+        from flask import redirect, make_response
+
+        # Get token from cookie
+        token = request.cookies.get("auth_token")
+
+        if not token:
+            # No cookie → redirect to home
+            return redirect("/")
+
+        # Decode and validate token with admin check
+        user = decode_token(token, require_admin=True)
+
+        if not user:
+            # Invalid token or not admin → redirect to home
+            return redirect("/")
+
+        # Valid admin token → serve page
+        # Pass current_user to route handler
+        return f(current_user=user, *args, **kwargs)
 
     return decorated_function

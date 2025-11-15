@@ -1,0 +1,17 @@
+# robots.txt for TapToLook
+# Disallow admin panel and sensitive routes
+
+User-agent: *
+
+# Block admin panel
+Disallow: /admin
+
+# Block API endpoints from indexing
+Disallow: /api/
+
+# Block uploads and results
+Disallow: /uploads/
+Disallow: /results/
+
+# Allow everything else
+Allow: /

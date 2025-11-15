@@ -5,6 +5,7 @@ import os
 from flask import Blueprint, jsonify, send_from_directory
 from werkzeug.utils import secure_filename
 
+from backend.auth import require_admin_page
 from backend.logger import get_logger
 
 logger = get_logger(__name__)
@@ -98,13 +99,23 @@ def create_static_blueprint(
             return jsonify({"error": "Frontend not found"}), 404
 
     @static_bp.route("/admin", methods=["GET"])
-    def serve_admin():
+    @require_admin_page
+    def serve_admin(current_user):
         """
-        Serve admin panel HTML.
+        Serve admin panel HTML (protected by server-side admin check).
+
+        Only accessible to users with admin role via auth_token cookie.
+        Unauthorized users are redirected to home page.
         """
         try:
             response = send_from_directory(frontend_folder, "admin.html")
-            response.headers["Cache-Control"] = "no-cache, must-revalidate"
+            # Security headers
+            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
+            response.headers["X-Robots-Tag"] = "noindex, nofollow"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+
+            logger.info(f"[ADMIN] Panel served to {current_user['email']} (ID: {current_user['id']})")
             return response
         except Exception as e:
             logger.error(f"Error serving admin panel: {e}", exc_info=True)

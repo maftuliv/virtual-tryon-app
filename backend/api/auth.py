@@ -1,7 +1,8 @@
 """Authentication API endpoints."""
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, make_response, request
 
+from backend.auth import clear_auth_cookie, set_auth_cookie
 from backend.logger import get_logger
 from backend.services.auth_service import AuthService
 
@@ -69,7 +70,15 @@ def create_auth_blueprint(auth_service: AuthService) -> Blueprint:
             # Register via service
             user = auth_service.register(email=email, password=password, full_name=full_name)
 
-            return jsonify({"success": True, "message": "User registered successfully", "user": user}), 201
+            # Create response with auth cookie
+            response = make_response(
+                jsonify({"success": True, "message": "User registered successfully", "user": user}),
+                201
+            )
+            set_auth_cookie(response, user["token"])
+            logger.info(f"[AUTH] Registration successful, cookie set for {email}")
+
+            return response
 
         except ValueError as e:
             logger.warning(f"Registration validation failed: {e}")
@@ -133,7 +142,15 @@ def create_auth_blueprint(auth_service: AuthService) -> Blueprint:
                 logger.warning(f"Login failed: invalid credentials for {email}")
                 return jsonify({"error": "Invalid email or password"}), 401
 
-            return jsonify({"success": True, "message": "Login successful", "user": user}), 200
+            # Create response with auth cookie
+            response = make_response(
+                jsonify({"success": True, "message": "Login successful", "user": user}),
+                200
+            )
+            set_auth_cookie(response, user["token"])
+            logger.info(f"[AUTH] Login successful, cookie set for {email}")
+
+            return response
 
         except ValueError as e:
             logger.warning(f"Login validation failed: {e}")
@@ -235,6 +252,34 @@ def create_auth_blueprint(auth_service: AuthService) -> Blueprint:
 
         except Exception as e:
             logger.error(f"Check limit failed: {e}", exc_info=True)
+            return jsonify({"error": str(e)}), 500
+
+    @auth_bp.route("/api/auth/logout", methods=["POST"])
+    def logout():
+        """
+        Logout user by clearing auth cookie.
+
+        This endpoint clears the HTTP-only auth_token cookie.
+        Client should also clear localStorage token.
+
+        Response:
+        {
+            "success": true,
+            "message": "Logged out successfully"
+        }
+        """
+        try:
+            response = make_response(
+                jsonify({"success": True, "message": "Logged out successfully"}),
+                200
+            )
+            clear_auth_cookie(response)
+            logger.info("[AUTH] User logged out, cookie cleared")
+
+            return response
+
+        except Exception as e:
+            logger.error(f"Logout failed: {e}", exc_info=True)
             return jsonify({"error": str(e)}), 500
 
     return auth_bp

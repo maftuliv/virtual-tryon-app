@@ -31,7 +31,8 @@ class AuthManager {
             const data = await response.json();
 
             if (data.success) {
-                this.token = data.token;
+                // Server sets HTTP-only cookie automatically
+                this.token = data.user.token;  // Still store in localStorage for API calls
                 this.user = data.user;
                 localStorage.setItem('auth_token', this.token);
                 this.updateUI();
@@ -60,7 +61,8 @@ class AuthManager {
             const data = await response.json();
 
             if (data.success) {
-                this.token = data.token;
+                // Server sets HTTP-only cookie automatically
+                this.token = data.user.token;  // Still store in localStorage for API calls
                 this.user = data.user;
                 localStorage.setItem('auth_token', this.token);
                 this.updateUI();
@@ -105,7 +107,21 @@ class AuthManager {
         }
     }
 
-    logout() {
+    async logout() {
+        try {
+            // Call server logout endpoint to clear HTTP-only cookie
+            await fetch(`${this.API_URL}/api/auth/logout`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+        } catch (error) {
+            console.error('Logout API error:', error);
+            // Continue with local logout even if server call fails
+        }
+
+        // Clear local state
         this.token = null;
         this.user = null;
         localStorage.removeItem('auth_token');

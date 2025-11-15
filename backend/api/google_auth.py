@@ -2,8 +2,9 @@
 
 from urllib.parse import urlencode
 
-from flask import Blueprint, jsonify, redirect, request, session
+from flask import Blueprint, jsonify, make_response, redirect, request, session
 
+from backend.auth import set_auth_cookie
 from backend.logger import get_logger
 from backend.services.google_auth_service import GoogleAuthService
 
@@ -161,10 +162,13 @@ def create_google_auth_blueprint(google_auth_service: GoogleAuthService) -> Blue
                 f"email={user.get('email')}"
             )
 
-            # Redirect to frontend with token in URL hash (URL-encoded to preserve +, /, = chars)
-            # Frontend will extract token and store it
+            # Create redirect response with auth cookie
             fragment = urlencode({"google_auth_success": "1", "token": token})
-            return redirect(f"/#{fragment}")
+            response = make_response(redirect(f"/#{fragment}"))
+            set_auth_cookie(response, token)
+            logger.info(f"[GOOGLE-AUTH-API] Cookie set for {user.get('email')}")
+
+            return response
 
         except ValueError as e:
             # Validation error (state mismatch, invalid token, etc.)
