@@ -76,6 +76,7 @@ def create_app(config: Optional[Settings] = None) -> Flask:
     # Store config in app
     app.config["SETTINGS"] = config
     app.config["SECRET_KEY"] = config.jwt_secret_key  # For Flask session management (Google OAuth)
+    app.config["db_connection"] = None  # Will be set later after DB connection is established
 
     # Configure CORS
     CORS(
@@ -119,6 +120,7 @@ def create_app(config: Optional[Settings] = None) -> Flask:
     if config.database_url:
         try:
             db_conn = psycopg2.connect(str(config.database_url))
+            app.config["db_connection"] = db_conn  # Store for require_admin decorator
             logger.info("[OK] Database connection established")
         except Exception as e:
             logger.error(f"[ERROR] Database connection failed: {e}")

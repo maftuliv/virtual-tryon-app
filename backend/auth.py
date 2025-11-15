@@ -699,3 +699,88 @@ def create_auth_decorator(auth_manager: AuthManager) -> Tuple[Callable, Callable
         return decorated_function
 
     return require_auth, require_admin
+
+
+# ============================================================
+# Standalone Admin Decorator (for backwards compatibility)
+# ============================================================
+
+
+def require_admin(f: Callable) -> Callable:
+    """
+    Standalone decorator to require admin role.
+
+    This is a simplified version that doesn't require auth_manager parameter.
+    It verifies token and checks admin role directly.
+
+    Args:
+        f: Flask route function to protect
+
+    Returns:
+        Callable: Decorated function that checks JWT token and admin role
+    """
+    @wraps(f)
+    def decorated_function(*args: Any, **kwargs: Any) -> Response:
+        # Get token from Authorization header
+        auth_header = request.headers.get("Authorization", "")
+
+        if not auth_header.startswith("Bearer "):
+            return jsonify({"error": "No authorization token provided"}), 401
+
+        token = auth_header.replace("Bearer ", "")
+
+        # Verify token
+        try:
+            payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+            user_id = payload["user_id"]
+        except jwt.ExpiredSignatureError:
+            return jsonify({"error": "Token expired"}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({"error": "Invalid token"}), 401
+
+        # Get database connection from app config
+        from flask import current_app
+        db = current_app.config.get('db_connection')
+
+        if not db:
+            return jsonify({"error": "Database not available"}), 500
+
+        # Check if user is admin
+        cursor = db.cursor()
+        try:
+            cursor.execute(
+                """
+                SELECT id, email, full_name, role, is_premium, avatar_url, provider
+                FROM users
+                WHERE id = %s
+                """,
+                (user_id,),
+            )
+
+            user = cursor.fetchone()
+            cursor.close()
+
+            if not user:
+                return jsonify({"error": "User not found"}), 404
+
+            if user[3] != "admin":  # role column
+                return jsonify({"error": "Access denied. Admin privileges required"}), 403
+
+            # Build current_user dict and pass to route
+            current_user = {
+                "id": user[0],
+                "email": user[1],
+                "full_name": user[2],
+                "role": user[3],
+                "is_premium": user[4],
+                "avatar_url": user[5],
+                "provider": user[6],
+            }
+
+            return f(current_user, *args, **kwargs)
+
+        except Exception as e:
+            print(f"Admin auth error: {e}")
+            return jsonify({"error": "Authentication failed"}), 500
+
+    return decorated_function
