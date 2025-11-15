@@ -5,14 +5,20 @@ Script to apply SQL migration to Railway PostgreSQL database
 import psycopg2
 import sys
 
-# Замените этот URL на ваш из Railway (нажмите "show" и скопируйте)
-DATABASE_URL = "postgresql://postgres:rrQVBIrrzIFcRJlZCfjyrqYCmKSDfiKk@gondola.proxy.rlwy.net:15018/railway"
+# Import centralized database configuration
+try:
+    from backend.db_config import parse_database_url
+except ImportError:
+    print("Error: Cannot import backend.db_config")
+    print("Make sure you're running from the project root directory")
+    sys.exit(1)
+
 
 def apply_migration():
     """Apply SQL migration to database"""
     try:
         print("🔌 Подключение к базе данных...")
-        conn = psycopg2.connect(DATABASE_URL)
+        conn = psycopg2.connect(**parse_database_url())
         cursor = conn.cursor()
 
         print("📄 Чтение SQL файла...")
@@ -41,6 +47,10 @@ def apply_migration():
 
         return True
 
+    except ValueError as exc:
+        print(f"❌ Configuration error: {exc}")
+        print("Make sure DATABASE_URL is set in your environment or .env file")
+        return False
     except Exception as e:
         print(f"❌ Ошибка: {e}")
         return False

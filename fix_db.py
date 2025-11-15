@@ -1,8 +1,16 @@
 import psycopg2
 import sys
 
+# Import centralized database configuration
 try:
-    conn = psycopg2.connect('postgresql://postgres:rrQVBIrrzIFcRJlZCfjyrqYCmKSDfiKk@gondola.proxy.rlwy.net:15018/railway')
+    from backend.db_config import parse_database_url
+except ImportError:
+    print("Error: Cannot import backend.db_config")
+    print("Make sure you're running from the project root directory")
+    sys.exit(1)
+
+try:
+    conn = psycopg2.connect(**parse_database_url())
     cursor = conn.cursor()
 
     print("1. Dropping UNIQUE constraint...")
@@ -28,6 +36,10 @@ try:
     print("\nMigration completed successfully!")
     sys.exit(0)
 
+except ValueError as exc:
+    print(f"\n❌ Configuration error: {exc}")
+    print("Make sure DATABASE_URL is set in your environment or .env file")
+    sys.exit(1)
 except Exception as e:
     print("ERROR: " + str(e))
     sys.exit(1)

@@ -2,44 +2,26 @@
 Utility script to reset anonymous device limits (free quota) in PostgreSQL.
 
 Usage:
-    python reset_device_limits.py [optional_database_url]
+    python reset_device_limits.py
 
-Priority of DB URL:
-1. Command-line argument
-2. Environment variable DATABASE_URL
-3. DEFAULT_DB_URL in this file
+Requires DATABASE_URL environment variable to be set.
 """
 
-import os
 import sys
 import psycopg2
-from urllib.parse import urlparse
 
-DEFAULT_DB_URL = "postgresql://postgres:rrQVBIrrzIFcRJlZCfjyrqYCmKSDfiKk@gondola.proxy.rlwy.net:15018/railway"
-
-
-def parse_db_url(db_url: str) -> dict:
-    parsed = urlparse(db_url)
-    if parsed.scheme not in ("postgresql", "postgres"):
-        raise ValueError(f"Unsupported scheme in DATABASE_URL: {parsed.scheme}")
-    if not parsed.hostname:
-        raise ValueError("DATABASE_URL must include hostname")
-
-    port = parsed.port or 5432
-    return {
-        "dbname": parsed.path.lstrip("/"),
-        "user": parsed.username,
-        "password": parsed.password,
-        "host": parsed.hostname,
-        "port": port,
-        "sslmode": "require",
-        "connect_timeout": 10,
-    }
+# Import centralized database configuration
+try:
+    from backend.db_config import get_database_url, parse_database_url
+except ImportError:
+    print("Error: Cannot import backend.db_config")
+    print("Make sure you're running from the project root directory")
+    sys.exit(1)
 
 
-def reset_limits(db_url: str):
-    print(f"Connecting to database...")
-    conn = psycopg2.connect(**parse_db_url(db_url))
+def reset_limits():
+    print("Connecting to database...")
+    conn = psycopg2.connect(**parse_database_url())
     cur = conn.cursor()
 
     # Get today's date
@@ -71,13 +53,12 @@ def reset_limits(db_url: str):
 
 
 if __name__ == "__main__":
-    db_url = (
-        sys.argv[1]
-        if len(sys.argv) > 1
-        else os.getenv("DATABASE_URL", DEFAULT_DB_URL)
-    )
     try:
-        reset_limits(db_url)
+        reset_limits()
+    except ValueError as exc:
+        print(f"❌ Configuration error: {exc}")
+        print("Make sure DATABASE_URL is set in your environment or .env file")
+        sys.exit(1)
     except Exception as exc:
         print(f"❌ Failed to reset limits: {exc}")
         sys.exit(1)

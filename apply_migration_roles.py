@@ -2,16 +2,24 @@
 Apply migration 002_add_user_roles.sql
 """
 
+import sys
 import psycopg2
 
-DATABASE_URL = "postgresql://postgres:rrQVBIrrzIFcRJlZCfjyrqYCmKSDfiKk@gondola.proxy.rlwy.net:15018/railway"
+# Import centralized database configuration
+try:
+    from backend.db_config import parse_database_url
+except ImportError:
+    print("Error: Cannot import backend.db_config")
+    print("Make sure you're running from the project root directory")
+    sys.exit(1)
+
 
 def apply_migration():
     try:
         print("\nApplying migration: 002_add_user_roles.sql")
         print("=" * 70)
 
-        conn = psycopg2.connect(DATABASE_URL)
+        conn = psycopg2.connect(**parse_database_url())
         cursor = conn.cursor()
 
         # Read SQL file
@@ -70,6 +78,11 @@ def apply_migration():
 
         input("\n\nPress Enter to exit...")
 
+    except ValueError as exc:
+        print(f"\n❌ Configuration error: {exc}")
+        print("Make sure DATABASE_URL is set in your environment or .env file")
+        input("\n\nPress Enter to exit...")
+        sys.exit(1)
     except Exception as e:
         print(f"\n[ERROR]: {e}")
         import traceback

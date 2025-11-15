@@ -4,9 +4,12 @@ import base64
 import json
 import requests
 import psycopg2
+import threading
 from datetime import datetime
 from flask import Flask, request, jsonify, send_file, send_from_directory
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from werkzeug.utils import secure_filename
 from PIL import Image
 import io
@@ -73,6 +76,15 @@ CORS(app, resources={
         "allow_headers": ["Content-Type", "Authorization"]
     }
 })
+
+# Rate limiting configuration
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["200 per hour", "50 per minute"],
+    storage_uri="memory://",
+    strategy="fixed-window"
+)
 
 # Configuration
 UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'uploads')
@@ -951,6 +963,7 @@ def validate_uploaded_image():
 
 
 @app.route('/api/upload', methods=['POST'])
+@limiter.limit("30 per hour")  # Prevent upload spam
 def upload_files():
     """
     Upload person images and garment image
@@ -1096,6 +1109,7 @@ def increment_device_limit():
 
 
 @app.route('/api/tryon', methods=['POST'])
+@limiter.limit("10 per hour")  # Strict limit for expensive try-on operations
 def virtual_tryon():
     """
     Perform virtual try-on using NanoBanana API (synchronous)
@@ -1592,6 +1606,7 @@ def send_telegram_photo_with_retry(bot_token, chat_id, photo_path, caption=None,
 # ==================== END TELEGRAM RETRY ====================
 
 @app.route('/api/feedback', methods=['POST'])
+@limiter.limit("20 per hour")  # Prevent feedback spam
 def submit_feedback():
     """
     Save user feedback (rating and comment)
@@ -1908,13 +1923,58 @@ def list_feedback():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+def cleanup_old_files():
+    """
+    Background cleanup function - removes files older than 1 hour
+    Called automatically every 30 minutes
+    """
+    try:
+        current_time = time.time()
+        cleanup_count = 0
+
+        for folder in [UPLOAD_FOLDER, RESULTS_FOLDER]:
+            if not os.path.exists(folder):
+                continue
+
+            for filename in os.listdir(folder):
+                file_path = os.path.join(folder, filename)
+                if os.path.isfile(file_path):
+                    file_age = current_time - os.path.getmtime(file_path)
+                    if file_age > 3600:  # 1 hour
+                        try:
+                            os.remove(file_path)
+                            cleanup_count += 1
+                        except Exception as e:
+                            print(f"[CLEANUP] Failed to remove {filename}: {e}")
+
+        if cleanup_count > 0:
+            print(f"[CLEANUP] ✅ Removed {cleanup_count} old files")
+
+    except Exception as e:
+        print(f"[CLEANUP] ❌ Error: {e}")
+
+
+def start_cleanup_scheduler():
+    """
+    Start background thread for automatic file cleanup
+    Runs every 30 minutes
+    """
+    def run_cleanup_loop():
+        while True:
+            time.sleep(1800)  # 30 minutes
+            cleanup_old_files()
+
+    cleanup_thread = threading.Thread(target=run_cleanup_loop, daemon=True)
+    cleanup_thread.start()
+    print("[CLEANUP] ✅ Background cleanup scheduler started (runs every 30 minutes)")
+
+
 @app.route('/api/cleanup', methods=['POST'])
 def cleanup():
     """
-    Clean up old files
+    Manual cleanup endpoint - removes files older than 1 hour
     """
     try:
-        # Delete files older than 1 hour
         current_time = time.time()
         cleanup_count = 0
 
@@ -1937,6 +1997,7 @@ def cleanup():
 # ==================== AUTH ENDPOINTS ====================
 
 @app.route('/api/auth/register', methods=['POST'])
+@limiter.limit("5 per hour")  # Prevent registration spam
 def register():
     """Register new user with email and password"""
     if not auth_available:
@@ -1965,6 +2026,7 @@ def register():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/auth/login', methods=['POST'])
+@limiter.limit("10 per hour")  # Prevent brute-force attacks
 def login():
     """Login user with email and password"""
     if not auth_available:
@@ -2308,5 +2370,8 @@ if __name__ == '__main__':
         print(f"  ℹ️ Checked variables: NANOBANANA_API_KEY, nanobanana_api_key")
 
     print("=" * 60)
+
+    # Start automatic file cleanup scheduler
+    start_cleanup_scheduler()
 
     app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)

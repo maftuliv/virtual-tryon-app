@@ -2,11 +2,18 @@
 Script to check and manage user's daily limit status
 """
 
+import sys
 import psycopg2
 from datetime import datetime
 
-# DATABASE_URL из Railway
-DATABASE_URL = "postgresql://postgres:rrQVBIrrzIFcRJlZCfjyrqYCmKSDfiKk@gondola.proxy.rlwy.net:15018/railway"
+# Import centralized database configuration
+try:
+    from backend.db_config import parse_database_url
+except ImportError:
+    print("Error: Cannot import backend.db_config")
+    print("Make sure you're running from the project root directory")
+    sys.exit(1)
+
 
 def check_user_limit(email):
     """Check user's limit and generation history"""
@@ -17,7 +24,7 @@ def check_user_limit(email):
         print(f"\n🔍 Проверка лимитов для пользователя: {email}")
         print("=" * 70)
 
-        conn = psycopg2.connect(DATABASE_URL)
+        conn = psycopg2.connect(**parse_database_url())
         cursor = conn.cursor()
 
         # Get user info
@@ -160,6 +167,11 @@ if __name__ == "__main__":
     try:
         check_user_limit("maftul4d@gmail.com")
         input("\n\nНажмите Enter для выхода...")
+    except ValueError as exc:
+        print(f"\n❌ Configuration error: {exc}")
+        print("Make sure DATABASE_URL is set in your environment or .env file")
+        input("\n\nНажмите Enter для выхода...")
+        sys.exit(1)
     except KeyboardInterrupt:
         print("\n\n⚠️  Прервано пользователем")
     except Exception as e:

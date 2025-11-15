@@ -2,10 +2,17 @@
 Script to view all users and their info
 """
 
+import sys
 import psycopg2
 
-# DATABASE_URL из Railway
-DATABASE_URL = "postgresql://postgres:rrQVBIrrzIFcRJlZCfjyrqYCmKSDfiKk@gondola.proxy.rlwy.net:15018/railway"
+# Import centralized database configuration
+try:
+    from backend.db_config import parse_database_url
+except ImportError:
+    print("Error: Cannot import backend.db_config")
+    print("Make sure you're running from the project root directory")
+    sys.exit(1)
+
 
 def view_all_users():
     """View all registered users"""
@@ -13,7 +20,7 @@ def view_all_users():
         print("\n👥 СПИСОК ВСЕХ ПОЛЬЗОВАТЕЛЕЙ")
         print("=" * 100)
 
-        conn = psycopg2.connect(DATABASE_URL)
+        conn = psycopg2.connect(**parse_database_url())
         cursor = conn.cursor()
 
         # Get all users
@@ -67,6 +74,11 @@ if __name__ == "__main__":
     try:
         view_all_users()
         input("\n\nНажмите Enter для выхода...")
+    except ValueError as exc:
+        print(f"\n❌ Configuration error: {exc}")
+        print("Make sure DATABASE_URL is set in your environment or .env file")
+        input("\n\nНажмите Enter для выхода...")
+        sys.exit(1)
     except KeyboardInterrupt:
         print("\n\n⚠️  Прервано пользователем")
     except Exception as e:

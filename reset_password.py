@@ -2,11 +2,18 @@
 Script to reset user password
 """
 
+import sys
 import psycopg2
 from werkzeug.security import generate_password_hash
 
-# DATABASE_URL из Railway
-DATABASE_URL = "postgresql://postgres:rrQVBIrrzIFcRJlZCfjyrqYCmKSDfiKk@gondola.proxy.rlwy.net:15018/railway"
+# Import centralized database configuration
+try:
+    from backend.db_config import parse_database_url
+except ImportError:
+    print("Error: Cannot import backend.db_config")
+    print("Make sure you're running from the project root directory")
+    sys.exit(1)
+
 
 def reset_password(email, new_password):
     """Reset user password"""
@@ -14,7 +21,7 @@ def reset_password(email, new_password):
         print(f"\n🔐 Сброс пароля для пользователя: {email}")
         print("=" * 70)
 
-        conn = psycopg2.connect(DATABASE_URL)
+        conn = psycopg2.connect(**parse_database_url())
         cursor = conn.cursor()
 
         # Check if user exists
@@ -83,6 +90,11 @@ if __name__ == "__main__":
 
         input("\n\nНажмите Enter для выхода...")
 
+    except ValueError as exc:
+        print(f"\n❌ Configuration error: {exc}")
+        print("Make sure DATABASE_URL is set in your environment or .env file")
+        input("\n\nНажмите Enter для выхода...")
+        sys.exit(1)
     except KeyboardInterrupt:
         print("\n\n⚠️  Прервано пользователем")
     except Exception as e:
