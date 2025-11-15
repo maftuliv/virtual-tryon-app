@@ -89,6 +89,9 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['RESULTS_FOLDER'] = RESULTS_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
+# Anonymous generation daily limit per device/IP
+FREE_DEVICE_LIMIT = 3
+
 # Removed: Task storage system - using simple synchronous processing instead
 
 # API configurations
@@ -273,6 +276,125 @@ def validate_environment():
 validate_environment()
 
 # ==================== END VALIDATION ====================
+
+
+def get_client_ip():
+    """Return client IP, respecting X-Forwarded-For."""
+    client_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+    if client_ip and ',' in client_ip:
+        client_ip = client_ip.split(',')[0].strip()
+    return client_ip or 'unknown'
+
+
+def ensure_device_limit_service():
+    if not db_conn:
+        raise RuntimeError('Device limit service not configured')
+
+
+def ensure_device_limit_record(device_fingerprint, client_ip, user_agent):
+    """Ensure device record exists for current day and reset if needed."""
+    ensure_device_limit_service()
+    cursor = db_conn.cursor()
+    today = datetime.now().date()
+    cursor.execute("""
+        SELECT id, limit_date
+        FROM device_limits
+        WHERE device_fingerprint = %s
+    """, (device_fingerprint,))
+    record = cursor.fetchone()
+
+    if record:
+        record_id, limit_date = record
+        if limit_date < today:
+            cursor.execute("""
+                UPDATE device_limits
+                SET generations_used = 0,
+                    limit_date = %s,
+                    last_used_at = NOW(),
+                    updated_at = NOW(),
+                    ip_address = %s,
+                    user_agent = %s
+                WHERE id = %s
+            """, (today, client_ip, user_agent, record_id))
+            db_conn.commit()
+    else:
+        cursor.execute("""
+            INSERT INTO device_limits (device_fingerprint, generations_used, limit_date, ip_address, user_agent)
+            VALUES (%s, 0, %s, %s, %s)
+        """, (device_fingerprint, today, client_ip, user_agent))
+        db_conn.commit()
+
+    cursor.close()
+
+
+def calculate_device_usage(device_fingerprint, client_ip):
+    """Return total generations used for fingerprint or IP today."""
+    ensure_device_limit_service()
+    cursor = db_conn.cursor()
+    today = datetime.now().date()
+    cursor.execute("""
+        SELECT COALESCE(SUM(generations_used), 0)
+        FROM device_limits
+        WHERE (device_fingerprint = %s OR ip_address = %s)
+        AND limit_date = %s
+    """, (device_fingerprint, client_ip, today))
+    total_used = cursor.fetchone()[0]
+    cursor.close()
+    remaining = max(0, FREE_DEVICE_LIMIT - total_used)
+    return {
+        'can_generate': total_used < FREE_DEVICE_LIMIT,
+        'used': total_used,
+        'remaining': remaining,
+        'limit': FREE_DEVICE_LIMIT
+    }
+
+
+def get_device_limit_status(device_fingerprint, client_ip, user_agent):
+    """Ensure record exists and return current limit usage."""
+    ensure_device_limit_record(device_fingerprint, client_ip, user_agent)
+    return calculate_device_usage(device_fingerprint, client_ip)
+
+
+def increment_device_usage(device_fingerprint, client_ip, user_agent, increment=1):
+    """Increment limit counter for fingerprint and return updated totals."""
+    ensure_device_limit_record(device_fingerprint, client_ip, user_agent)
+    today = datetime.now().date()
+    cursor = db_conn.cursor()
+    cursor.execute("""
+        UPDATE device_limits
+        SET generations_used = generations_used + %s,
+            last_used_at = NOW(),
+            updated_at = NOW(),
+            ip_address = %s,
+            user_agent = %s
+        WHERE device_fingerprint = %s
+        AND limit_date = %s
+        RETURNING generations_used
+    """, (increment, client_ip, user_agent, device_fingerprint, today))
+    result = cursor.fetchone()
+
+    if not result:
+        # Record might have been reset between calls; ensure and retry once
+        cursor.close()
+        ensure_device_limit_record(device_fingerprint, client_ip, user_agent)
+        cursor = db_conn.cursor()
+        cursor.execute("""
+            UPDATE device_limits
+            SET generations_used = generations_used + %s,
+                last_used_at = NOW(),
+                updated_at = NOW(),
+                ip_address = %s,
+                user_agent = %s
+            WHERE device_fingerprint = %s
+            AND limit_date = %s
+            RETURNING generations_used
+        """, (increment, client_ip, user_agent, device_fingerprint, today))
+        result = cursor.fetchone()
+
+    db_conn.commit()
+    cursor.close()
+    return calculate_device_usage(device_fingerprint, client_ip)
+
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -912,9 +1034,6 @@ def check_device_limit():
     Expects JSON: {device_fingerprint: "abc123"}
     Returns: {can_generate: bool, used: int, remaining: int, limit: int}
     """
-    if not db_conn:
-        return jsonify({'error': 'Device limit service not configured'}), 503
-
     try:
         data = request.get_json()
         device_fingerprint = data.get('device_fingerprint')
@@ -922,83 +1041,17 @@ def check_device_limit():
         if not device_fingerprint:
             return jsonify({'error': 'device_fingerprint required'}), 400
 
-        # Get client IP and user agent for tracking
-        client_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
-        if ',' in client_ip:
-            client_ip = client_ip.split(',')[0].strip()
+        client_ip = get_client_ip()
         user_agent = request.headers.get('User-Agent', '')
 
-        cursor = db_conn.cursor()
-        today = datetime.now().date()
-        FREE_LIMIT = 3
+        limit_info = get_device_limit_status(device_fingerprint, client_ip, user_agent)
 
-        print(f"[DEVICE-LIMIT] CHECK Request from FP: {device_fingerprint[:16]}... IP: {client_ip}")
+        print(f"[DEVICE-LIMIT] FP: {device_fingerprint[:16]}... IP: {client_ip} Total: {limit_info['used']}/{limit_info['limit']}")
 
-        # CRITICAL: Check total usage across BOTH fingerprint AND IP
-        # This prevents incognito mode bypass (different fingerprint, same IP)
-        cursor.execute("""
-            SELECT COALESCE(SUM(generations_used), 0) as total_used
-            FROM device_limits
-            WHERE (device_fingerprint = %s OR ip_address = %s)
-            AND limit_date = %s
-        """, (device_fingerprint, client_ip, today))
+        return jsonify(limit_info), 200
 
-        result = cursor.fetchone()
-        total_generations_used = result[0] if result else 0
-
-        print(f"[DEVICE-LIMIT] Found {total_generations_used} total generations for FP or IP")
-
-        # Check if this specific fingerprint exists
-        cursor.execute("""
-            SELECT id, generations_used, limit_date
-            FROM device_limits
-            WHERE device_fingerprint = %s
-        """, (device_fingerprint,))
-
-        fingerprint_record = cursor.fetchone()
-
-        if fingerprint_record:
-            record_id, fp_generations, limit_date = fingerprint_record
-
-            # Reset if new day
-            if limit_date < today:
-                cursor.execute("""
-                    UPDATE device_limits
-                    SET generations_used = 0, limit_date = %s, last_used_at = NOW(), updated_at = NOW()
-                    WHERE id = %s
-                """, (today, record_id))
-                db_conn.commit()
-
-                # Recalculate total after reset
-                cursor.execute("""
-                    SELECT COALESCE(SUM(generations_used), 0)
-                    FROM device_limits
-                    WHERE (device_fingerprint = %s OR ip_address = %s)
-                    AND limit_date = %s
-                """, (device_fingerprint, client_ip, today))
-                total_generations_used = cursor.fetchone()[0]
-        else:
-            # Create new fingerprint entry - no UNIQUE constraint, just insert
-            cursor.execute("""
-                INSERT INTO device_limits (device_fingerprint, generations_used, limit_date, ip_address, user_agent)
-                VALUES (%s, 0, %s, %s, %s)
-            """, (device_fingerprint, today, client_ip, user_agent))
-            db_conn.commit()
-
-        cursor.close()
-
-        remaining = max(0, FREE_LIMIT - total_generations_used)
-        can_generate = total_generations_used < FREE_LIMIT
-
-        print(f"[DEVICE-LIMIT] FP: {device_fingerprint[:16]}... IP: {client_ip} Total: {total_generations_used}/{FREE_LIMIT}")
-
-        return jsonify({
-            'can_generate': can_generate,
-            'used': total_generations_used,
-            'remaining': remaining,
-            'limit': FREE_LIMIT
-        }), 200
-
+    except RuntimeError as e:
+        return jsonify({'error': str(e)}), 503
     except Exception as e:
         print(f"[DEVICE-LIMIT] Error: {e}")
         import traceback
@@ -1014,9 +1067,6 @@ def increment_device_limit():
     Expects JSON: {device_fingerprint: "abc123"}
     Returns: {success: bool, used: int, remaining: int}
     """
-    if not db_conn:
-        return jsonify({'error': 'Device limit service not configured'}), 503
-
     try:
         data = request.get_json()
         device_fingerprint = data.get('device_fingerprint')
@@ -1024,54 +1074,23 @@ def increment_device_limit():
         if not device_fingerprint:
             return jsonify({'error': 'device_fingerprint required'}), 400
 
-        # Get client IP for multi-factor tracking
-        client_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
-        if ',' in client_ip:
-            client_ip = client_ip.split(',')[0].strip()
+        client_ip = get_client_ip()
+        user_agent = request.headers.get('User-Agent', '')
 
-        cursor = db_conn.cursor()
-        today = datetime.now().date()
-        FREE_LIMIT = 3
+        updated_limit = increment_device_usage(device_fingerprint, client_ip, user_agent)
 
-        # Update counter for this specific fingerprint
-        cursor.execute("""
-            UPDATE device_limits
-            SET generations_used = generations_used + 1, last_used_at = NOW(), updated_at = NOW()
-            WHERE device_fingerprint = %s AND limit_date = %s
-            RETURNING generations_used
-        """, (device_fingerprint, today))
+        print(f"[DEVICE-LIMIT] Incremented: FP {device_fingerprint[:16]}... IP {client_ip} Total: {updated_limit['used']}/{updated_limit['limit']}")
 
-        result = cursor.fetchone()
-        if result:
-            fingerprint_used = result[0]
-            db_conn.commit()
+        return jsonify({
+            'success': True,
+            **updated_limit
+        }), 200
 
-            # Get TOTAL usage across fingerprint + IP
-            cursor.execute("""
-                SELECT COALESCE(SUM(generations_used), 0)
-                FROM device_limits
-                WHERE (device_fingerprint = %s OR ip_address = %s)
-                AND limit_date = %s
-            """, (device_fingerprint, client_ip, today))
-
-            total_used = cursor.fetchone()[0]
-            remaining = max(0, FREE_LIMIT - total_used)
-
-            print(f"[DEVICE-LIMIT] Incremented: FP {device_fingerprint[:16]}... IP {client_ip} Total: {total_used}/{FREE_LIMIT}")
-
-            cursor.close()
-            return jsonify({
-                'success': True,
-                'used': total_used,
-                'remaining': remaining,
-                'limit': FREE_LIMIT
-            }), 200
-        else:
-            cursor.close()
-            return jsonify({'error': 'Device not found or date mismatch'}), 404
-
+    except RuntimeError as e:
+        return jsonify({'error': str(e)}), 503
     except Exception as e:
-        db_conn.rollback()
+        if db_conn:
+            db_conn.rollback()
         print(f"[DEVICE-LIMIT] Increment error: {e}")
         return jsonify({'error': str(e)}), 500
 
@@ -1085,6 +1104,10 @@ def virtual_tryon():
     Authentication is optional - allows 3 free generations without login
     """
     try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'Missing request body'}), 400
+
         # Check if user is authenticated (optional)
         user_id = None
         auth_header = request.headers.get('Authorization', '')
@@ -1109,10 +1132,33 @@ def virtual_tryon():
             remaining = limit - used if limit >= 0 else -1
             print(f"[TRYON] User {user_id} - Limit check: {used}/{limit} used, {remaining} remaining")
         else:
-            # Non-authenticated user - frontend handles free generation limit
-            print(f"[TRYON] Non-authenticated user - free generation (frontend tracks limit)")
+            # Enforce anonymous device limit
+            device_fingerprint = data.get('device_fingerprint')
+            if not device_fingerprint:
+                return jsonify({
+                    'error': 'DEVICE_FINGERPRINT_REQUIRED',
+                    'message': 'Обновите страницу или включите JavaScript, чтобы мы могли проверить бесплатный лимит.'
+                }), 400
 
-        data = request.get_json()
+            client_ip = get_client_ip()
+            user_agent = request.headers.get('User-Agent', '')
+
+            try:
+                anonymous_limit = get_device_limit_status(device_fingerprint, client_ip, user_agent)
+            except RuntimeError as e:
+                return jsonify({
+                    'error': 'LIMIT_SERVICE_UNAVAILABLE',
+                    'message': 'Не удалось проверить лимит устройства. Повторите попытку позже или войдите в аккаунт.'
+                }), 503
+
+            if not anonymous_limit['can_generate']:
+                return jsonify({
+                    'error': 'ANON_LIMIT_EXCEEDED',
+                    'message': 'Вы использовали все бесплатные генерации. Зарегистрируйтесь, чтобы продолжить.',
+                    **anonymous_limit
+                }), 403
+
+            print(f"[TRYON] Anonymous user - {anonymous_limit['used']}/{anonymous_limit['limit']} used")
 
         if not data or 'person_images' not in data or 'garment_image' not in data:
             return jsonify({'error': 'Missing required data'}), 400
@@ -1227,15 +1273,29 @@ def virtual_tryon():
                 })
 
         # Increment daily limit counter after successful generation (only for authenticated users)
-        if auth_available and user_id and len(results) > 0:
-            # Only increment if at least one result was successful
-            successful_results = [r for r in results if 'error' not in r]
-            if successful_results:
-                try:
-                    auth_manager.increment_daily_limit(user_id)
-                    print(f"[TRYON] Daily limit incremented for user {user_id}")
-                except Exception as e:
-                    print(f"[TRYON] Warning: Failed to increment daily limit: {e}")
+        successful_results = [r for r in results if 'error' not in r]
+
+        if auth_available and user_id and successful_results:
+            try:
+                auth_manager.increment_daily_limit(user_id)
+                print(f"[TRYON] Daily limit incremented for user {user_id}")
+            except Exception as e:
+                print(f"[TRYON] Warning: Failed to increment daily limit: {e}")
+
+        anonymous_limit_update = None
+        if not user_id and successful_results:
+            try:
+                anonymous_limit_update = increment_device_usage(
+                    device_fingerprint,
+                    client_ip,
+                    request.headers.get('User-Agent', ''),
+                    increment=1
+                )
+                print(f"[TRYON] Anonymous device limit incremented: {anonymous_limit_update['used']}/{anonymous_limit_update['limit']}")
+            except RuntimeError:
+                pass
+            except Exception as e:
+                print(f"[TRYON] Warning: Failed to increment anonymous limit: {e}")
 
         # Get updated limit info (only for authenticated users)
         updated_limit = {'can_generate': True, 'used': -1, 'remaining': -1, 'limit': -1}
@@ -1247,11 +1307,16 @@ def virtual_tryon():
             except Exception as e:
                 print(f"[TRYON] Warning: Failed to get updated limit: {e}")
 
-        return jsonify({
+        response_payload = {
             'success': True,
             'results': results,
             'daily_limit': updated_limit
-        }), 200
+        }
+
+        if not user_id:
+            response_payload['anonymous_limit'] = anonymous_limit_update
+
+        return jsonify(response_payload), 200
 
     except Exception as e:
         print(f"[TRYON ERROR] {e}")

@@ -57,36 +57,6 @@ async function checkDeviceLimit() {
     }
 }
 
-async function incrementDeviceLimit() {
-    try {
-        const fingerprint = await getDeviceFingerprint();
-
-        const response = await fetch(`${API_URL}/api/increment-device-limit`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ device_fingerprint: fingerprint })
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to increment device limit');
-        }
-
-        const data = await response.json();
-        currentDeviceLimit = data;
-
-        console.log(`[DEVICE] Limit incremented: ${data.used}/${data.limit}`);
-
-        // Update indicator
-        updateFreeGenerationsIndicator(data);
-
-        return data;
-    } catch (error) {
-        console.error('[DEVICE] Error incrementing limit:', error);
-    }
-}
-
 async function updateFreeGenerationsIndicator(limitData = null) {
     const counter = document.getElementById('freeGenerationsCounter');
     const remainingEl = document.getElementById('freeGenRemaining');
@@ -797,6 +767,11 @@ async function handleTryOn() {
             auth.updateLimitIndicator();
         }
 
+        let deviceFingerprint = null;
+        if (!auth.user) {
+            deviceFingerprint = await getDeviceFingerprint();
+        }
+
         // Disable button (no animation)
         if (generateSwitch) {
             generateSwitch.disabled = true;
@@ -861,7 +836,8 @@ async function handleTryOn() {
             body: JSON.stringify({
                 person_images: state.uploadedPersonPaths,
                 garment_image: state.uploadedGarmentPath,
-                garment_category: state.garmentCategory  // Send selected category
+                garment_category: state.garmentCategory,  // Send selected category
+                device_fingerprint: deviceFingerprint
             })
         });
 
@@ -890,8 +866,11 @@ async function handleTryOn() {
         if (tryonData.daily_limit && auth.user) {
             auth.updateLimitIndicator();
         } else if (!auth.user) {
-            // Increment device fingerprint limit for non-logged users
-            await incrementDeviceLimit();
+            if (tryonData.anonymous_limit) {
+                updateFreeGenerationsIndicator(tryonData.anonymous_limit);
+            } else {
+                updateFreeGenerationsIndicator();
+            }
         }
 
         // Hide loading overlay and progress, show results
