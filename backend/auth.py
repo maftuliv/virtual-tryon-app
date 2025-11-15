@@ -99,7 +99,7 @@ class AuthManager:
     # User Registration and Login
     # ============================================================
 
-    def register_user(self, email: str, password: str, full_name: str) -> Dict[str, Any]:
+    def register_user(self, email: str, password: str, full_name: str, provider: str = "email") -> Dict[str, Any]:
         """
         Register new user with email and password.
 
@@ -107,6 +107,7 @@ class AuthManager:
             email: User email address
             password: Plain text password (will be hashed)
             full_name: User's full name
+            provider: Authentication provider (default: "email", also: "google")
 
         Returns:
             Dict containing success status, user data, and token
@@ -130,10 +131,10 @@ class AuthManager:
             cursor.execute(
                 """
                 INSERT INTO users (email, password_hash, full_name, provider, created_at, last_login)
-                VALUES (%s, %s, %s, 'email', NOW(), NOW())
+                VALUES (%s, %s, %s, %s, NOW(), NOW())
                 RETURNING id, email, full_name, is_premium, created_at
             """,
-                (email, password_hash, full_name),
+                (email, password_hash, full_name, provider),
             )
 
             user = cursor.fetchone()

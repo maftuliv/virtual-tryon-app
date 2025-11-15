@@ -53,6 +53,27 @@ class Settings(BaseSettings):
         description="Secret pepper for device fingerprint hashing (defaults to JWT secret if unset)",
     )
 
+    # ==================== GOOGLE OAUTH CONFIGURATION (OPTIONAL) ====================
+    google_oauth_enabled: bool = Field(
+        default=False,
+        description="Enable Google OAuth 2.0 authentication"
+    )
+
+    google_client_id: Optional[str] = Field(
+        default=None,
+        description="Google OAuth 2.0 Client ID (from Google Cloud Console)",
+    )
+
+    google_client_secret: Optional[str] = Field(
+        default=None,
+        description="Google OAuth 2.0 Client Secret (from Google Cloud Console)",
+    )
+
+    google_redirect_uri: Optional[str] = Field(
+        default=None,
+        description="Google OAuth 2.0 Redirect URI (must match Google Cloud Console configuration)",
+    )
+
     # ==================== NOTIFICATIONS CONFIGURATION (OPTIONAL) ====================
     telegram_bot_token: Optional[str] = Field(default=None, description="Telegram bot token for feedback notifications")
 
@@ -117,6 +138,36 @@ class Settings(BaseSettings):
             )
         return v
 
+    @field_validator("google_redirect_uri")
+    @classmethod
+    def validate_google_redirect_uri(cls, v: Optional[str], info) -> Optional[str]:
+        """Validate Google redirect URI if OAuth is enabled."""
+        if info.data.get("google_oauth_enabled") and not v:
+            raise ValueError(
+                "GOOGLE_REDIRECT_URI is required when google_oauth_enabled=True"
+            )
+        return v
+
+    @field_validator("google_client_secret")
+    @classmethod
+    def validate_google_client_secret(cls, v: Optional[str], info) -> Optional[str]:
+        """Validate Google client secret if OAuth is enabled."""
+        if info.data.get("google_oauth_enabled") and not v:
+            raise ValueError(
+                "GOOGLE_CLIENT_SECRET is required when google_oauth_enabled=True"
+            )
+        return v
+
+    @field_validator("google_client_id")
+    @classmethod
+    def validate_google_client_id(cls, v: Optional[str], info) -> Optional[str]:
+        """Validate Google client ID if OAuth is enabled."""
+        if info.data.get("google_oauth_enabled") and not v:
+            raise ValueError(
+                "GOOGLE_CLIENT_ID is required when google_oauth_enabled=True"
+            )
+        return v
+
     # ==================== HELPER PROPERTIES ====================
 
     @property
@@ -150,6 +201,7 @@ class Settings(BaseSettings):
             "huggingface_api_key",
             "telegram_bot_token",
             "device_fingerprint_secret",
+            "google_client_secret",
         ]
 
         for key in sensitive_keys:

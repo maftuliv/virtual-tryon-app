@@ -237,22 +237,4 @@ def create_auth_blueprint(auth_service: AuthService) -> Blueprint:
             logger.error(f"Check limit failed: {e}", exc_info=True)
             return jsonify({"error": str(e)}), 500
 
-    @auth_bp.route("/api/auth/google", methods=["GET"])
-    def google_auth():
-        """
-        Initiate Google OAuth flow.
-
-        TODO: Implement Google OAuth.
-        """
-        return jsonify({"error": "Google OAuth not implemented yet"}), 501
-
-    @auth_bp.route("/api/auth/google/callback", methods=["GET"])
-    def google_callback():
-        """
-        Handle Google OAuth callback.
-
-        TODO: Implement Google OAuth callback.
-        """
-        return jsonify({"error": "Google OAuth not implemented yet"}), 501
-
     return auth_bp

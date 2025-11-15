@@ -271,8 +271,92 @@ class AuthManager {
     // Google OAuth
     // ============================================================
 
-    googleLogin() {
-        window.location.href = `${this.API_URL}/api/auth/google`;
+    async googleLogin() {
+        try {
+            console.log('[GOOGLE-AUTH] Initiating Google OAuth flow...');
+
+            // Request authorization URL from backend
+            const response = await fetch(`${this.API_URL}/api/auth/google/login`, {
+                method: 'GET',
+                credentials: 'include', // Include cookies for session
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+
+            if (!data.success || !data.authorization_url) {
+                throw new Error(data.error || 'Не удалось получить ссылку для авторизации');
+            }
+
+            console.log('[GOOGLE-AUTH] Redirecting to Google...');
+            // Redirect to Google authorization page
+            window.location.href = data.authorization_url;
+
+        } catch (error) {
+            console.error('[GOOGLE-AUTH] Login initiation failed:', error);
+            alert(`Ошибка входа через Google: ${error.message}`);
+        }
+    }
+
+    /**
+     * Handle Google OAuth callback (after redirect back from Google)
+     */
+    handleGoogleCallback() {
+        const hash = window.location.hash.substring(1); // Remove '#'
+        const params = new URLSearchParams(hash);
+
+        // Check for success
+        if (params.has('google_auth_success')) {
+            const token = params.get('token');
+
+            if (token) {
+                console.log('[GOOGLE-AUTH] Callback successful, token received');
+
+                // Save token
+                this.saveToken(token);
+
+                // Clean URL
+                window.location.hash = '';
+
+                // Fetch user info and update UI
+                this.checkAuth();
+
+                // Show success message
+                this.showNotification('Вход через Google выполнен успешно!', 'success');
+            } else {
+                console.error('[GOOGLE-AUTH] Callback successful but no token');
+                this.showNotification('Ошибка: токен не получен', 'error');
+            }
+        }
+
+        // Check for error
+        else if (params.has('google_auth_error')) {
+            const errorMessage = params.get('message') || 'Неизвестная ошибка';
+            console.error('[GOOGLE-AUTH] Callback error:', errorMessage);
+
+            // Clean URL
+            window.location.hash = '';
+
+            // Show error message
+            this.showNotification(`Ошибка входа через Google: ${decodeURIComponent(errorMessage)}`, 'error');
+        }
+    }
+
+    /**
+     * Show notification to user
+     */
+    showNotification(message, type = 'info') {
+        // TODO: Replace with your notification system
+        if (type === 'error') {
+            alert('❌ ' + message);
+        } else if (type === 'success') {
+            alert('✅ ' + message);
+        } else {
+            alert('ℹ️ ' + message);
+        }
     }
 }
 
@@ -281,9 +365,13 @@ const auth = new AuthManager();
 
 // Check authentication on page load
 document.addEventListener('DOMContentLoaded', () => {
+    // Check for Google OAuth callback first
+    auth.handleGoogleCallback();
+
+    // Then check normal authentication
     auth.checkAuth();
 
-    // Check for token in URL (from OAuth callback)
+    // Check for token in URL (from OAuth callback - legacy)
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token');
     if (token) {
