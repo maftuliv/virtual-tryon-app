@@ -413,15 +413,18 @@ class AuthManager:
         try:
             limit_record = None
             with db_transaction(self.db) as cursor:
-                # Check if user is premium
-                cursor.execute("SELECT is_premium FROM users WHERE id = %s", (user_id,))
+                # Check if user is premium or admin
+                cursor.execute("SELECT is_premium, role FROM users WHERE id = %s", (user_id,))
                 user = cursor.fetchone()
 
                 if not user:
                     return False, 0, FREE_DAILY_LIMIT
 
-                # Premium users have unlimited generations
-                if user[0]:
+                is_premium = user[0]
+                role = user[1] if len(user) > 1 else "user"
+
+                # Premium users and admins have unlimited generations
+                if is_premium or role == "admin":
                     return True, -1, -1  # -1 means unlimited
 
                 # Check today's usage
