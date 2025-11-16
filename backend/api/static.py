@@ -98,6 +98,28 @@ def create_static_blueprint(
             logger.error(f"Error serving frontend: {e}", exc_info=True)
             return jsonify({"error": "Frontend not found"}), 404
 
+    @static_bp.route("/admin-login", methods=["GET"])
+    def serve_admin_login():
+        """
+        Serve admin login page (public but unlisted).
+
+        This page is not linked anywhere on the site.
+        Only those who know the URL can access it.
+        """
+        try:
+            response = send_from_directory(frontend_folder, "admin-login.html")
+            # Security headers
+            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
+            response.headers["X-Robots-Tag"] = "noindex, nofollow"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+
+            logger.info("[ADMIN] Login page served")
+            return response
+        except Exception as e:
+            logger.error(f"Error serving admin login: {e}", exc_info=True)
+            return jsonify({"error": "Page not found"}), 404
+
     @static_bp.route("/admin", methods=["GET"])
     @require_admin_page
     def serve_admin(current_user):

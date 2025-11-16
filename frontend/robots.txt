@@ -5,6 +5,7 @@ User-agent: *
 
 # Block admin panel
 Disallow: /admin
+Disallow: /admin-login
 
 # Block API endpoints from indexing
 Disallow: /api/
