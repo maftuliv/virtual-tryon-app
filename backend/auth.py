@@ -199,6 +199,7 @@ class AuthManager:
         """
         try:
             email = email.lower().strip()
+            print(f"[AUTH] login_user: attempting login for {email}")
 
             with db_transaction(self.db) as cursor:
                 cursor.execute(
@@ -212,12 +213,18 @@ class AuthManager:
                 user = cursor.fetchone()
 
                 if not user:
+                    print(f"[AUTH] login_user: user not found for {email}")
                     return {"success": False, "error": "Invalid email or password"}
+
+                print(f"[AUTH] login_user: found user_id={user[0]}, has_password_hash={bool(user[2])}")
 
                 # Verify password (user[2] is password_hash)
                 # Allow login if user has a password_hash set (even if registered via OAuth)
                 if not user[2] or not check_password_hash(user[2], password):
+                    print(f"[AUTH] login_user: password verification failed for {email}")
                     return {"success": False, "error": "Invalid email or password"}
+
+                print(f"[AUTH] login_user: password verified successfully for {email}")
 
                 # Update last login in same transaction
                 cursor.execute(
