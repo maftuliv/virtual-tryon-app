@@ -168,8 +168,18 @@ class UserRepository:
             raise RuntimeError("Authentication system is not available")
 
         try:
-            limit_info = self.auth_manager.check_daily_limit(user_id)
-            return limit_info
+            # AuthManager returns tuple: (can_generate, used, limit)
+            can_generate, used, limit = self.auth_manager.check_daily_limit(user_id)
+
+            # Convert to dict format expected by service layer
+            remaining = max(0, limit - used) if limit > 0 else -1  # -1 for unlimited
+
+            return {
+                "can_generate": can_generate,
+                "used": used,
+                "limit": limit,
+                "remaining": remaining,
+            }
 
         except Exception as e:
             logger.error(f"Error checking limit for user {user_id}: {e}", exc_info=True)
