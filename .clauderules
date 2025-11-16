@@ -1,0 +1,215 @@
+# Claude Code Rules for Virtual Try-On App
+
+## 🚨 CRITICAL RULES - ALWAYS FOLLOW
+
+### 1. Production-First Mindset
+**ALWAYS assume user wants production deployment unless explicitly stated otherwise**
+- ❌ NEVER focus on localhost/local development by default
+- ✅ ALWAYS implement features for production (Railway/taptolook.net)
+- ✅ Test locally but DEPLOY to production immediately
+- ✅ Admin panel must work from ANY device/location (not just localhost)
+
+### 2. Database Operations
+**ALL database operations MUST use `db_transaction` context manager**
+```python
+# ✅ CORRECT
+from backend.utils.db_helpers import db_transaction
+
+with db_transaction(self.db) as cursor:
+    cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+    result = cursor.fetchone()
+# Transaction auto-commits on success, auto-rolls back on error
+
+# ❌ WRONG - Never do this
+cursor = self.db.cursor()
+cursor.execute("...")  # Can cause "current transaction is aborted" errors
+```
+
+### 3. Authentication & Security
+**CRITICAL: Cookie-based auth must work on production (HTTPS)**
+- ✅ `Secure=True` on production (HTTPS required)
+- ✅ `Secure=False` only on localhost (for dev)
+- ✅ `credentials: 'include'` in ALL fetch() calls
+- ✅ CORS `supports_credentials=True` with explicit origins (NOT `*`)
+- ✅ Admin routes MUST verify role on SERVER before serving HTML
+
+### 4. CORS Configuration
+**When using credentials (cookies), NEVER use wildcard origins**
+```python
+# ✅ CORRECT
+CORS(app, resources={
+    r"/*": {
+        "origins": ["https://taptolook.net", "http://localhost:5000"],
+        "supports_credentials": True,
+    }
+})
+
+# ❌ WRONG
+CORS(app, resources={
+    r"/*": {
+        "origins": "*",  # Incompatible with credentials!
+        "supports_credentials": True,
+    }
+})
+```
+
+### 5. Deployment Process
+**ALWAYS follow this sequence for production changes**
+1. Make changes locally
+2. Test locally (if needed)
+3. ✅ **IMMEDIATELY commit and push to GitHub**
+4. ✅ **VERIFY Railway deployment status**
+5. ✅ **WAIT for Railway to finish deploying (2-3 min)**
+6. ✅ **TEST on production (taptolook.net)**
+7. ❌ NEVER assume it's deployed without verification
+
+### 6. Error Handling & Debugging
+**When user reports errors, IMMEDIATELY analyze production logs**
+- ✅ Ask user to check Railway logs or provide screenshots
+- ✅ Check Network tab (F12) for actual request/response
+- ✅ Verify cookies are being sent in requests
+- ❌ NEVER assume local behavior matches production
+
+### 7. Admin Panel Security
+**Admin panel MUST be protected at SERVER level**
+```python
+# ✅ CORRECT - Server-side check before serving HTML
+@app.route("/admin")
+@require_admin_page  # Checks cookie, redirects if unauthorized
+def serve_admin(current_user):
+    return send_file("admin.html")
+
+# ❌ WRONG - Client-side only
+@app.route("/admin")
+def serve_admin():
+    return send_file("admin.html")  # Anyone can access!
+```
+
+### 8. Professional Standards
+**User expects professional enterprise-level code**
+- ✅ Security first (XSS, CSRF, SQL injection protection)
+- ✅ Proper error handling with user-friendly messages
+- ✅ Audit logging for critical operations
+- ✅ Input validation on ALL endpoints
+- ✅ Rate limiting on sensitive endpoints
+- ❌ NEVER skip security features "for simplicity"
+
+### 9. Testing on Production
+**After deployment, ALWAYS verify on production**
+```bash
+# ✅ Deployment checklist:
+1. git push → GitHub
+2. Check Railway dashboard for deployment status
+3. Wait for "Active" status
+4. Clear browser cache/cookies
+5. Test feature on https://taptolook.net
+6. Check Railway logs for errors
+```
+
+### 10. Cookie Configuration
+**HTTP-only cookies must work in production environment**
+```python
+# ✅ CORRECT - Conditional based on environment
+is_localhost = request.host.startswith("localhost")
+response.set_cookie(
+    "auth_token",
+    value=token,
+    secure=not is_localhost,  # True on production (HTTPS)
+    httponly=True,
+    samesite="Strict",
+    path="/",
+)
+```
+
+## 🎯 Project-Specific Rules
+
+### Admin Panel Access
+- Must work from ANY device (mobile, laptop, different locations)
+- Protected by server-side role check (not just client-side)
+- Uses HTTP-only cookies for security
+- Redirects unauthorized users to home page
+
+### Google OAuth Flow
+- Sets both cookie AND returns token in JSON
+- Cookie for HTML page access (/admin)
+- Token in localStorage for API calls
+- Must set cookie before redirect
+
+### API Authentication
+- Supports BOTH Authorization header AND cookie
+- Decorator `@require_admin` checks both sources
+- Graceful fallback if one source fails
+
+### Railway Deployment
+- Auto-deploys on push to main branch
+- Takes 2-3 minutes to complete
+- Check deployment status before testing
+- Logs available in Railway dashboard
+
+## 📋 Pre-Deployment Checklist
+
+Before committing admin/auth changes:
+- [ ] Cookies work on HTTPS (production)
+- [ ] CORS allows credentials with specific origins
+- [ ] fetch() includes `credentials: 'include'`
+- [ ] Server-side role verification exists
+- [ ] Tested on production after deployment
+- [ ] Error messages logged properly
+- [ ] Security headers set correctly
+
+## 🚫 Common Mistakes to AVOID
+
+1. ❌ Testing only on localhost and assuming production works
+2. ❌ Using `origins: "*"` with `supports_credentials: True`
+3. ❌ Forgetting `credentials: 'include'` in fetch calls
+4. ❌ Setting `Secure=True` on localhost (blocks cookies on HTTP)
+5. ❌ Not waiting for Railway deployment to complete
+6. ❌ Client-side only admin protection
+7. ❌ Using wildcard CORS in production
+8. ❌ Not clearing cookies when testing auth changes
+
+## 💡 Best Practices
+
+### When User Reports Bug
+1. Ask for production URL and error screenshot
+2. Check Railway logs immediately
+3. Verify Network tab shows cookie/headers
+4. Fix and deploy to production ASAP
+5. Verify fix on production before confirming
+
+### When Implementing Auth Feature
+1. Design for production (HTTPS, secure cookies)
+2. Add localhost compatibility (conditional Secure flag)
+3. Test both localStorage AND cookie flows
+4. Verify CORS settings allow credentials
+5. Deploy and test on production
+
+### When Adding Admin Feature
+1. Server-side protection FIRST
+2. Add API endpoint with @require_admin
+3. Add frontend UI
+4. Add audit logging
+5. Test unauthorized access (must redirect/403)
+6. Deploy and verify on production
+
+## 📚 Reference Files
+
+- `backend/DATABASE_BEST_PRACTICES.md` - DB transaction patterns
+- `backend/auth.py` - Auth decorators and cookie helpers
+- `backend/api/admin.py` - Admin API endpoints
+- `frontend/admin.js` - Admin panel frontend
+- `README.md` - Deployment and security documentation
+
+## 🔥 Emergency Rules
+
+If user says "ты все сломал" or similar:
+1. **STOP** and analyze what broke
+2. Check Railway deployment logs
+3. Verify production behavior (not localhost)
+4. Fix immediately and deploy
+5. Test on production before confirming
+6. Apologize professionally and learn from mistake
+
+---
+
+**Remember: User expects enterprise-grade, production-ready code that works globally, not just on localhost.**
