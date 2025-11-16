@@ -134,14 +134,19 @@ class AuthService:
 
         self.logger.info(f"Login attempt: email={email}")
 
-        user = self.user_repository.authenticate(email.strip(), password)
+        result = self.user_repository.authenticate(email.strip(), password)
 
-        if user:
-            self.logger.info(f"Login successful: user_id={user['id']}, email={user['email']}")
+        if result and result.get("success"):
+            user_data = result.get("user", {})
+            token = result.get("token")
+            # Merge token into user_data for convenience
+            if user_data and token:
+                user_data["token"] = token
+            self.logger.info(f"Login successful: user_id={user_data.get('id')}, email={user_data.get('email')}")
+            return user_data
         else:
             self.logger.warning(f"Login failed: invalid credentials for email={email}")
-
-        return user
+            return None
 
     def get_user_by_token(self, token: str) -> Optional[Dict]:
         """
