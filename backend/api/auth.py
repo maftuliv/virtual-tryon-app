@@ -273,13 +273,13 @@ def create_auth_blueprint(
             logger.info(f"[ADMIN-AUTH] Admin login request: email={email}")
 
             # Используем тот же путь логина, что и обычные пользователи
-            result = auth_service.login(email=email, password=password)
-            if not result or not result.get("success"):
+            # auth_service.login() returns user dict directly with token inside
+            user_data = auth_service.login(email=email, password=password)
+            if not user_data:
                 logger.warning(f"[ADMIN-AUTH] Admin login failed: invalid credentials for {email}")
                 return jsonify({"error": "Invalid email or password"}), 401
 
-            user_data = result.get("user", {}) or {}
-            token = result.get("token")
+            token = user_data.get("token")
 
             # Разрешаем доступ только пользователям с ролью admin
             if user_data.get("role") != "admin":
