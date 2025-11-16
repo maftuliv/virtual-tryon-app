@@ -268,6 +268,12 @@ class AuthManager {
             if (freeCounter) {
                 freeCounter.classList.add('hide');
             }
+
+            // Show user generations counter
+            const userGenCounter = document.getElementById('userGenerationsCounter');
+            if (userGenCounter) {
+                userGenCounter.style.display = 'block';
+            }
         } else {
             // Show auth button
             if (authButton) authButton.style.display = 'inline-flex';
@@ -286,21 +292,68 @@ class AuthManager {
                     updateFreeGenerationsIndicator();
                 }
             }
+
+            // Hide user generations counter
+            const userGenCounter = document.getElementById('userGenerationsCounter');
+            if (userGenCounter) {
+                userGenCounter.style.display = 'none';
+            }
         }
     }
 
     async updateLimitIndicator() {
         const userLimitBadge = document.getElementById('userLimit');
+        const userGenCounter = document.getElementById('userGenerationsCounter');
+        const userGenRemaining = document.getElementById('userGenRemaining');
+        const userGenTotal = document.getElementById('userGenTotal');
+        const userGenLabel = document.getElementById('userGenLabel');
 
-        if (!this.user || this.user.is_premium) {
-            // Hide limit indicator for premium users
+        if (!this.user) {
+            // Hide limit indicators when not logged in
             const limitBanner = document.getElementById('limitBanner');
             if (limitBanner) limitBanner.style.display = 'none';
             if (userLimitBadge) userLimitBadge.style.display = 'none';
+            if (userGenCounter) userGenCounter.style.display = 'none';
             return;
         }
 
         const limit = await this.checkLimit();
+
+        // Check if user is admin (unlimited)
+        if (this.user.role === 'admin' && limit.limit === -1) {
+            // Admin: show unlimited
+            if (userLimitBadge) {
+                userLimitBadge.textContent = '∞';
+                userLimitBadge.style.display = 'inline-block';
+                userLimitBadge.style.background = 'rgba(139, 92, 246, 0.1)';
+                userLimitBadge.style.color = '#8b5cf6';
+            }
+            if (userGenCounter) {
+                userGenCounter.style.display = 'block';
+            }
+            if (userGenRemaining) userGenRemaining.textContent = '∞';
+            if (userGenTotal) userGenTotal.textContent = '';
+            if (userGenLabel) userGenLabel.textContent = 'Безлимитно:';
+            return;
+        }
+
+        // Update counters for premium and free users
+        if (userGenCounter) {
+            userGenCounter.style.display = 'block';
+        }
+
+        if (this.user.is_premium) {
+            // Premium user: monthly limit
+            if (userGenLabel) userGenLabel.textContent = 'Осталось в этом месяце:';
+        } else {
+            // Free user: daily limit
+            if (userGenLabel) userGenLabel.textContent = 'Осталось сегодня:';
+        }
+
+        // Update the counter below "сделать примерку" button
+        if (userGenRemaining) userGenRemaining.textContent = limit.remaining;
+        if (userGenTotal) userGenTotal.textContent = `/${limit.limit}`;
+
         const limitBanner = document.getElementById('limitBanner');
         const limitText = document.getElementById('limitText');
 
@@ -311,15 +364,15 @@ class AuthManager {
 
             // Change color based on remaining count
             if (limit.remaining === 0) {
-                // No generations left (0/3) - red
+                // No generations left - red
                 userLimitBadge.style.background = 'rgba(220, 38, 38, 0.1)';
                 userLimitBadge.style.color = '#dc2626';
-            } else if (limit.remaining <= 1) {
-                // Low on generations (1/3) - yellow
+            } else if (limit.remaining <= Math.ceil(limit.limit * 0.2)) {
+                // Low on generations (less than 20%) - yellow
                 userLimitBadge.style.background = 'rgba(251, 191, 36, 0.1)';
                 userLimitBadge.style.color = '#f59e0b';
             } else {
-                // Plenty left (2/3, 3/3) - pink
+                // Plenty left - pink
                 userLimitBadge.style.background = 'rgba(236, 72, 153, 0.1)';
                 userLimitBadge.style.color = '#ec4899';
             }
@@ -327,9 +380,10 @@ class AuthManager {
 
         // Show warning banner when limit is low
         if (limitBanner && limitText) {
-            if (limit.remaining !== undefined && limit.remaining >= 0 && limit.remaining <= 1) {
+            if (limit.remaining !== undefined && limit.remaining >= 0 && limit.remaining <= Math.ceil(limit.limit * 0.1)) {
                 limitBanner.style.display = 'flex';
-                limitText.textContent = `⚠️ Осталось генераций сегодня: ${limit.remaining}/${limit.limit}`;
+                const periodText = this.user.is_premium ? 'в этом месяце' : 'сегодня';
+                limitText.textContent = `⚠️ Осталось генераций ${periodText}: ${limit.remaining}/${limit.limit}`;
             } else {
                 limitBanner.style.display = 'none';
             }
