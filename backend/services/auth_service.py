@@ -85,13 +85,23 @@ class AuthService:
 
         self.logger.info(f"Registering new user: email={email}, provider={provider}")
 
-        user = self.user_repository.create_user(
+        result = self.user_repository.create_user(
             email=email.strip(), password=password, full_name=full_name.strip(), provider=provider
         )
 
-        self.logger.info(f"User registered successfully: id={user['id']}, email={user['email']}")
-
-        return user
+        # Handle wrapper format: {success: bool, user: {...}, token: str}
+        if result and result.get("success"):
+            user_data = result.get("user", {})
+            token = result.get("token")
+            # Merge token into user_data for convenience
+            if user_data and token:
+                user_data["token"] = token
+            self.logger.info(f"User registered successfully: id={user_data.get('id')}, email={user_data.get('email')}")
+            return user_data
+        elif result and result.get("error"):
+            raise ValueError(result.get("error"))
+        else:
+            raise ValueError("Registration failed")
 
     def login(self, email: str, password: str) -> Optional[Dict]:
         """
