@@ -187,6 +187,8 @@ class AuthManager:
     def login_user(self, email: str, password: str) -> Dict[str, Any]:
         """
         Login user with email and password.
+        
+        Uses safe transaction management to prevent "current transaction is aborted" errors.
 
         Args:
             email: User email address
@@ -218,15 +220,14 @@ class AuthManager:
             if not check_password_hash(user[2], password):
                 return {"success": False, "error": "Invalid email or password"}
 
-            # Update last login
-            cursor.execute(
-                """
-                UPDATE users SET last_login = NOW() WHERE id = %s
-            """,
-                (user[0],),
-            )
-            self.db.commit()
-            cursor.close()
+                # Update last login in same transaction
+                cursor.execute(
+                    """
+                    UPDATE users SET last_login = NOW() WHERE id = %s
+                """,
+                    (user[0],),
+                )
+                # Transaction commits automatically on context exit
 
             user_data = {
                 "id": user[0],
