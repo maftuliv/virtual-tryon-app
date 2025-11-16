@@ -60,21 +60,36 @@ def create_auth_blueprint(
     def _activate_admin_session(response, user):
         """Create admin session for admin users after login/registration."""
         if not admin_session_service or not admin_session_service.is_available():
+            logger.debug("[ADMIN-SESSION] Service unavailable, skipping admin session creation")
             return
 
-        admin_user = _extract_admin_user(user)
-        if not admin_user:
-            # Not an admin (or malformed payload) → no admin session
-            logger.info("[ADMIN-SESSION] Skipping admin session: user is not admin or payload invalid")
+        if not user or not isinstance(user, dict):
+            logger.debug("[ADMIN-SESSION] No user provided or invalid format")
+            return
+
+        user_role = user.get("role")
+        user_id = user.get("id")
+
+        logger.info(f"[ADMIN-SESSION] Checking admin session creation: user_id={user_id}, role={user_role}")
+
+        if user_role != "admin":
+            logger.debug(f"[ADMIN-SESSION] User {user_id} is not admin (role={user_role}), skipping session creation")
+            return
+
+        if not user_id:
+            logger.warning("[ADMIN-SESSION] Admin user has no ID, cannot create session")
             return
 
         session_id = admin_session_service.create_session(
-            user_id=admin_user["id"],
+            user_id=user_id,
             ip_address=request.remote_addr,
             user_agent=request.headers.get("User-Agent"),
         )
         if session_id:
             set_admin_session_cookie(response, session_id)
+            logger.info(f"[ADMIN-SESSION] Admin session created for user_id={user_id}, session_id={session_id[:8]}...")
+        else:
+            logger.error(f"[ADMIN-SESSION] Failed to create admin session for user_id={user_id}")
 
     def _clear_admin_session(response):
         if not admin_session_service or not admin_session_service.is_available():
@@ -129,16 +144,24 @@ def create_auth_blueprint(
             logger.info(f"Registration request: email={email}")
 
             # Register via service
-            user = auth_service.register(email=email, password=password, full_name=full_name)
+            result = auth_service.register(email=email, password=password, full_name=full_name)
+
+            # AuthService returns result from AuthManager: {"success": True, "user": {...}, "token": ...}
+            if not result.get("success"):
+                logger.error(f"Registration failed: {result.get('error')}")
+                return jsonify(result), 400
+
+            user_data = result.get("user", {})
+            token = result.get("token")
 
             # Create response with auth cookie
             response = make_response(
-                jsonify({"success": True, "message": "User registered successfully", "user": user}),
+                jsonify({"success": True, "message": "User registered successfully", "user": user_data, "token": token}), 
                 201
             )
-            set_auth_cookie(response, user["token"])
-            _activate_admin_session(response, user)
-            logger.info(f"[AUTH] Registration successful, cookie set for {email}")
+            set_auth_cookie(response, token)
+            _activate_admin_session(response, user_data)
+            logger.info(f"[AUTH] Registration successful, cookie set for {email}, role={user_data.get('role')}")
 
             return response
 
@@ -198,20 +221,24 @@ def create_auth_blueprint(
             logger.info(f"Login request: email={email}")
 
             # Login via service
-            user = auth_service.login(email=email, password=password)
+            result = auth_service.login(email=email, password=password)
 
-            if not user:
+            # AuthService.login returns result from AuthManager: {"success": True, "user": {...}, "token": ...}
+            if not result or not result.get("success"):
                 logger.warning(f"Login failed: invalid credentials for {email}")
                 return jsonify({"error": "Invalid email or password"}), 401
 
+            user_data = result.get("user", {})
+            token = result.get("token")
+
             # Create response with auth cookie
             response = make_response(
-                jsonify({"success": True, "message": "Login successful", "user": user}),
+                jsonify({"success": True, "message": "Login successful", "user": user_data, "token": token}), 
                 200
             )
-            set_auth_cookie(response, user["token"])
-            _activate_admin_session(response, user)
-            logger.info(f"[AUTH] Login successful, cookie set for {email}")
+            set_auth_cookie(response, token)
+            _activate_admin_session(response, user_data)
+            logger.info(f"[AUTH] Login successful, cookie set for {email}, role={user_data.get('role')}")
 
             return response
 
