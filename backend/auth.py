@@ -46,6 +46,7 @@ ADMIN_SESSION_MAX_AGE = 60 * 60 * 12  # 12 hours
 
 # Premium Configuration
 FREE_DAILY_LIMIT = 3
+PREMIUM_MONTHLY_LIMIT = 50  # Premium users get 50 generations per month
 PREMIUM_PRICE = 4.99
 
 
@@ -423,11 +424,27 @@ class AuthManager:
                 is_premium = user[0]
                 role = user[1] if len(user) > 1 else "user"
 
-                # Premium users and admins have unlimited generations
-                if is_premium or role == "admin":
+                # Admins have unlimited generations
+                if role == "admin":
                     return True, -1, -1  # -1 means unlimited
 
-                # Check today's usage
+                # Premium users have 50 generations per month
+                if is_premium:
+                    # Count generations this month from generations table
+                    cursor.execute(
+                        """
+                        SELECT COUNT(*) FROM generations
+                        WHERE user_id = %s
+                        AND created_at >= DATE_TRUNC('month', CURRENT_DATE)
+                        AND created_at < DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month'
+                        """,
+                        (user_id,),
+                    )
+                    monthly_used = cursor.fetchone()[0]
+                    can_generate = monthly_used < PREMIUM_MONTHLY_LIMIT
+                    return can_generate, monthly_used, PREMIUM_MONTHLY_LIMIT
+
+                # Check today's usage for free users
                 today = datetime.now().date()
                 cursor.execute(
                     """
