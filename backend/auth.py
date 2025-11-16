@@ -205,7 +205,7 @@ class AuthManager:
                     """
                     SELECT id, email, password_hash, full_name, avatar_url, is_premium, premium_until, role
                     FROM users
-                    WHERE email = %s AND provider = 'email'
+                    WHERE email = %s
                 """,
                     (email,),
                 )
@@ -214,8 +214,9 @@ class AuthManager:
                 if not user:
                     return {"success": False, "error": "Invalid email or password"}
 
-                # Verify password
-                if not check_password_hash(user[2], password):
+                # Verify password (user[2] is password_hash)
+                # Allow login if user has a password_hash set (even if registered via OAuth)
+                if not user[2] or not check_password_hash(user[2], password):
                     return {"success": False, "error": "Invalid email or password"}
 
                 # Update last login in same transaction
