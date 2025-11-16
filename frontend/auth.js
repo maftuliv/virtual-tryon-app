@@ -403,6 +403,29 @@ class AuthManager {
     }
 
     // ============================================================
+    // Helper Methods
+    // ============================================================
+
+    /**
+     * Get correct Russian plural form for a number
+     * @param {number} n - The number
+     * @param {string} one - Form for 1 (примерка)
+     * @param {string} few - Form for 2-4 (примерки)
+     * @param {string} many - Form for 5+ (примерок)
+     * @returns {string} The correct plural form
+     */
+    getPluralForm(n, one, few, many) {
+        const abs = Math.abs(n);
+        if (abs % 10 === 1 && abs % 100 !== 11) {
+            return one;
+        }
+        if (abs % 10 >= 2 && abs % 10 <= 4 && (abs % 100 < 10 || abs % 100 >= 20)) {
+            return few;
+        }
+        return many;
+    }
+
+    // ============================================================
     // Google OAuth
     // ============================================================
 
