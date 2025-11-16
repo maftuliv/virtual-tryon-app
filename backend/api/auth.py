@@ -35,15 +35,41 @@ def create_auth_blueprint(
         Configured Blueprint
     """
 
+    def _extract_admin_user(user: dict) -> Optional[dict]:
+        """
+        Normalize user payload from AuthService/AuthManager.
+
+        Depending on the layer, `user` can be either:
+        - flat dict with fields: id, email, role, token, ...
+        - wrapped dict: { success, user: {...}, token }
+        """
+        if not isinstance(user, dict):
+            return None
+
+        # Flat format
+        if user.get("role") == "admin":
+            return user
+
+        # Wrapped format from AuthManager.register_user/login_user
+        inner = user.get("user")
+        if isinstance(inner, dict) and inner.get("role") == "admin":
+            return inner
+
+        return None
+
     def _activate_admin_session(response, user):
+        """Create admin session for admin users after login/registration."""
         if not admin_session_service or not admin_session_service.is_available():
             return
 
-        if not user or user.get("role") != "admin":
+        admin_user = _extract_admin_user(user)
+        if not admin_user:
+            # Not an admin (or malformed payload) → no admin session
+            logger.info("[ADMIN-SESSION] Skipping admin session: user is not admin or payload invalid")
             return
 
         session_id = admin_session_service.create_session(
-            user_id=user["id"],
+            user_id=admin_user["id"],
             ip_address=request.remote_addr,
             user_agent=request.headers.get("User-Agent"),
         )

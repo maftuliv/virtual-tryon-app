@@ -152,7 +152,7 @@ class AuthManager:
                 """
                 INSERT INTO users (email, password_hash, full_name, provider, created_at, last_login)
                 VALUES (%s, %s, %s, %s, NOW(), NOW())
-                RETURNING id, email, full_name, is_premium, created_at
+                RETURNING id, email, full_name, is_premium, created_at, role
             """,
                 (email, password_hash, full_name, provider),
             )
@@ -168,6 +168,7 @@ class AuthManager:
                     "full_name": user[2],
                     "is_premium": user[3],
                     "created_at": user[4].isoformat() if user[4] else None,
+                    "role": user[5] if len(user) > 5 else "user",
                 }
 
                 # Generate token
@@ -200,7 +201,7 @@ class AuthManager:
             cursor = self.db.cursor()
             cursor.execute(
                 """
-                SELECT id, email, password_hash, full_name, avatar_url, is_premium, premium_until
+                SELECT id, email, password_hash, full_name, avatar_url, is_premium, premium_until, role
                 FROM users
                 WHERE email = %s AND provider = 'email'
             """,
@@ -233,6 +234,7 @@ class AuthManager:
                 "avatar_url": user[4],
                 "is_premium": user[5],
                 "premium_until": user[6].isoformat() if user[6] else None,
+                "role": user[7] if len(user) > 7 else "user",
             }
 
             # Generate token
@@ -254,6 +256,9 @@ class AuthManager:
     ) -> Dict[str, Any]:
         """
         Find existing OAuth user or create new one.
+        
+        Uses a separate transaction with proper error handling to prevent
+        "current transaction is aborted" errors.
 
         Args:
             email: User email address
@@ -265,6 +270,7 @@ class AuthManager:
         Returns:
             Dict containing success status, user data, and token
         """
+        cursor = None
         try:
             email = email.lower().strip()
 
@@ -273,7 +279,7 @@ class AuthManager:
             # Try to find existing user by email or provider_id
             cursor.execute(
                 """
-                SELECT id, email, full_name, avatar_url, is_premium, premium_until
+                SELECT id, email, full_name, avatar_url, is_premium, premium_until, role
                 FROM users
                 WHERE email = %s OR (provider = %s AND provider_id = %s)
             """,
@@ -301,6 +307,7 @@ class AuthManager:
                     "avatar_url": avatar_url or user[3],
                     "is_premium": user[4],
                     "premium_until": user[5].isoformat() if user[5] else None,
+                    "role": user[6] if len(user) > 6 else "user",
                 }
             else:
                 # Create new OAuth user
@@ -323,6 +330,7 @@ class AuthManager:
                     "avatar_url": new_user[3],
                     "is_premium": new_user[4],
                     "premium_until": None,
+                    "role": "user",
                 }
 
             # Generate token
@@ -331,12 +339,21 @@ class AuthManager:
             return {"success": True, "user": user_data, "token": token}
 
         except Exception as e:
-            self.db.rollback()
-            print(f"OAuth user creation error: {e}")
+            # Always rollback on error to prevent "current transaction is aborted"
+            if cursor:
+                try:
+                    self.db.rollback()
+                except Exception as rollback_error:
+                    print(f"[AUTH] Error during rollback: {rollback_error}")
+            print(f"[AUTH] OAuth user creation error: {e}")
             return {"success": False, "error": str(e)}
         finally:
+            # Always close cursor to prevent resource leaks
             if cursor:
-                cursor.close()
+                try:
+                    cursor.close()
+                except Exception as close_error:
+                    print(f"[AUTH] Error closing cursor: {close_error}")
 
     # ============================================================
     # User Information
