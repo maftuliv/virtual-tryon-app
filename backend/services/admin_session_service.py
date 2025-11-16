@@ -9,6 +9,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Dict, Optional
 
 from backend.logger import get_logger
+from backend.utils.db_helpers import db_transaction
 
 logger = get_logger(__name__)
 
@@ -35,121 +36,82 @@ class AdminSessionService:
         session_id = secrets.token_urlsafe(48)
         expires_at = self._utcnow() + self.session_duration
 
-        cursor = None
         try:
-            cursor = self.db.cursor()
-            cursor.execute(
-                """
-                INSERT INTO admin_sessions (session_id, user_id, ip_address, user_agent, expires_at)
-                VALUES (%s, %s, %s, %s, %s)
-                """,
-                (session_id, user_id, ip_address, user_agent, expires_at),
-            )
-            self.db.commit()
+            with db_transaction(self.db) as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO admin_sessions (session_id, user_id, ip_address, user_agent, expires_at)
+                    VALUES (%s, %s, %s, %s, %s)
+                    """,
+                    (session_id, user_id, ip_address, user_agent, expires_at),
+                )
             logger.info("[ADMIN-SESSION] Created session for user_id=%s", user_id)
             return session_id
         except Exception as e:
-            # Always rollback on error
-            if cursor:
-                try:
-                    self.db.rollback()
-                except Exception as rollback_error:
-                    logger.error(f"[ADMIN-SESSION] Error during rollback in create_session: {rollback_error}")
             logger.error(f"[ADMIN-SESSION] Failed to create session: {e}", exc_info=True)
             return None
-        finally:
-            # Always close cursor
-            if cursor:
-                try:
-                    cursor.close()
-                except Exception as close_error:
-                    logger.error(f"[ADMIN-SESSION] Error closing cursor in create_session: {close_error}")
 
     def delete_session(self, session_id: str) -> None:
+        """Delete admin session by session_id."""
         if not self.is_available() or not session_id:
             return
 
-        cursor = None
         try:
-            # Ensure we start with a clean transaction state
-            self.db.rollback()
-            cursor = self.db.cursor()
-            cursor.execute("DELETE FROM admin_sessions WHERE session_id = %s", (session_id,))
-            self.db.commit()
+            with db_transaction(self.db) as cursor:
+                cursor.execute("DELETE FROM admin_sessions WHERE session_id = %s", (session_id,))
             logger.info("[ADMIN-SESSION] Deleted session %s", session_id[:8])
         except Exception as e:
-            # Always rollback on error
-            if cursor:
-                try:
-                    self.db.rollback()
-                except Exception as rollback_error:
-                    logger.error(f"[ADMIN-SESSION] Error during rollback in delete_session: {rollback_error}")
             logger.error(f"[ADMIN-SESSION] Failed to delete session: {e}", exc_info=True)
-        finally:
-            # Always close cursor
-            if cursor:
-                try:
-                    cursor.close()
-                except Exception as close_error:
-                    logger.error(f"[ADMIN-SESSION] Error closing cursor in delete_session: {close_error}")
 
     def delete_user_sessions(self, user_id: int) -> None:
+        """Delete all admin sessions for a user."""
         if not self.is_available():
             return
 
-        cursor = self.db.cursor()
         try:
-            cursor.execute("DELETE FROM admin_sessions WHERE user_id = %s", (user_id,))
-            self.db.commit()
+            with db_transaction(self.db) as cursor:
+                cursor.execute("DELETE FROM admin_sessions WHERE user_id = %s", (user_id,))
             logger.info("[ADMIN-SESSION] Deleted sessions for user_id=%s", user_id)
         except Exception as e:
-            self.db.rollback()
             logger.error(f"[ADMIN-SESSION] Failed to delete user sessions: {e}", exc_info=True)
-        finally:
-            cursor.close()
 
     def get_session_user(self, session_id: str) -> Optional[Dict]:
-        """Return admin user linked to session if valid (not expired)."""
+        """
+        Return admin user linked to session if valid (not expired).
+        
+        Uses safe transaction management to prevent "current transaction is aborted" errors.
+        """
         if not self.is_available() or not session_id:
             return None
 
-        cursor = None
         try:
-            # Ensure we start with a clean transaction state
-            try:
-                self.db.rollback()
-            except Exception:
-                pass  # Ignore rollback errors if transaction is already clean
-            
-            cursor = self.db.cursor()
-            cursor.execute(
-                """
-                SELECT s.user_id,
-                       s.expires_at,
-                       u.email,
-                       u.full_name,
-                       u.role,
-                       u.is_premium,
-                       u.avatar_url
-                FROM admin_sessions s
-                JOIN users u ON u.id = s.user_id
-                WHERE s.session_id = %s
-                """,
-                (session_id,),
-            )
-            row = cursor.fetchone()
-            if not row:
-                cursor.close()
-                return None
+            # Use transaction context manager for safe query execution
+            with db_transaction(self.db) as cursor:
+                cursor.execute(
+                    """
+                    SELECT s.user_id,
+                           s.expires_at,
+                           u.email,
+                           u.full_name,
+                           u.role,
+                           u.is_premium,
+                           u.avatar_url
+                    FROM admin_sessions s
+                    JOIN users u ON u.id = s.user_id
+                    WHERE s.session_id = %s
+                    """,
+                    (session_id,),
+                )
+                row = cursor.fetchone()
+                if not row:
+                    return None
 
-            user_id, expires_at, email, full_name, role, is_premium, avatar_url = row
+                user_id, expires_at, email, full_name, role, is_premium, avatar_url = row
 
-            # Close cursor before any other operations
-            cursor.close()
-
+            # Check expiration outside transaction to avoid conflicts
             if expires_at <= self._utcnow():
                 logger.info("[ADMIN-SESSION] Session expired for user_id=%s", user_id)
-                # Delete expired session in separate transaction (after cursor is closed)
+                # Delete expired session in separate transaction
                 try:
                     self.delete_session(session_id)
                 except Exception as delete_error:
@@ -169,36 +131,20 @@ class AdminSessionService:
                 "avatar_url": avatar_url,
             }
         except Exception as e:
-            # Always rollback on error to prevent "current transaction is aborted"
-            if cursor:
-                try:
-                    self.db.rollback()
-                except Exception as rollback_error:
-                    logger.error(f"[ADMIN-SESSION] Error during rollback: {rollback_error}")
             logger.error(f"[ADMIN-SESSION] Failed to validate session: {e}", exc_info=True)
             return None
-        finally:
-            # Always close cursor to prevent resource leaks
-            if cursor:
-                try:
-                    cursor.close()
-                except Exception as close_error:
-                    logger.error(f"[ADMIN-SESSION] Error closing cursor: {close_error}")
 
     def cleanup_expired(self) -> None:
+        """Clean up expired admin sessions."""
         if not self.is_available():
             return
 
-        cursor = self.db.cursor()
         try:
-            cursor.execute("DELETE FROM admin_sessions WHERE expires_at <= NOW()")
-            deleted = cursor.rowcount
-            self.db.commit()
+            with db_transaction(self.db) as cursor:
+                cursor.execute("DELETE FROM admin_sessions WHERE expires_at <= NOW()")
+                deleted = cursor.rowcount
             if deleted:
                 logger.info("[ADMIN-SESSION] Cleaned up %s expired sessions", deleted)
         except Exception as e:
-            self.db.rollback()
             logger.error(f"[ADMIN-SESSION] Failed to cleanup sessions: {e}", exc_info=True)
-        finally:
-            cursor.close()
 

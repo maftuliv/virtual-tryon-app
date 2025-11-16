@@ -14,6 +14,8 @@ import jwt
 from flask import Response, jsonify, request
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from backend.utils.db_helpers import db_transaction
+
 
 def _load_jwt_secret() -> str:
     """
@@ -122,6 +124,8 @@ class AuthManager:
     def register_user(self, email: str, password: str, full_name: str, provider: str = "email") -> Dict[str, Any]:
         """
         Register new user with email and password.
+        
+        Uses safe transaction management to prevent "current transaction is aborted" errors.
 
         Args:
             email: User email address
@@ -138,28 +142,26 @@ class AuthManager:
             if "@" not in email or "." not in email.split("@")[1]:
                 return {"success": False, "error": "Invalid email format"}
 
-            # Check if user already exists
-            cursor = self.db.cursor()
-            cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
-            if cursor.fetchone():
-                return {"success": False, "error": "User with this email already exists"}
+            # Check if user already exists and insert in same transaction
+            with db_transaction(self.db) as cursor:
+                cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
+                if cursor.fetchone():
+                    return {"success": False, "error": "User with this email already exists"}
 
-            # Hash password
-            password_hash = generate_password_hash(password, method="pbkdf2:sha256")
+                # Hash password
+                password_hash = generate_password_hash(password, method="pbkdf2:sha256")
 
-            # Insert user
-            cursor.execute(
-                """
-                INSERT INTO users (email, password_hash, full_name, provider, created_at, last_login)
-                VALUES (%s, %s, %s, %s, NOW(), NOW())
-                RETURNING id, email, full_name, is_premium, created_at, role
-            """,
-                (email, password_hash, full_name, provider),
-            )
-
-            user = cursor.fetchone()
-            self.db.commit()
-            cursor.close()
+                # Insert user
+                cursor.execute(
+                    """
+                    INSERT INTO users (email, password_hash, full_name, provider, created_at, last_login)
+                    VALUES (%s, %s, %s, %s, NOW(), NOW())
+                    RETURNING id, email, full_name, is_premium, created_at, role
+                """,
+                    (email, password_hash, full_name, provider),
+                )
+                user = cursor.fetchone()
+                # Transaction commits automatically on context exit
 
             if user:
                 user_data = {
@@ -171,7 +173,7 @@ class AuthManager:
                     "role": user[5] if len(user) > 5 else "user",
                 }
 
-                # Generate token
+                # Generate token outside transaction
                 token = self.generate_token(user_data["id"])
 
                 return {"success": True, "user": user_data, "token": token}
@@ -179,8 +181,7 @@ class AuthManager:
             return {"success": False, "error": "Failed to create user"}
 
         except Exception as e:
-            self.db.rollback()
-            print(f"Registration error: {e}")
+            print(f"[AUTH] Registration error: {e}")
             return {"success": False, "error": str(e)}
 
     def login_user(self, email: str, password: str) -> Dict[str, Any]:
@@ -257,8 +258,7 @@ class AuthManager:
         """
         Find existing OAuth user or create new one.
         
-        Uses a separate transaction with proper error handling to prevent
-        "current transaction is aborted" errors.
+        Uses safe transaction management to prevent "current transaction is aborted" errors.
 
         Args:
             email: User email address
@@ -270,90 +270,73 @@ class AuthManager:
         Returns:
             Dict containing success status, user data, and token
         """
-        cursor = None
         try:
             email = email.lower().strip()
 
-            cursor = self.db.cursor()
-
-            # Try to find existing user by email or provider_id
-            cursor.execute(
-                """
-                SELECT id, email, full_name, avatar_url, is_premium, premium_until, role
-                FROM users
-                WHERE email = %s OR (provider = %s AND provider_id = %s)
-            """,
-                (email, provider, provider_id),
-            )
-
-            user = cursor.fetchone()
-
-            if user:
-                # Update last login and OAuth info
+            with db_transaction(self.db) as cursor:
+                # Try to find existing user by email or provider_id
                 cursor.execute(
                     """
-                    UPDATE users
-                    SET last_login = NOW(), provider = %s, provider_id = %s, avatar_url = %s
-                    WHERE id = %s
+                    SELECT id, email, full_name, avatar_url, is_premium, premium_until, role
+                    FROM users
+                    WHERE email = %s OR (provider = %s AND provider_id = %s)
                 """,
-                    (provider, provider_id, avatar_url, user[0]),
+                    (email, provider, provider_id),
                 )
-                self.db.commit()
+                user = cursor.fetchone()
 
-                user_data = {
-                    "id": user[0],
-                    "email": user[1],
-                    "full_name": user[2],
-                    "avatar_url": avatar_url or user[3],
-                    "is_premium": user[4],
-                    "premium_until": user[5].isoformat() if user[5] else None,
-                    "role": user[6] if len(user) > 6 else "user",
-                }
-            else:
-                # Create new OAuth user
-                cursor.execute(
-                    """
-                    INSERT INTO users (email, full_name, avatar_url, provider, provider_id, created_at, last_login)
-                    VALUES (%s, %s, %s, %s, %s, NOW(), NOW())
-                    RETURNING id, email, full_name, avatar_url, is_premium
-                """,
-                    (email, full_name, avatar_url, provider, provider_id),
-                )
+                if user:
+                    # Update last login and OAuth info
+                    cursor.execute(
+                        """
+                        UPDATE users
+                        SET last_login = NOW(), provider = %s, provider_id = %s, avatar_url = %s
+                        WHERE id = %s
+                    """,
+                        (provider, provider_id, avatar_url, user[0]),
+                    )
+                    # Transaction commits automatically on context exit
 
-                new_user = cursor.fetchone()
-                self.db.commit()
+                    user_data = {
+                        "id": user[0],
+                        "email": user[1],
+                        "full_name": user[2],
+                        "avatar_url": avatar_url or user[3],
+                        "is_premium": user[4],
+                        "premium_until": user[5].isoformat() if user[5] else None,
+                        "role": user[6] if len(user) > 6 else "user",
+                    }
+                else:
+                    # Create new OAuth user
+                    cursor.execute(
+                        """
+                        INSERT INTO users (email, full_name, avatar_url, provider, provider_id, created_at, last_login)
+                        VALUES (%s, %s, %s, %s, %s, NOW(), NOW())
+                        RETURNING id, email, full_name, avatar_url, is_premium
+                    """,
+                        (email, full_name, avatar_url, provider, provider_id),
+                    )
+                    new_user = cursor.fetchone()
+                    # Transaction commits automatically on context exit
 
-                user_data = {
-                    "id": new_user[0],
-                    "email": new_user[1],
-                    "full_name": new_user[2],
-                    "avatar_url": new_user[3],
-                    "is_premium": new_user[4],
-                    "premium_until": None,
-                    "role": "user",
-                }
+                    user_data = {
+                        "id": new_user[0],
+                        "email": new_user[1],
+                        "full_name": new_user[2],
+                        "avatar_url": new_user[3],
+                        "is_premium": new_user[4],
+                        "premium_until": None,
+                        "role": "user",
+                    }
 
-            # Generate token
+            # Generate token outside transaction
             token = self.generate_token(user_data["id"])
 
             return {"success": True, "user": user_data, "token": token}
 
         except Exception as e:
-            # Always rollback on error to prevent "current transaction is aborted"
-            if cursor:
-                try:
-                    self.db.rollback()
-                except Exception as rollback_error:
-                    print(f"[AUTH] Error during rollback: {rollback_error}")
             print(f"[AUTH] OAuth user creation error: {e}")
             return {"success": False, "error": str(e)}
-        finally:
-            # Always close cursor to prevent resource leaks
-            if cursor:
-                try:
-                    cursor.close()
-                except Exception as close_error:
-                    print(f"[AUTH] Error closing cursor: {close_error}")
 
     # ============================================================
     # User Information
@@ -362,6 +345,8 @@ class AuthManager:
     def get_user_by_id(self, user_id: int) -> Optional[Dict[str, Any]]:
         """
         Get user information by ID.
+        
+        Uses safe transaction management to prevent "current transaction is aborted" errors.
 
         Args:
             user_id: User ID to retrieve
@@ -370,18 +355,16 @@ class AuthManager:
             Optional[Dict]: User data if found, None otherwise
         """
         try:
-            cursor = self.db.cursor()
-            cursor.execute(
-                """
-                SELECT id, email, full_name, avatar_url, provider, is_premium, premium_until, created_at, role
-                FROM users
-                WHERE id = %s
-            """,
-                (user_id,),
-            )
-
-            user = cursor.fetchone()
-            cursor.close()
+            with db_transaction(self.db) as cursor:
+                cursor.execute(
+                    """
+                    SELECT id, email, full_name, avatar_url, provider, is_premium, premium_until, created_at, role
+                    FROM users
+                    WHERE id = %s
+                """,
+                    (user_id,),
+                )
+                user = cursor.fetchone()
 
             if user:
                 return {
@@ -399,7 +382,7 @@ class AuthManager:
             return None
 
         except Exception as e:
-            print(f"Get user error: {e}")
+            print(f"[AUTH] Get user error: {e}")
             return None
 
     # ============================================================
@@ -409,6 +392,8 @@ class AuthManager:
     def check_daily_limit(self, user_id: int) -> Tuple[bool, int, int]:
         """
         Check if user can generate (returns can_generate, used, limit).
+        
+        Uses safe transaction management to prevent "current transaction is aborted" errors.
 
         Args:
             user_id: User ID to check limits for
@@ -420,33 +405,29 @@ class AuthManager:
                 - generation_limit: Daily limit (-1 for unlimited/premium)
         """
         try:
-            cursor = self.db.cursor()
+            limit_record = None
+            with db_transaction(self.db) as cursor:
+                # Check if user is premium
+                cursor.execute("SELECT is_premium FROM users WHERE id = %s", (user_id,))
+                user = cursor.fetchone()
 
-            # Check if user is premium
-            cursor.execute("SELECT is_premium FROM users WHERE id = %s", (user_id,))
-            user = cursor.fetchone()
+                if not user:
+                    return False, 0, FREE_DAILY_LIMIT
 
-            if not user:
-                cursor.close()
-                return False, 0, FREE_DAILY_LIMIT
+                # Premium users have unlimited generations
+                if user[0]:
+                    return True, -1, -1  # -1 means unlimited
 
-            # Premium users have unlimited generations
-            if user[0]:
-                cursor.close()
-                return True, -1, -1  # -1 means unlimited
-
-            # Check today's usage
-            today = datetime.now().date()
-            cursor.execute(
-                """
-                SELECT generations_count FROM daily_limits
-                WHERE user_id = %s AND date = %s
-            """,
-                (user_id, today),
-            )
-
-            limit_record = cursor.fetchone()
-            cursor.close()
+                # Check today's usage
+                today = datetime.now().date()
+                cursor.execute(
+                    """
+                    SELECT generations_count FROM daily_limits
+                    WHERE user_id = %s AND date = %s
+                """,
+                    (user_id, today),
+                )
+                limit_record = cursor.fetchone()
 
             if not limit_record:
                 # No generations yet today - return 0 used
@@ -460,12 +441,14 @@ class AuthManager:
             return True, used, FREE_DAILY_LIMIT
 
         except Exception as e:
-            print(f"Check limit error: {e}")
+            print(f"[AUTH] Check limit error: {e}")
             return False, 0, FREE_DAILY_LIMIT
 
     def increment_daily_limit(self, user_id: int) -> bool:
         """
         Increment user's daily generation count.
+        
+        Uses safe transaction management to prevent "current transaction is aborted" errors.
 
         Args:
             user_id: User ID to increment counter for
@@ -475,33 +458,31 @@ class AuthManager:
         """
         try:
             today = datetime.now().date()
-            cursor = self.db.cursor()
-
-            # Insert or update daily limit
-            cursor.execute(
-                """
-                INSERT INTO daily_limits (user_id, date, generations_count)
-                VALUES (%s, %s, 1)
-                ON CONFLICT (user_id, date)
-                DO UPDATE SET
-                    generations_count = daily_limits.generations_count + 1,
-                    updated_at = NOW()
-            """,
-                (user_id, today),
-            )
-
-            self.db.commit()
-            cursor.close()
+            with db_transaction(self.db) as cursor:
+                # Insert or update daily limit
+                cursor.execute(
+                    """
+                    INSERT INTO daily_limits (user_id, date, generations_count)
+                    VALUES (%s, %s, 1)
+                    ON CONFLICT (user_id, date)
+                    DO UPDATE SET
+                        generations_count = daily_limits.generations_count + 1,
+                        updated_at = NOW()
+                """,
+                    (user_id, today),
+                )
+                # Transaction commits automatically on context exit
             return True
 
         except Exception as e:
-            self.db.rollback()
-            print(f"Increment limit error: {e}")
+            print(f"[AUTH] Increment limit error: {e}")
             return False
 
     def set_premium(self, user_id: int, days: int = 30) -> bool:
         """
         Set user as premium for specified days.
+        
+        Uses safe transaction management to prevent "current transaction is aborted" errors.
 
         Args:
             user_id: User ID to grant premium to
@@ -512,24 +493,20 @@ class AuthManager:
         """
         try:
             premium_until = datetime.now() + timedelta(days=days)
-
-            cursor = self.db.cursor()
-            cursor.execute(
-                """
-                UPDATE users
-                SET is_premium = TRUE, premium_until = %s
-                WHERE id = %s
-            """,
-                (premium_until, user_id),
-            )
-
-            self.db.commit()
-            cursor.close()
+            with db_transaction(self.db) as cursor:
+                cursor.execute(
+                    """
+                    UPDATE users
+                    SET is_premium = TRUE, premium_until = %s
+                    WHERE id = %s
+                """,
+                    (premium_until, user_id),
+                )
+                # Transaction commits automatically on context exit
             return True
 
         except Exception as e:
-            self.db.rollback()
-            print(f"Set premium error: {e}")
+            print(f"[AUTH] Set premium error: {e}")
             return False
 
     # ============================================================
@@ -547,6 +524,8 @@ class AuthManager:
     ) -> Optional[int]:
         """
         Save generation to history.
+        
+        Uses safe transaction management to prevent "current transaction is aborted" errors.
 
         Args:
             user_id: User ID who created the generation
@@ -560,30 +539,29 @@ class AuthManager:
             Optional[int]: Generation ID if successful, None on error
         """
         try:
-            cursor = self.db.cursor()
-            cursor.execute(
-                """
-                INSERT INTO generations (user_id, session_id, person_image_url, garment_image_url, result_image_url, category, status, created_at)
-                VALUES (%s, %s, %s, %s, %s, %s, 'completed', NOW())
-                RETURNING id
-            """,
-                (user_id, session_id, person_image_url, garment_image_url, result_image_url, category),
-            )
-
-            generation_id = cursor.fetchone()[0]
-            self.db.commit()
-            cursor.close()
+            with db_transaction(self.db) as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO generations (user_id, session_id, person_image_url, garment_image_url, result_image_url, category, status, created_at)
+                    VALUES (%s, %s, %s, %s, %s, %s, 'completed', NOW())
+                    RETURNING id
+                """,
+                    (user_id, session_id, person_image_url, garment_image_url, result_image_url, category),
+                )
+                generation_id = cursor.fetchone()[0]
+                # Transaction commits automatically on context exit
 
             return generation_id
 
         except Exception as e:
-            self.db.rollback()
-            print(f"Save generation error: {e}")
+            print(f"[AUTH] Save generation error: {e}")
             return None
 
     def get_user_generations(self, user_id: int, limit: int = 50, offset: int = 0) -> List[Dict[str, Any]]:
         """
         Get user's generation history.
+        
+        Uses safe transaction management to prevent "current transaction is aborted" errors.
 
         Args:
             user_id: User ID to retrieve generations for
@@ -594,20 +572,18 @@ class AuthManager:
             List[Dict]: List of generation records
         """
         try:
-            cursor = self.db.cursor()
-            cursor.execute(
-                """
-                SELECT id, person_image_url, garment_image_url, result_image_url, category, created_at
-                FROM generations
-                WHERE user_id = %s
-                ORDER BY created_at DESC
-                LIMIT %s OFFSET %s
-            """,
-                (user_id, limit, offset),
-            )
-
-            generations = cursor.fetchall()
-            cursor.close()
+            with db_transaction(self.db) as cursor:
+                cursor.execute(
+                    """
+                    SELECT id, person_image_url, garment_image_url, result_image_url, category, created_at
+                    FROM generations
+                    WHERE user_id = %s
+                    ORDER BY created_at DESC
+                    LIMIT %s OFFSET %s
+                """,
+                    (user_id, limit, offset),
+                )
+                generations = cursor.fetchall()
 
             return [
                 {
@@ -622,7 +598,7 @@ class AuthManager:
             ]
 
         except Exception as e:
-            print(f"Get generations error: {e}")
+            print(f"[AUTH] Get generations error: {e}")
             return []
 
 
@@ -776,21 +752,18 @@ def decode_token(token: str, require_admin: bool = False) -> Optional[Dict[str, 
             print("[AUTH] Database not available for token validation")
             return None
 
-        # Fetch user from database
-        cursor = None
+        # Fetch user from database using safe transaction management
         try:
-            cursor = db.cursor()
-            cursor.execute(
-                """
-                SELECT id, email, full_name, role, is_premium, avatar_url, provider
-                FROM users
-                WHERE id = %s
-                """,
-                (user_id,),
-            )
-
-            user_row = cursor.fetchone()
-            cursor.close()
+            with db_transaction(db) as cursor:
+                cursor.execute(
+                    """
+                    SELECT id, email, full_name, role, is_premium, avatar_url, provider
+                    FROM users
+                    WHERE id = %s
+                    """,
+                    (user_id,),
+                )
+                user_row = cursor.fetchone()
 
             if not user_row:
                 return None
@@ -812,21 +785,8 @@ def decode_token(token: str, require_admin: bool = False) -> Optional[Dict[str, 
             return user
 
         except Exception as e:
-            # Always rollback on error to prevent "current transaction is aborted"
-            if cursor:
-                try:
-                    db.rollback()
-                except Exception as rollback_error:
-                    print(f"[AUTH] Error during rollback: {rollback_error}")
             print(f"[AUTH] Error fetching user during token decode: {e}")
             return None
-        finally:
-            # Always close cursor to prevent resource leaks
-            if cursor:
-                try:
-                    cursor.close()
-                except Exception as close_error:
-                    print(f"[AUTH] Error closing cursor: {close_error}")
 
     except jwt.ExpiredSignatureError:
         return None
