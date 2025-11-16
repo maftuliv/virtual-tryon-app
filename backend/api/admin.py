@@ -1,21 +1,17 @@
 """
-Admin API endpoints.
-
-All endpoints require admin role (enforced by require_admin decorator).
-
-Security:
-- RBAC via require_admin decorator
-- Input validation via Pydantic
-- Audit logging for all mutations
-- Rate limiting on destructive operations
+Admin API endpoints protected by server-side admin sessions.
 """
 
-from flask import Blueprint, jsonify, request
+from functools import wraps
+from typing import Optional
+
+from flask import Blueprint, jsonify, make_response, request
 from pydantic import BaseModel, Field, ValidationError, field_validator
 
-from backend.auth import require_admin
+from backend.auth import ADMIN_SESSION_COOKIE, clear_admin_session_cookie
 from backend.logger import get_logger
 from backend.services.admin_service import AdminService
+from backend.services.admin_session_service import AdminSessionService
 
 logger = get_logger(__name__)
 
@@ -51,7 +47,9 @@ class TogglePremiumRequest(BaseModel):
 # ============================================================
 
 
-def create_admin_blueprint(admin_service: AdminService) -> Blueprint:
+def create_admin_blueprint(
+    admin_service: AdminService, admin_session_service: Optional[AdminSessionService] = None
+) -> Blueprint:
     """
     Create admin API blueprint.
 
@@ -63,8 +61,28 @@ def create_admin_blueprint(admin_service: AdminService) -> Blueprint:
     """
     admin_bp = Blueprint("admin", __name__)
 
+    def require_session(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            if not admin_session_service or not admin_session_service.is_available():
+                return jsonify({"error": "Admin session service unavailable"}), 503
+
+            session_id = request.cookies.get(ADMIN_SESSION_COOKIE)
+            if not session_id:
+                return jsonify({"error": "Admin session required"}), 401
+
+            admin_user = admin_session_service.get_session_user(session_id)
+            if not admin_user:
+                response = make_response(jsonify({"error": "Admin session expired"}), 401)
+                clear_admin_session_cookie(response)
+                return response
+
+            return f(admin_user, *args, **kwargs)
+
+        return wrapper
+
     @admin_bp.route("/api/admin/summary", methods=["GET"])
-    @require_admin
+    @require_session
     def get_summary(current_user):
         """
         Get dashboard summary statistics.
@@ -97,7 +115,7 @@ def create_admin_blueprint(admin_service: AdminService) -> Blueprint:
             return jsonify({"error": str(e)}), 500
 
     @admin_bp.route("/api/admin/users", methods=["GET"])
-    @require_admin
+    @require_session
     def get_users(current_user):
         """
         Get paginated list of users.
@@ -152,7 +170,7 @@ def create_admin_blueprint(admin_service: AdminService) -> Blueprint:
             return jsonify({"error": str(e)}), 500
 
     @admin_bp.route("/api/admin/users/<int:user_id>/role", methods=["PATCH"])
-    @require_admin
+    @require_session
     def change_user_role(current_user, user_id):
         """
         Change user role.
@@ -212,7 +230,7 @@ def create_admin_blueprint(admin_service: AdminService) -> Blueprint:
             return jsonify({"error": str(e)}), 500
 
     @admin_bp.route("/api/admin/users/<int:user_id>/premium", methods=["PATCH"])
-    @require_admin
+    @require_session
     def toggle_premium(current_user, user_id):
         """
         Toggle premium status for user.
@@ -275,7 +293,7 @@ def create_admin_blueprint(admin_service: AdminService) -> Blueprint:
             return jsonify({"error": str(e)}), 500
 
     @admin_bp.route("/api/admin/users/<int:user_id>/reset-limit", methods=["POST"])
-    @require_admin
+    @require_session
     def reset_user_limit(current_user, user_id):
         """
         Reset daily generation limit for user.
@@ -320,7 +338,7 @@ def create_admin_blueprint(admin_service: AdminService) -> Blueprint:
             return jsonify({"error": str(e)}), 500
 
     @admin_bp.route("/api/admin/feedback", methods=["GET"])
-    @require_admin
+    @require_session
     def get_feedback(current_user):
         """
         Get feedback/support requests.
@@ -362,7 +380,7 @@ def create_admin_blueprint(admin_service: AdminService) -> Blueprint:
             return jsonify({"error": str(e)}), 500
 
     @admin_bp.route("/api/admin/audit", methods=["GET"])
-    @require_admin
+    @require_session
     def get_audit_logs(current_user):
         """
         Get recent audit logs.

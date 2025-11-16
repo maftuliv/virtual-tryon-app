@@ -54,6 +54,21 @@ class AuthManager {
         return fetch(url, config);
     }
 
+    async getAdminSessionUser() {
+        try {
+            const response = await this.fetchWithAuth('/api/auth/admin/session');
+            if (!response.ok) {
+                return null;
+            }
+
+            const data = await response.json();
+            return data.user || null;
+        } catch (error) {
+            console.error('[ADMIN] Failed to fetch admin session info:', error);
+            return null;
+        }
+    }
+
     // ============================================================
     // Authentication Methods
     // ============================================================

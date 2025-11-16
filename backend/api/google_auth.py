@@ -4,14 +4,17 @@ from urllib.parse import urlencode
 
 from flask import Blueprint, jsonify, make_response, redirect, request, session
 
-from backend.auth import set_auth_cookie
+from backend.auth import set_admin_session_cookie, set_auth_cookie
 from backend.logger import get_logger
+from backend.services.admin_session_service import AdminSessionService
 from backend.services.google_auth_service import GoogleAuthService
 
 logger = get_logger(__name__)
 
 
-def create_google_auth_blueprint(google_auth_service: GoogleAuthService) -> Blueprint:
+def create_google_auth_blueprint(
+    google_auth_service: GoogleAuthService, admin_session_service: AdminSessionService = None
+) -> Blueprint:
     """
     Create blueprint for Google OAuth endpoints.
 
@@ -167,6 +170,15 @@ def create_google_auth_blueprint(google_auth_service: GoogleAuthService) -> Blue
             response = make_response(redirect(f"/#{fragment}"))
             set_auth_cookie(response, token)
             logger.info(f"[GOOGLE-AUTH-API] Cookie set for {user.get('email')}")
+
+            if admin_session_service and admin_session_service.is_available() and user.get("role") == "admin":
+                session_id = admin_session_service.create_session(
+                    user_id=user["id"],
+                    ip_address=request.remote_addr,
+                    user_agent=request.headers.get("User-Agent"),
+                )
+                if session_id:
+                    set_admin_session_cookie(response, session_id)
 
             return response
 

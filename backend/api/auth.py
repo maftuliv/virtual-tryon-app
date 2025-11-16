@@ -1,9 +1,19 @@
 """Authentication API endpoints."""
 
+from typing import Optional
+
 from flask import Blueprint, jsonify, make_response, request
 
-from backend.auth import clear_auth_cookie, get_token_from_request, set_auth_cookie
+from backend.auth import (
+    ADMIN_SESSION_COOKIE,
+    clear_admin_session_cookie,
+    clear_auth_cookie,
+    get_token_from_request,
+    set_admin_session_cookie,
+    set_auth_cookie,
+)
 from backend.logger import get_logger
+from backend.services.admin_session_service import AdminSessionService
 from backend.services.auth_service import AuthService
 
 logger = get_logger(__name__)
@@ -12,7 +22,9 @@ logger = get_logger(__name__)
 auth_bp = Blueprint("auth", __name__)
 
 
-def create_auth_blueprint(auth_service: AuthService) -> Blueprint:
+def create_auth_blueprint(
+    auth_service: AuthService, admin_session_service: Optional[AdminSessionService] = None
+) -> Blueprint:
     """
     Factory function to create auth blueprint with injected dependencies.
 
@@ -22,6 +34,29 @@ def create_auth_blueprint(auth_service: AuthService) -> Blueprint:
     Returns:
         Configured Blueprint
     """
+
+    def _activate_admin_session(response, user):
+        if not admin_session_service or not admin_session_service.is_available():
+            return
+
+        if not user or user.get("role") != "admin":
+            return
+
+        session_id = admin_session_service.create_session(
+            user_id=user["id"],
+            ip_address=request.remote_addr,
+            user_agent=request.headers.get("User-Agent"),
+        )
+        if session_id:
+            set_admin_session_cookie(response, session_id)
+
+    def _clear_admin_session(response):
+        if not admin_session_service or not admin_session_service.is_available():
+            return
+        session_id = request.cookies.get(ADMIN_SESSION_COOKIE)
+        if session_id:
+            admin_session_service.delete_session(session_id)
+        clear_admin_session_cookie(response)
 
     @auth_bp.route("/api/auth/register", methods=["POST"])
     def register():
@@ -76,6 +111,7 @@ def create_auth_blueprint(auth_service: AuthService) -> Blueprint:
                 201
             )
             set_auth_cookie(response, user["token"])
+            _activate_admin_session(response, user)
             logger.info(f"[AUTH] Registration successful, cookie set for {email}")
 
             return response
@@ -148,6 +184,7 @@ def create_auth_blueprint(auth_service: AuthService) -> Blueprint:
                 200
             )
             set_auth_cookie(response, user["token"])
+            _activate_admin_session(response, user)
             logger.info(f"[AUTH] Login successful, cookie set for {email}")
 
             return response
@@ -248,6 +285,23 @@ def create_auth_blueprint(auth_service: AuthService) -> Blueprint:
             logger.error(f"Check limit failed: {e}", exc_info=True)
             return jsonify({"error": str(e)}), 500
 
+    @auth_bp.route("/api/auth/admin/session", methods=["GET"])
+    def admin_session_status():
+        if not admin_session_service or not admin_session_service.is_available():
+            return jsonify({"error": "Admin sessions unavailable"}), 503
+
+        session_id = request.cookies.get(ADMIN_SESSION_COOKIE)
+        if not session_id:
+            return jsonify({"error": "Admin session not found"}), 401
+
+        admin_user = admin_session_service.get_session_user(session_id)
+        if not admin_user:
+            response = make_response(jsonify({"error": "Admin session expired"}), 401)
+            clear_admin_session_cookie(response)
+            return response
+
+        return jsonify({"user": admin_user}), 200
+
     @auth_bp.route("/api/auth/logout", methods=["POST"])
     def logout():
         """
@@ -268,6 +322,7 @@ def create_auth_blueprint(auth_service: AuthService) -> Blueprint:
                 200
             )
             clear_auth_cookie(response)
+            _clear_admin_session(response)
             logger.info("[AUTH] User logged out, cookie cleared")
 
             return response

@@ -371,6 +371,12 @@ class GoogleAuthService:
         # Step 3: Find or create user in database
         result = self.find_or_create_user(user_info)
 
-        self.logger.info("[GOOGLE-AUTH] OAuth callback completed successfully")
+        if result.get("success"):
+            self.logger.info("[GOOGLE-AUTH] OAuth callback completed successfully")
+        else:
+            self.logger.error(
+                "[GOOGLE-AUTH] OAuth callback failed during user creation: %s",
+                result.get("error"),
+            )
 
         return result

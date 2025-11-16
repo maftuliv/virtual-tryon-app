@@ -32,6 +32,7 @@ from backend.repositories.device_limit_repository import DeviceLimitRepository
 from backend.repositories.feedback_repository import FeedbackRepository
 from backend.repositories.generation_repository import GenerationRepository
 from backend.services.admin_service import AdminService
+from backend.services.admin_session_service import AdminSessionService
 from backend.services.auth_service import AuthService
 from backend.services.device_fingerprint_service import DeviceFingerprintService
 from backend.services.feedback_service import FeedbackService
@@ -196,6 +197,15 @@ def create_app(config: Optional[Settings] = None) -> Flask:
 
     auth_service = AuthService(user_repository=user_repository) if user_repository else None
 
+    # Admin session service
+    admin_session_service = AdminSessionService(db_conn) if db_conn else None
+    if admin_session_service and admin_session_service.is_available():
+        logger.info("[OK] AdminSessionService initialized")
+    else:
+        logger.info("[SKIP] AdminSessionService not available (no database connection)")
+
+    app.config["ADMIN_SESSION_SERVICE"] = admin_session_service
+
     # Initialize Admin service
     admin_service = AdminService(
         user_repository=user_repository,
@@ -261,7 +271,7 @@ def create_app(config: Optional[Settings] = None) -> Flask:
 
     # Auth blueprint
     if auth_service:
-        auth_bp = create_auth_blueprint(auth_service)
+        auth_bp = create_auth_blueprint(auth_service, admin_session_service)
         app.register_blueprint(auth_bp)
         logger.info("  - Auth blueprint registered")
     else:
@@ -269,14 +279,14 @@ def create_app(config: Optional[Settings] = None) -> Flask:
 
     # Admin blueprint (requires admin role)
     if admin_service and admin_service.is_available():
-        admin_bp = create_admin_blueprint(admin_service)
+        admin_bp = create_admin_blueprint(admin_service, admin_session_service)
         app.register_blueprint(admin_bp)
         logger.info("  - Admin blueprint registered")
     else:
         logger.warning("  - Admin blueprint skipped (admin service not available)")
 
     # Google OAuth blueprint (always register to return proper 503 when disabled)
-    google_auth_bp = create_google_auth_blueprint(google_auth_service)
+    google_auth_bp = create_google_auth_blueprint(google_auth_service, admin_session_service)
     app.register_blueprint(google_auth_bp)
     if google_auth_service.is_enabled():
         logger.info("  - Google OAuth blueprint registered (OAuth enabled)")

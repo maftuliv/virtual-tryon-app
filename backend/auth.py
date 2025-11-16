@@ -38,6 +38,10 @@ JWT_SECRET_KEY = _load_jwt_secret()
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_DAYS = 7
 
+# Admin session configuration
+ADMIN_SESSION_COOKIE = "admin_session"
+ADMIN_SESSION_MAX_AGE = 60 * 60 * 12  # 12 hours
+
 # Premium Configuration
 FREE_DAILY_LIMIT = 3
 PREMIUM_PRICE = 4.99
@@ -189,6 +193,7 @@ class AuthManager:
         Returns:
             Dict containing success status, user data, and token
         """
+        cursor = None
         try:
             email = email.lower().strip()
 
@@ -320,8 +325,6 @@ class AuthManager:
                     "premium_until": None,
                 }
 
-            cursor.close()
-
             # Generate token
             token = self.generate_token(user_data["id"])
 
@@ -331,6 +334,9 @@ class AuthManager:
             self.db.rollback()
             print(f"OAuth user creation error: {e}")
             return {"success": False, "error": str(e)}
+        finally:
+            if cursor:
+                cursor.close()
 
     # ============================================================
     # User Information
@@ -864,6 +870,31 @@ def clear_auth_cookie(response: Response) -> Response:
     return response
 
 
+def set_admin_session_cookie(response: Response, session_id: str) -> Response:
+    """Set admin session cookie."""
+    if not session_id:
+        return response
+
+    # Determine HTTPS requirement
+    is_localhost = request.host.startswith("localhost") or request.host.startswith("127.0.0.1")
+
+    response.set_cookie(
+        ADMIN_SESSION_COOKIE,
+        value=session_id,
+        max_age=ADMIN_SESSION_MAX_AGE,
+        secure=not is_localhost,
+        httponly=True,
+        samesite="Strict",
+        path="/",
+    )
+    return response
+
+
+def clear_admin_session_cookie(response: Response) -> Response:
+    response.delete_cookie(ADMIN_SESSION_COOKIE, path="/")
+    return response
+
+
 # ============================================================
 # Admin Page Decorator (Server-Side HTML Protection)
 # ============================================================
@@ -871,37 +902,27 @@ def clear_auth_cookie(response: Response) -> Response:
 
 def require_admin_page(f: Callable) -> Callable:
     """
-    Decorator for admin HTML pages (not API endpoints).
-
-    Checks auth_token cookie for admin role, redirects to / if unauthorized.
-    Use this for serving admin.html and other admin UI pages.
-
-    Args:
-        f: Flask route function that returns HTML
-
-    Returns:
-        Callable: Decorated function that checks admin session
+    Decorator for serving admin HTML with server-side session validation.
     """
+
     @wraps(f)
     def decorated_function(*args: Any, **kwargs: Any) -> Response:
-        from flask import redirect, make_response
+        from flask import current_app, redirect
+        admin_session_service = current_app.config.get("ADMIN_SESSION_SERVICE")
 
-        # Get token from cookie
-        token = request.cookies.get("auth_token")
-
-        if not token:
-            # No cookie → redirect to home
+        if not admin_session_service or not admin_session_service.is_available():
             return redirect("/")
 
-        # Decode and validate token with admin check
-        user = decode_token(token, require_admin=True)
-
-        if not user:
-            # Invalid token or not admin → redirect to home
+        session_id = request.cookies.get(ADMIN_SESSION_COOKIE)
+        if not session_id:
             return redirect("/")
 
-        # Valid admin token → serve page
-        # Pass current_user to route handler
-        return f(current_user=user, *args, **kwargs)
+        admin_user = admin_session_service.get_session_user(session_id)
+        if not admin_user:
+            response = redirect("/")
+            clear_admin_session_cookie(response)
+            return response
+
+        return f(current_user=admin_user, *args, **kwargs)
 
     return decorated_function

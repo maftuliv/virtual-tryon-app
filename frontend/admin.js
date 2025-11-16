@@ -13,27 +13,33 @@ class AdminPanel {
     }
 
     async init() {
-        // Check if user is admin
-        if (!auth || !auth.user) {
-            await auth.checkAuth();
+        if (!auth) {
+            alert('❌ Ошибка инициализации авторизации.');
+            return;
         }
 
-        if (!auth.user || auth.user.role !== 'admin') {
-            alert('❌ Доступ запрещён. Только для администраторов.');
+        // Refresh general auth state for UI (ignore result)
+        await auth.checkAuth();
+
+        const adminUser = await auth.getAdminSessionUser();
+
+        if (!adminUser) {
+            alert('❌ Сессия администратора отсутствует или истекла. Войдите заново.');
             window.location.href = '/';
             return;
         }
 
-        // Show admin info
-        document.getElementById('adminUserInfo').textContent = `Admin: ${auth.user.email}`;
+        this.currentAdmin = adminUser;
 
-        // Setup tab navigation
+        if (!auth.user || auth.user.id === adminUser.id) {
+            auth.user = {...(auth.user || {}), ...adminUser};
+            auth.updateUI();
+        }
+
+        document.getElementById('adminUserInfo').textContent = `Admin: ${adminUser.email}`;
+
         this.setupTabs();
-
-        // Setup search
         this.setupSearch();
-
-        // Load initial data
         this.loadDashboard();
     }
 
