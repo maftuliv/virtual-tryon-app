@@ -46,6 +46,45 @@ from backend.utils.file_helpers import start_cleanup_scheduler
 logger = get_logger(__name__)
 
 
+def _apply_pending_migrations(db_conn, logger):
+    """
+    Apply pending database migrations automatically.
+
+    Checks for missing columns and adds them if necessary.
+    This ensures the database schema is always up-to-date.
+    """
+    try:
+        cursor = db_conn.cursor()
+
+        # Check if generations table has device_fingerprint column
+        cursor.execute("""
+            SELECT EXISTS (
+                SELECT FROM information_schema.columns
+                WHERE table_name = 'generations' AND column_name = 'device_fingerprint'
+            )
+        """)
+        has_device_fingerprint = cursor.fetchone()[0]
+
+        if not has_device_fingerprint:
+            logger.info("[MIGRATION] Adding device_fingerprint column to generations table...")
+            cursor.execute("""
+                ALTER TABLE generations ADD COLUMN IF NOT EXISTS device_fingerprint VARCHAR(255);
+                ALTER TABLE generations ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
+                CREATE INDEX IF NOT EXISTS idx_generations_device_fingerprint ON generations(device_fingerprint);
+            """)
+            db_conn.commit()
+            logger.info("[MIGRATION] Successfully added device_fingerprint and updated_at columns")
+
+        cursor.close()
+    except Exception as e:
+        logger.warning(f"[MIGRATION] Auto-migration failed (non-critical): {e}")
+        # Don't fail app startup if migration fails
+        try:
+            db_conn.rollback()
+        except Exception:
+            pass
+
+
 def create_app(config: Optional[Settings] = None) -> Flask:
     """
     Application factory function.
@@ -132,6 +171,9 @@ def create_app(config: Optional[Settings] = None) -> Flask:
             db_conn = psycopg2.connect(str(config.database_url))
             app.config["db_connection"] = db_conn  # Store for require_admin decorator
             logger.info("[OK] Database connection established")
+
+            # Auto-apply pending migrations
+            _apply_pending_migrations(db_conn, logger)
         except Exception as e:
             logger.error(f"[ERROR] Database connection failed: {e}")
             db_conn = None
