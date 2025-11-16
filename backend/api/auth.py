@@ -144,22 +144,22 @@ def create_auth_blueprint(
             logger.info(f"Registration request: email={email}")
 
             # Register via service
-            result = auth_service.register(email=email, password=password, full_name=full_name)
+            # AuthService.register() returns user_data dict directly with token inside
+            user_data = auth_service.register(email=email, password=password, full_name=full_name)
 
-            # AuthService returns result from AuthManager: {"success": True, "user": {...}, "token": ...}
-            if not result.get("success"):
-                logger.error(f"Registration failed: {result.get('error')}")
-                return jsonify(result), 400
+            if not user_data or not user_data.get("id"):
+                logger.error(f"Registration failed: no user data returned")
+                return jsonify({"error": "Registration failed"}), 400
 
-            user_data = result.get("user", {})
-            token = result.get("token")
+            token = user_data.get("token")
 
             # Create response with auth cookie
             response = make_response(
                 jsonify({"success": True, "message": "User registered successfully", "user": user_data, "token": token}), 
                 201
             )
-            set_auth_cookie(response, token)
+            if token:
+                set_auth_cookie(response, token)
             _activate_admin_session(response, user_data)
             logger.info(f"[AUTH] Registration successful, cookie set for {email}, role={user_data.get('role')}")
 
