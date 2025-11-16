@@ -197,28 +197,26 @@ class AuthManager:
         Returns:
             Dict containing success status, user data, and token
         """
-        cursor = None
         try:
             email = email.lower().strip()
 
-            cursor = self.db.cursor()
-            cursor.execute(
-                """
-                SELECT id, email, password_hash, full_name, avatar_url, is_premium, premium_until, role
-                FROM users
-                WHERE email = %s AND provider = 'email'
-            """,
-                (email,),
-            )
+            with db_transaction(self.db) as cursor:
+                cursor.execute(
+                    """
+                    SELECT id, email, password_hash, full_name, avatar_url, is_premium, premium_until, role
+                    FROM users
+                    WHERE email = %s AND provider = 'email'
+                """,
+                    (email,),
+                )
+                user = cursor.fetchone()
 
-            user = cursor.fetchone()
+                if not user:
+                    return {"success": False, "error": "Invalid email or password"}
 
-            if not user:
-                return {"success": False, "error": "Invalid email or password"}
-
-            # Verify password
-            if not check_password_hash(user[2], password):
-                return {"success": False, "error": "Invalid email or password"}
+                # Verify password
+                if not check_password_hash(user[2], password):
+                    return {"success": False, "error": "Invalid email or password"}
 
                 # Update last login in same transaction
                 cursor.execute(
@@ -239,14 +237,13 @@ class AuthManager:
                 "role": user[7] if len(user) > 7 else "user",
             }
 
-            # Generate token
+            # Generate token outside transaction
             token = self.generate_token(user_data["id"])
 
             return {"success": True, "user": user_data, "token": token}
 
         except Exception as e:
-            self.db.rollback()
-            print(f"Login error: {e}")
+            print(f"[AUTH] Login error: {e}")
             return {"success": False, "error": str(e)}
 
     # ============================================================
