@@ -321,7 +321,7 @@ class AuthManager {
 
         // Check if user is admin (unlimited)
         if (this.user.role === 'admin' && limit.limit === -1) {
-            // Admin: show unlimited
+            // Admin: show unlimited badge
             if (userLimitBadge) {
                 userLimitBadge.textContent = '∞';
                 userLimitBadge.style.display = 'inline-block';
@@ -333,7 +333,7 @@ class AuthManager {
             }
             if (userGenRemaining) userGenRemaining.textContent = '∞';
             if (userGenTotal) userGenTotal.textContent = '';
-            if (userGenLabel) userGenLabel.textContent = 'Безлимитно:';
+            if (userGenLabel) userGenLabel.textContent = 'Лимит';
             return;
         }
 
@@ -344,10 +344,10 @@ class AuthManager {
 
         if (this.user.is_premium) {
             // Premium user: monthly limit
-            if (userGenLabel) userGenLabel.textContent = 'Осталось в этом месяце:';
+            if (userGenLabel) userGenLabel.textContent = 'Месяц';
         } else {
             // Free user: daily limit
-            if (userGenLabel) userGenLabel.textContent = 'Осталось на этой неделе:';
+            if (userGenLabel) userGenLabel.textContent = 'Неделя';
         }
 
         // Update the counter below "сделать примерку" button

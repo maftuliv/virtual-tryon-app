@@ -2962,17 +2962,18 @@ body::before {
 
 /* Free generations counter */
 .free-generations-counter {
-    margin-top: 16px;
-    padding: 12px 20px;
+    margin-top: 12px;
+    padding: 8px 16px;
     background: linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
     border: 1.5px solid rgba(192, 132, 252, 0.3);
-    border-radius: 16px;
-    display: flex; /* Visible by default for guests */
+    border-radius: 12px;
+    display: inline-flex; /* Compact inline display */
     align-items: center;
-    justify-content: space-between;
-    gap: 16px;
+    justify-content: center;
+    gap: 8px;
     animation: slideInDown 0.3s ease;
     backdrop-filter: blur(10px);
+    font-size: 0.95em;
 }
 
 .free-generations-counter.hide {
