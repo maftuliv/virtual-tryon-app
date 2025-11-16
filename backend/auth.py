@@ -619,7 +619,7 @@ def create_auth_decorator(auth_manager: AuthManager) -> Tuple[Callable, Callable
         Tuple[Callable, Callable]: (require_auth, require_admin) decorators
     """
 
-        def require_auth(f: Callable) -> Callable:
+    def require_auth(f: Callable) -> Callable:
         """
         Decorator to require authentication.
 
@@ -632,20 +632,20 @@ def create_auth_decorator(auth_manager: AuthManager) -> Tuple[Callable, Callable
 
         @wraps(f)
         def decorated_function(*args: Any, **kwargs: Any) -> Any:
-                # Extract token from cookie/header
-                token = get_token_from_request()
+            # Extract token from cookie/header
+            token = get_token_from_request()
 
-                if not token:
-                    return jsonify({"error": "No authorization token provided"}), 401
+            if not token:
+                return jsonify({"error": "No authorization token provided"}), 401
 
-                user = decode_token(token)
-                if not user:
-                    return jsonify({"error": "Invalid or expired token"}), 401
+            user = decode_token(token)
+            if not user:
+                return jsonify({"error": "Invalid or expired token"}), 401
 
-                # Attach user info for downstream handlers
-                request.user_id = user["id"]
+            # Attach user info for downstream handlers
+            request.user_id = user["id"]
 
-                return f(*args, **kwargs)
+            return f(*args, **kwargs)
 
         return decorated_function
 
@@ -662,18 +662,18 @@ def create_auth_decorator(auth_manager: AuthManager) -> Tuple[Callable, Callable
 
         @wraps(f)
         def decorated_function(*args: Any, **kwargs: Any) -> Any:
-                token = get_token_from_request()
+            token = get_token_from_request()
 
-                if not token:
-                    return jsonify({"error": "No authorization token provided"}), 401
+            if not token:
+                return jsonify({"error": "No authorization token provided"}), 401
 
-                user = decode_token(token, require_admin=True)
-                if not user:
-                    return jsonify({"error": "Access denied. Admin privileges required"}), 403
+            user = decode_token(token, require_admin=True)
+            if not user:
+                return jsonify({"error": "Access denied. Admin privileges required"}), 403
 
-                request.user_id = user["id"]
+            request.user_id = user["id"]
 
-                return f(*args, **kwargs)
+            return f(*args, **kwargs)
 
         return decorated_function
 
