@@ -87,7 +87,12 @@ async function updateFreeGenerationsIndicator(limitData = null) {
     }
 
     if (limitData && typeof limitData.remaining !== 'undefined') {
-        remainingEl.textContent = limitData.remaining;
+        // Show friendly text with plural form
+        const n = limitData.remaining;
+        let word = 'примерок';
+        if (n === 1) word = 'примерка';
+        else if (n >= 2 && n <= 4) word = 'примерки';
+        remainingEl.textContent = n + ' ' + word;
         console.log('[FREE-GEN] Updated counter to:', limitData.remaining);
     } else {
         console.error('[FREE-GEN] Invalid limit data:', limitData);

@@ -331,7 +331,7 @@ class AuthManager {
             if (userGenCounter) {
                 userGenCounter.style.display = 'block';
             }
-            if (userGenRemaining) userGenRemaining.textContent = 'Безлимит';
+            if (userGenRemaining) userGenRemaining.textContent = '∞ примерок';
             if (userGenTotal) userGenTotal.textContent = '';
             if (userGenLabel) userGenLabel.textContent = '';
             return;
@@ -343,14 +343,16 @@ class AuthManager {
         }
 
         // Update the counter below "сделать примерку" button
-        if (userGenRemaining) userGenRemaining.textContent = `${limit.remaining}/${limit.limit}`;
-        
         if (this.user.is_premium) {
-            // Premium user: monthly limit
-            if (userGenTotal) userGenTotal.textContent = ' в месяц';
+            // Premium user: monthly limit - show remaining
+            const word = this.getPluralForm(limit.remaining, 'примерка', 'примерки', 'примерок');
+            if (userGenRemaining) userGenRemaining.textContent = `${limit.remaining} ${word}`;
+            if (userGenTotal) userGenTotal.textContent = ' осталось в этом месяце';
         } else {
-            // Free user: weekly limit
-            if (userGenTotal) userGenTotal.textContent = ' в неделю';
+            // Free user: weekly limit - show remaining
+            const word = this.getPluralForm(limit.remaining, 'примерка', 'примерки', 'примерок');
+            if (userGenRemaining) userGenRemaining.textContent = `${limit.remaining} ${word}`;
+            if (userGenTotal) userGenTotal.textContent = ' осталось на этой неделе';
         }
         
         if (userGenLabel) userGenLabel.textContent = '';

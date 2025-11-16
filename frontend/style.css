@@ -2962,18 +2962,18 @@ body::before {
 
 /* Free generations counter */
 .free-generations-counter {
-    margin-top: 12px;
-    padding: 8px 16px;
-    background: linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
-    border: 1.5px solid rgba(192, 132, 252, 0.3);
-    border-radius: 12px;
-    display: inline-flex; /* Compact inline display */
+    margin-top: 10px;
+    padding: 6px 12px;
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%);
+    border: 1px solid rgba(192, 132, 252, 0.2);
+    border-radius: 20px;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    animation: slideInDown 0.3s ease;
-    backdrop-filter: blur(10px);
-    font-size: 0.95em;
+    gap: 6px;
+    animation: fadeIn 0.3s ease;
+    font-size: 0.85em;
+    color: var(--text-secondary);
 }
 
 .free-generations-counter.hide {
@@ -3006,18 +3006,15 @@ body::before {
 }
 
 .free-gen-number {
-    font-size: 1.5em;
-    font-weight: 700;
-    background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    font-size: 1em;
+    font-weight: 600;
+    color: #8b5cf6;
 }
 
 .free-gen-total {
-    font-size: 1em;
+    font-size: 0.9em;
     color: var(--text-secondary);
-    font-weight: 500;
+    font-weight: 400;
 }
 
 .free-gen-text strong {
