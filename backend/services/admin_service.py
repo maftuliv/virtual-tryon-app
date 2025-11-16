@@ -71,43 +71,51 @@ class AdminService:
             raise ValueError("Admin service not available")
 
         try:
-            cursor = self.db.cursor()
+            from backend.utils.db_helpers import db_transaction
 
             # Count total users
-            cursor.execute("SELECT COUNT(*) FROM users")
-            users_total = cursor.fetchone()[0]
+            with db_transaction(self.db) as cursor:
+                cursor.execute("SELECT COUNT(*) FROM users")
+                users_total = cursor.fetchone()[0]
 
             # Count premium users
-            cursor.execute(
-                "SELECT COUNT(*) FROM users WHERE is_premium = TRUE AND (premium_until IS NULL OR premium_until > NOW())"
-            )
-            premium_total = cursor.fetchone()[0]
-
-            # Count generations today
-            if self.generation_repository:
+            with db_transaction(self.db) as cursor:
                 cursor.execute(
-                    "SELECT COUNT(*) FROM generations WHERE created_at >= CURRENT_DATE"
+                    "SELECT COUNT(*) FROM users WHERE is_premium = TRUE AND (premium_until IS NULL OR premium_until > NOW())"
                 )
-                generations_today = cursor.fetchone()[0]
-            else:
+                premium_total = cursor.fetchone()[0]
+
+            # Count generations today (using DATE() to handle timezone correctly)
+            generations_today = 0
+            try:
+                with db_transaction(self.db) as cursor:
+                    # Use DATE(created_at) = CURRENT_DATE for better timezone handling
+                    cursor.execute(
+                        "SELECT COUNT(*) FROM generations WHERE DATE(created_at) = CURRENT_DATE"
+                    )
+                    generations_today = cursor.fetchone()[0]
+            except Exception as e:
+                # If generations table doesn't exist or query fails, log and continue
+                self.logger.warning(f"[ADMIN] Failed to count generations today: {e}")
                 generations_today = 0
 
             # Count pending feedback (assuming status field exists)
-            if self.feedback_repository:
-                try:
+            feedback_pending = 0
+            try:
+                with db_transaction(self.db) as cursor:
                     cursor.execute(
                         "SELECT COUNT(*) FROM feedback WHERE status = 'pending' OR status IS NULL"
                     )
                     feedback_pending = cursor.fetchone()[0]
-                except Exception:
-                    # If status column doesn't exist, return 0
-                    feedback_pending = 0
-            else:
+            except Exception as e:
+                # If status column doesn't exist or table doesn't exist, return 0
+                self.logger.debug(f"[ADMIN] Failed to count pending feedback: {e}")
                 feedback_pending = 0
 
-            cursor.close()
-
-            self.logger.info("[ADMIN] Dashboard summary requested")
+            self.logger.info(
+                f"[ADMIN] Dashboard summary: users={users_total}, premium={premium_total}, "
+                f"generations_today={generations_today}, feedback_pending={feedback_pending}"
+            )
 
             return {
                 "users_total": users_total,
