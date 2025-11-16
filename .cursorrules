@@ -1,0 +1,43 @@
+# Cursor Rules for Virtual Try-On App
+
+## Database Operations
+
+**CRITICAL**: All database operations MUST use `db_transaction` context manager from `backend.utils.db_helpers`.
+
+### Required Pattern:
+```python
+from backend.utils.db_helpers import db_transaction
+
+def my_method(self):
+    try:
+        with db_transaction(self.db) as cursor:
+            cursor.execute("SELECT ...", params)
+            result = cursor.fetchone()
+            # Automatic COMMIT on success
+    except Exception as e:
+        logger.error(f"[SERVICE] Error: {e}")
+        return None
+```
+
+### NEVER:
+- ❌ Call `self.db.cursor()` directly
+- ❌ Call `self.db.commit()` directly  
+- ❌ Call `self.db.rollback()` directly
+- ❌ Manually close cursors (db_transaction handles this)
+
+### Always:
+- ✅ Use `db_transaction` for all DB operations
+- ✅ Handle exceptions with proper logging
+- ✅ Let the context manager handle COMMIT/ROLLBACK
+
+## Code Style
+
+- Use descriptive variable names
+- Add docstrings to all methods
+- Log errors with context using `logger.error(f"[SERVICE] Error: {e}", exc_info=True)`
+- Follow existing code patterns in `backend/services/admin_session_service.py` and `backend/auth.py`
+
+## See Also
+
+- `backend/DATABASE_BEST_PRACTICES.md` for detailed guidelines
+
