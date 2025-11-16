@@ -35,8 +35,9 @@ class AdminSessionService:
         session_id = secrets.token_urlsafe(48)
         expires_at = self._utcnow() + self.session_duration
 
-        cursor = self.db.cursor()
+        cursor = None
         try:
+            cursor = self.db.cursor()
             cursor.execute(
                 """
                 INSERT INTO admin_sessions (session_id, user_id, ip_address, user_agent, expires_at)
@@ -48,26 +49,49 @@ class AdminSessionService:
             logger.info("[ADMIN-SESSION] Created session for user_id=%s", user_id)
             return session_id
         except Exception as e:
-            self.db.rollback()
+            # Always rollback on error
+            if cursor:
+                try:
+                    self.db.rollback()
+                except Exception as rollback_error:
+                    logger.error(f"[ADMIN-SESSION] Error during rollback in create_session: {rollback_error}")
             logger.error(f"[ADMIN-SESSION] Failed to create session: {e}", exc_info=True)
             return None
         finally:
-            cursor.close()
+            # Always close cursor
+            if cursor:
+                try:
+                    cursor.close()
+                except Exception as close_error:
+                    logger.error(f"[ADMIN-SESSION] Error closing cursor in create_session: {close_error}")
 
     def delete_session(self, session_id: str) -> None:
         if not self.is_available() or not session_id:
             return
 
-        cursor = self.db.cursor()
+        cursor = None
         try:
+            # Ensure we start with a clean transaction state
+            self.db.rollback()
+            cursor = self.db.cursor()
             cursor.execute("DELETE FROM admin_sessions WHERE session_id = %s", (session_id,))
             self.db.commit()
             logger.info("[ADMIN-SESSION] Deleted session %s", session_id[:8])
         except Exception as e:
-            self.db.rollback()
+            # Always rollback on error
+            if cursor:
+                try:
+                    self.db.rollback()
+                except Exception as rollback_error:
+                    logger.error(f"[ADMIN-SESSION] Error during rollback in delete_session: {rollback_error}")
             logger.error(f"[ADMIN-SESSION] Failed to delete session: {e}", exc_info=True)
         finally:
-            cursor.close()
+            # Always close cursor
+            if cursor:
+                try:
+                    cursor.close()
+                except Exception as close_error:
+                    logger.error(f"[ADMIN-SESSION] Error closing cursor in delete_session: {close_error}")
 
     def delete_user_sessions(self, user_id: int) -> None:
         if not self.is_available():
@@ -91,6 +115,12 @@ class AdminSessionService:
 
         cursor = None
         try:
+            # Ensure we start with a clean transaction state
+            try:
+                self.db.rollback()
+            except Exception:
+                pass  # Ignore rollback errors if transaction is already clean
+            
             cursor = self.db.cursor()
             cursor.execute(
                 """
@@ -114,19 +144,22 @@ class AdminSessionService:
 
             user_id, expires_at, email, full_name, role, is_premium, avatar_url = row
 
+            # Close cursor before any other operations
+            cursor.close()
+
             if expires_at <= self._utcnow():
                 logger.info("[ADMIN-SESSION] Session expired for user_id=%s", user_id)
-                cursor.close()
-                # Delete expired session in separate transaction
-                self.delete_session(session_id)
+                # Delete expired session in separate transaction (after cursor is closed)
+                try:
+                    self.delete_session(session_id)
+                except Exception as delete_error:
+                    logger.error(f"[ADMIN-SESSION] Error deleting expired session: {delete_error}")
                 return None
 
             if role != "admin":
                 logger.warning("[ADMIN-SESSION] Non-admin role detected for session (user_id=%s)", user_id)
-                cursor.close()
                 return None
 
-            cursor.close()
             return {
                 "id": user_id,
                 "email": email,
