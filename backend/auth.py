@@ -45,7 +45,7 @@ ADMIN_SESSION_COOKIE = "admin_session"
 ADMIN_SESSION_MAX_AGE = 60 * 60 * 12  # 12 hours
 
 # Premium Configuration
-FREE_DAILY_LIMIT = 3
+FREE_WEEKLY_LIMIT = 3  # Free users get 3 generations per week
 PREMIUM_MONTHLY_LIMIT = 50  # Premium users get 50 generations per month
 PREMIUM_PRICE = 4.99
 
@@ -419,7 +419,7 @@ class AuthManager:
                 user = cursor.fetchone()
 
                 if not user:
-                    return False, 0, FREE_DAILY_LIMIT
+                    return False, 0, FREE_WEEKLY_LIMIT
 
                 is_premium = user[0]
                 role = user[1] if len(user) > 1 else "user"
@@ -444,41 +444,38 @@ class AuthManager:
                     can_generate = monthly_used < PREMIUM_MONTHLY_LIMIT
                     return can_generate, monthly_used, PREMIUM_MONTHLY_LIMIT
 
-                # Check today's usage for free users
-                today = datetime.now().date()
+                # Free users: count generations this week from generations table
+                # Week starts on Monday (ISO week)
                 cursor.execute(
                     """
-                    SELECT generations_count FROM daily_limits
-                    WHERE user_id = %s AND date = %s
-                """,
-                    (user_id, today),
+                    SELECT COUNT(*) FROM generations
+                    WHERE user_id = %s
+                    AND created_at >= DATE_TRUNC('week', CURRENT_DATE)
+                    AND created_at < DATE_TRUNC('week', CURRENT_DATE) + INTERVAL '1 week'
+                    """,
+                    (user_id,),
                 )
-                limit_record = cursor.fetchone()
+                weekly_used = cursor.fetchone()[0]
+                can_generate = weekly_used < FREE_WEEKLY_LIMIT
+                return can_generate, weekly_used, FREE_WEEKLY_LIMIT
 
-            if not limit_record:
-                # No generations yet today - return 0 used
-                return True, 0, FREE_DAILY_LIMIT
-
-            used = limit_record[0]
-
-            if used >= FREE_DAILY_LIMIT:
-                return False, FREE_DAILY_LIMIT, FREE_DAILY_LIMIT
-
-            return True, used, FREE_DAILY_LIMIT
+            # This return is now inside the with block above
+            return True, 0, FREE_WEEKLY_LIMIT
 
         except Exception as e:
             print(f"[AUTH] Check limit error: {e}")
-            return False, 0, FREE_DAILY_LIMIT
+            return False, 0, FREE_WEEKLY_LIMIT
 
     def increment_daily_limit(self, user_id: int, increment: int = 1) -> Dict[str, Any]:
         """
-        Increment user's daily generation count.
+        Get updated generation count for user after increment.
 
-        Uses safe transaction management to prevent "current transaction is aborted" errors.
+        For free users: counts weekly generations from generations table.
+        The actual generation record is created by TryonService.
 
         Args:
-            user_id: User ID to increment counter for
-            increment: Amount to increment (default: 1)
+            user_id: User ID to get updated count for
+            increment: Amount that was incremented (for compatibility)
 
         Returns:
             Dict with updated limit info:
@@ -490,30 +487,68 @@ class AuthManager:
             }
         """
         try:
-            today = datetime.now().date()
             with db_transaction(self.db) as cursor:
-                # Insert or update daily limit
+                # Check user type first
+                cursor.execute("SELECT is_premium, role FROM users WHERE id = %s", (user_id,))
+                user = cursor.fetchone()
+
+                if not user:
+                    return {
+                        "success": False,
+                        "used": 0,
+                        "limit": FREE_WEEKLY_LIMIT,
+                        "remaining": FREE_WEEKLY_LIMIT,
+                    }
+
+                is_premium = user[0]
+                role = user[1] if len(user) > 1 else "user"
+
+                # Admins have unlimited
+                if role == "admin":
+                    return {
+                        "success": True,
+                        "used": -1,
+                        "limit": -1,
+                        "remaining": -1,
+                    }
+
+                # Premium users: count monthly
+                if is_premium:
+                    cursor.execute(
+                        """
+                        SELECT COUNT(*) FROM generations
+                        WHERE user_id = %s
+                        AND created_at >= DATE_TRUNC('month', CURRENT_DATE)
+                        AND created_at < DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month'
+                        """,
+                        (user_id,),
+                    )
+                    monthly_used = cursor.fetchone()[0]
+                    remaining = max(0, PREMIUM_MONTHLY_LIMIT - monthly_used)
+                    return {
+                        "success": True,
+                        "used": monthly_used,
+                        "limit": PREMIUM_MONTHLY_LIMIT,
+                        "remaining": remaining,
+                    }
+
+                # Free users: count weekly from generations table
                 cursor.execute(
                     """
-                    INSERT INTO daily_limits (user_id, date, generations_count)
-                    VALUES (%s, %s, %s)
-                    ON CONFLICT (user_id, date)
-                    DO UPDATE SET
-                        generations_count = daily_limits.generations_count + %s,
-                        updated_at = NOW()
-                    RETURNING generations_count
-                """,
-                    (user_id, today, increment, increment),
+                    SELECT COUNT(*) FROM generations
+                    WHERE user_id = %s
+                    AND created_at >= DATE_TRUNC('week', CURRENT_DATE)
+                    AND created_at < DATE_TRUNC('week', CURRENT_DATE) + INTERVAL '1 week'
+                    """,
+                    (user_id,),
                 )
-                result = cursor.fetchone()
-                new_count = result[0] if result else increment
-                # Transaction commits automatically on context exit
+                weekly_used = cursor.fetchone()[0]
 
-            remaining = max(0, FREE_DAILY_LIMIT - new_count)
+            remaining = max(0, FREE_WEEKLY_LIMIT - weekly_used)
             return {
                 "success": True,
-                "used": new_count,
-                "limit": FREE_DAILY_LIMIT,
+                "used": weekly_used,
+                "limit": FREE_WEEKLY_LIMIT,
                 "remaining": remaining,
             }
 
@@ -522,8 +557,8 @@ class AuthManager:
             return {
                 "success": False,
                 "used": 0,
-                "limit": FREE_DAILY_LIMIT,
-                "remaining": FREE_DAILY_LIMIT,
+                "limit": FREE_WEEKLY_LIMIT,
+                "remaining": FREE_WEEKLY_LIMIT,
             }
 
     def set_premium(self, user_id: int, days: int = 30) -> bool:

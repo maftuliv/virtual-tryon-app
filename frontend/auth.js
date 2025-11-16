@@ -347,7 +347,7 @@ class AuthManager {
             if (userGenLabel) userGenLabel.textContent = 'Осталось в этом месяце:';
         } else {
             // Free user: daily limit
-            if (userGenLabel) userGenLabel.textContent = 'Осталось сегодня:';
+            if (userGenLabel) userGenLabel.textContent = 'Осталось на этой неделе:';
         }
 
         // Update the counter below "сделать примерку" button
@@ -382,7 +382,7 @@ class AuthManager {
         if (limitBanner && limitText) {
             if (limit.remaining !== undefined && limit.remaining >= 0 && limit.remaining <= Math.ceil(limit.limit * 0.1)) {
                 limitBanner.style.display = 'flex';
-                const periodText = this.user.is_premium ? 'в этом месяце' : 'сегодня';
+                const periodText = this.user.is_premium ? 'в этом месяце' : 'на этой неделе';
                 limitText.textContent = `⚠️ Осталось генераций ${periodText}: ${limit.remaining}/${limit.limit}`;
             } else {
                 limitBanner.style.display = 'none';

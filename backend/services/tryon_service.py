@@ -126,7 +126,7 @@ class TryonService:
         if not limit_status["can_generate"]:
             user_type = "authenticated" if user_id else "anonymous"
             error_msg = (
-                f"Вы исчерпали дневной лимит генераций ({limit_status['limit']}/день). "
+                f"Вы исчерпали недельный лимит генераций ({limit_status['limit']}/неделю). "
                 f"{'Перейдите на Premium для безлимитного доступа!' if user_type == 'authenticated' else 'Зарегистрируйтесь, чтобы продолжить.'}"
             )
 
