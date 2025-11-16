@@ -75,6 +75,35 @@ def _apply_pending_migrations(db_conn, logger):
             db_conn.commit()
             logger.info("[MIGRATION] Successfully added device_fingerprint and updated_at columns")
 
+        # Check if admin_audit_logs table exists
+        cursor.execute("""
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables
+                WHERE table_name = 'admin_audit_logs'
+            )
+        """)
+        has_audit_logs = cursor.fetchone()[0]
+
+        if not has_audit_logs:
+            logger.info("[MIGRATION] Creating admin_audit_logs table...")
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS admin_audit_logs (
+                    id SERIAL PRIMARY KEY,
+                    admin_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    action VARCHAR(100) NOT NULL,
+                    target_type VARCHAR(50) NOT NULL,
+                    target_id INTEGER,
+                    payload JSONB,
+                    ip_address VARCHAR(45),
+                    user_agent TEXT,
+                    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+                );
+                CREATE INDEX IF NOT EXISTS idx_admin_audit_logs_admin_id ON admin_audit_logs(admin_id);
+                CREATE INDEX IF NOT EXISTS idx_admin_audit_logs_created_at ON admin_audit_logs(created_at DESC);
+            """)
+            db_conn.commit()
+            logger.info("[MIGRATION] Successfully created admin_audit_logs table")
+
         cursor.close()
     except Exception as e:
         logger.warning(f"[MIGRATION] Auto-migration failed (non-critical): {e}")
