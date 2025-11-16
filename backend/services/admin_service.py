@@ -386,7 +386,11 @@ class AdminService:
         self, user_id: int, admin_id: int, ip_address: str = None
     ) -> Dict:
         """
-        Reset daily generation limit for user.
+        Reset generation limit for user.
+
+        Since limits are now based on counting records in generations table
+        (weekly for free users, monthly for premium), this function deletes
+        the user's generation records for the current period.
 
         Args:
             user_id: Target user ID
@@ -394,7 +398,7 @@ class AdminService:
             ip_address: IP address of admin
 
         Returns:
-            Success confirmation
+            Success confirmation with number of records deleted
         """
         if not self.is_available():
             raise ValueError("Admin service not available")
@@ -402,15 +406,42 @@ class AdminService:
         try:
             cursor = self.db.cursor()
 
-            # Reset daily generations count
+            # Check if user is premium to determine period
             cursor.execute(
-                """
-                UPDATE users
-                SET daily_generations = 0, daily_limit_reset_at = NOW()
-                WHERE id = %s
-                """,
-                (user_id,),
+                "SELECT is_premium FROM users WHERE id = %s",
+                (user_id,)
             )
+            user = cursor.fetchone()
+            if not user:
+                raise ValueError(f"User {user_id} not found")
+
+            is_premium = user[0]
+
+            # Delete generations for current period
+            if is_premium:
+                # Premium: delete this month's generations
+                cursor.execute(
+                    """
+                    DELETE FROM generations
+                    WHERE user_id = %s
+                    AND created_at >= DATE_TRUNC('month', CURRENT_DATE)
+                    AND created_at < DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month'
+                    """,
+                    (user_id,),
+                )
+            else:
+                # Free: delete this week's generations
+                cursor.execute(
+                    """
+                    DELETE FROM generations
+                    WHERE user_id = %s
+                    AND created_at >= DATE_TRUNC('week', CURRENT_DATE)
+                    AND created_at < DATE_TRUNC('week', CURRENT_DATE) + INTERVAL '1 week'
+                    """,
+                    (user_id,),
+                )
+
+            deleted_count = cursor.rowcount
 
             # Log audit
             self._log_audit(
@@ -419,7 +450,10 @@ class AdminService:
                 action="reset_limit",
                 target_type="user",
                 target_id=user_id,
-                payload={},
+                payload={
+                    "deleted_generations": deleted_count,
+                    "period": "month" if is_premium else "week"
+                },
                 ip_address=ip_address,
             )
 
@@ -427,10 +461,10 @@ class AdminService:
             cursor.close()
 
             self.logger.info(
-                f"[ADMIN] User {user_id} limit reset by admin {admin_id}"
+                f"[ADMIN] User {user_id} limit reset by admin {admin_id}, deleted {deleted_count} generations"
             )
 
-            return {"user_id": user_id, "limit_reset": True}
+            return {"user_id": user_id, "limit_reset": True, "deleted_count": deleted_count}
 
         except Exception as e:
             self.db.rollback()
