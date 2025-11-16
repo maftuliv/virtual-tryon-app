@@ -319,42 +319,40 @@ class AuthManager {
 
         const limit = await this.checkLimit();
 
-        // Check if user is admin (unlimited)
-        if (this.user.role === 'admin' && limit.limit === -1) {
-            // Admin: show unlimited badge
+        // Determine user type by limit value from server (more reliable than local flags)
+        // limit = -1 → Admin (unlimited)
+        // limit = 50 → Premium (monthly)
+        // limit = 3 → Free (weekly)
+
+        // Update counters based on server-returned limit
+        if (userGenCounter) {
+            userGenCounter.style.display = 'block';
+        }
+
+        if (limit.limit === -1) {
+            // Admin: unlimited generations
             if (userLimitBadge) {
                 userLimitBadge.textContent = '∞';
                 userLimitBadge.style.display = 'inline-block';
                 userLimitBadge.style.background = 'rgba(139, 92, 246, 0.1)';
                 userLimitBadge.style.color = '#8b5cf6';
             }
-            if (userGenCounter) {
-                userGenCounter.style.display = 'block';
-            }
             if (userGenRemaining) userGenRemaining.textContent = '∞ примерок';
             if (userGenTotal) userGenTotal.textContent = '';
             if (userGenLabel) userGenLabel.textContent = '';
             return;
-        }
-
-        // Update counters for premium and free users
-        if (userGenCounter) {
-            userGenCounter.style.display = 'block';
-        }
-
-        // Update the counter below "сделать примерку" button
-        if (this.user.is_premium) {
-            // Premium user: monthly limit - show remaining
+        } else if (limit.limit === 50) {
+            // Premium user: 50 generations per month
             const word = this.getPluralForm(limit.remaining, 'примерка', 'примерки', 'примерок');
             if (userGenRemaining) userGenRemaining.textContent = `${limit.remaining} ${word}`;
             if (userGenTotal) userGenTotal.textContent = ' осталось в этом месяце';
         } else {
-            // Free user: weekly limit - show remaining
+            // Free user: 3 generations per week (or any other limit)
             const word = this.getPluralForm(limit.remaining, 'примерка', 'примерки', 'примерок');
             if (userGenRemaining) userGenRemaining.textContent = `${limit.remaining} ${word}`;
             if (userGenTotal) userGenTotal.textContent = ' осталось на этой неделе';
         }
-        
+
         if (userGenLabel) userGenLabel.textContent = '';
 
         const limitBanner = document.getElementById('limitBanner');
@@ -385,7 +383,8 @@ class AuthManager {
         if (limitBanner && limitText) {
             if (limit.remaining !== undefined && limit.remaining >= 0 && limit.remaining <= Math.ceil(limit.limit * 0.1)) {
                 limitBanner.style.display = 'flex';
-                const periodText = this.user.is_premium ? 'в этом месяце' : 'на этой неделе';
+                // Use limit value to determine period text (more reliable)
+                const periodText = limit.limit === 50 ? 'в этом месяце' : 'на этой неделе';
                 limitText.textContent = `⚠️ Осталось генераций ${periodText}: ${limit.remaining}/${limit.limit}`;
             } else {
                 limitBanner.style.display = 'none';
