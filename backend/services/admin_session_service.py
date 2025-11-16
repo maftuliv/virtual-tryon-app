@@ -89,8 +89,9 @@ class AdminSessionService:
         if not self.is_available() or not session_id:
             return None
 
-        cursor = self.db.cursor()
+        cursor = None
         try:
+            cursor = self.db.cursor()
             cursor.execute(
                 """
                 SELECT s.user_id,
@@ -108,6 +109,7 @@ class AdminSessionService:
             )
             row = cursor.fetchone()
             if not row:
+                cursor.close()
                 return None
 
             user_id, expires_at, email, full_name, role, is_premium, avatar_url = row
@@ -115,13 +117,16 @@ class AdminSessionService:
             if expires_at <= self._utcnow():
                 logger.info("[ADMIN-SESSION] Session expired for user_id=%s", user_id)
                 cursor.close()
+                # Delete expired session in separate transaction
                 self.delete_session(session_id)
                 return None
 
             if role != "admin":
                 logger.warning("[ADMIN-SESSION] Non-admin role detected for session (user_id=%s)", user_id)
+                cursor.close()
                 return None
 
+            cursor.close()
             return {
                 "id": user_id,
                 "email": email,
@@ -131,10 +136,21 @@ class AdminSessionService:
                 "avatar_url": avatar_url,
             }
         except Exception as e:
+            # Always rollback on error to prevent "current transaction is aborted"
+            if cursor:
+                try:
+                    self.db.rollback()
+                except Exception as rollback_error:
+                    logger.error(f"[ADMIN-SESSION] Error during rollback: {rollback_error}")
             logger.error(f"[ADMIN-SESSION] Failed to validate session: {e}", exc_info=True)
             return None
         finally:
-            cursor.close()
+            # Always close cursor to prevent resource leaks
+            if cursor:
+                try:
+                    cursor.close()
+                except Exception as close_error:
+                    logger.error(f"[ADMIN-SESSION] Error closing cursor: {close_error}")
 
     def cleanup_expired(self) -> None:
         if not self.is_available():

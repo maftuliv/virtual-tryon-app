@@ -777,8 +777,9 @@ def decode_token(token: str, require_admin: bool = False) -> Optional[Dict[str, 
             return None
 
         # Fetch user from database
-        cursor = db.cursor()
+        cursor = None
         try:
+            cursor = db.cursor()
             cursor.execute(
                 """
                 SELECT id, email, full_name, role, is_premium, avatar_url, provider
@@ -811,8 +812,21 @@ def decode_token(token: str, require_admin: bool = False) -> Optional[Dict[str, 
             return user
 
         except Exception as e:
+            # Always rollback on error to prevent "current transaction is aborted"
+            if cursor:
+                try:
+                    db.rollback()
+                except Exception as rollback_error:
+                    print(f"[AUTH] Error during rollback: {rollback_error}")
             print(f"[AUTH] Error fetching user during token decode: {e}")
             return None
+        finally:
+            # Always close cursor to prevent resource leaks
+            if cursor:
+                try:
+                    cursor.close()
+                except Exception as close_error:
+                    print(f"[AUTH] Error closing cursor: {close_error}")
 
     except jwt.ExpiredSignatureError:
         return None
