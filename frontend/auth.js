@@ -331,9 +331,9 @@ class AuthManager {
             if (userGenCounter) {
                 userGenCounter.style.display = 'block';
             }
-            if (userGenRemaining) userGenRemaining.textContent = '∞';
+            if (userGenRemaining) userGenRemaining.textContent = 'Безлимит';
             if (userGenTotal) userGenTotal.textContent = '';
-            if (userGenLabel) userGenLabel.textContent = 'Лимит';
+            if (userGenLabel) userGenLabel.textContent = '';
             return;
         }
 
@@ -342,17 +342,18 @@ class AuthManager {
             userGenCounter.style.display = 'block';
         }
 
+        // Update the counter below "сделать примерку" button
+        if (userGenRemaining) userGenRemaining.textContent = `${limit.remaining}/${limit.limit}`;
+        
         if (this.user.is_premium) {
             // Premium user: monthly limit
-            if (userGenLabel) userGenLabel.textContent = 'Месяц';
+            if (userGenTotal) userGenTotal.textContent = ' в месяц';
         } else {
-            // Free user: daily limit
-            if (userGenLabel) userGenLabel.textContent = 'Неделя';
+            // Free user: weekly limit
+            if (userGenTotal) userGenTotal.textContent = ' в неделю';
         }
-
-        // Update the counter below "сделать примерку" button
-        if (userGenRemaining) userGenRemaining.textContent = limit.remaining;
-        if (userGenTotal) userGenTotal.textContent = `/${limit.limit}`;
+        
+        if (userGenLabel) userGenLabel.textContent = '';
 
         const limitBanner = document.getElementById('limitBanner');
         const limitText = document.getElementById('limitText');
