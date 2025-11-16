@@ -470,17 +470,24 @@ class AuthManager:
             print(f"[AUTH] Check limit error: {e}")
             return False, 0, FREE_DAILY_LIMIT
 
-    def increment_daily_limit(self, user_id: int) -> bool:
+    def increment_daily_limit(self, user_id: int, increment: int = 1) -> Dict[str, Any]:
         """
         Increment user's daily generation count.
-        
+
         Uses safe transaction management to prevent "current transaction is aborted" errors.
 
         Args:
             user_id: User ID to increment counter for
+            increment: Amount to increment (default: 1)
 
         Returns:
-            bool: True if successful, False on error
+            Dict with updated limit info:
+            {
+                'success': bool,
+                'used': int,
+                'limit': int,
+                'remaining': int
+            }
         """
         try:
             today = datetime.now().date()
@@ -489,20 +496,35 @@ class AuthManager:
                 cursor.execute(
                     """
                     INSERT INTO daily_limits (user_id, date, generations_count)
-                    VALUES (%s, %s, 1)
+                    VALUES (%s, %s, %s)
                     ON CONFLICT (user_id, date)
                     DO UPDATE SET
-                        generations_count = daily_limits.generations_count + 1,
+                        generations_count = daily_limits.generations_count + %s,
                         updated_at = NOW()
+                    RETURNING generations_count
                 """,
-                    (user_id, today),
+                    (user_id, today, increment, increment),
                 )
+                result = cursor.fetchone()
+                new_count = result[0] if result else increment
                 # Transaction commits automatically on context exit
-            return True
+
+            remaining = max(0, FREE_DAILY_LIMIT - new_count)
+            return {
+                "success": True,
+                "used": new_count,
+                "limit": FREE_DAILY_LIMIT,
+                "remaining": remaining,
+            }
 
         except Exception as e:
             print(f"[AUTH] Increment limit error: {e}")
-            return False
+            return {
+                "success": False,
+                "used": 0,
+                "limit": FREE_DAILY_LIMIT,
+                "remaining": FREE_DAILY_LIMIT,
+            }
 
     def set_premium(self, user_id: int, days: int = 30) -> bool:
         """
