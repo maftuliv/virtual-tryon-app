@@ -827,12 +827,8 @@ async function handleTryOn() {
             '💡 Это может занять 10-30 секунд. Пока подумайте, где примените этот образ!'
         );
 
-        const tryonResponse = await fetch(`${API_URL}/api/tryon`, {
+        const tryonResponse = await auth.fetchWithAuth('/api/tryon', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${auth.token}`
-            },
             body: JSON.stringify({
                 person_images: state.uploadedPersonPaths,
                 garment_image: state.uploadedGarmentPath,

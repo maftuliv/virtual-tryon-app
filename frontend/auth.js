@@ -12,15 +12,56 @@ class AuthManager {
             : '';
     }
 
+    getRequestUrl(path = '') {
+        if (!path) {
+            return this.API_URL;
+        }
+        if (path.startsWith('http://') || path.startsWith('https://')) {
+            return path;
+        }
+        return `${this.API_URL}${path}`;
+    }
+
+    buildAuthHeaders(extraHeaders = {}, body = null) {
+        const headers = {...extraHeaders};
+
+        if (body && !(body instanceof FormData) && !headers['Content-Type']) {
+            headers['Content-Type'] = 'application/json';
+        }
+
+        if (this.token && !headers['Authorization']) {
+            headers['Authorization'] = `Bearer ${this.token}`;
+        }
+
+        return headers;
+    }
+
+    async fetchWithAuth(path, options = {}) {
+        const url = this.getRequestUrl(path);
+        const config = {
+            credentials: 'include',
+            ...options,
+        };
+
+        const headers = this.buildAuthHeaders(config.headers || {}, config.body);
+
+        if (Object.keys(headers).length > 0) {
+            config.headers = headers;
+        } else {
+            delete config.headers;
+        }
+
+        return fetch(url, config);
+    }
+
     // ============================================================
     // Authentication Methods
     // ============================================================
 
     async register(email, password, fullName) {
         try {
-            const response = await fetch(`${this.API_URL}/api/auth/register`, {
+            const response = await this.fetchWithAuth('/api/auth/register', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
                     email: email,
                     password: password,
@@ -52,9 +93,8 @@ class AuthManager {
 
     async login(email, password) {
         try {
-            const response = await fetch(`${this.API_URL}/api/auth/login`, {
+            const response = await this.fetchWithAuth('/api/auth/login', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({email, password})
             });
 
@@ -82,15 +122,7 @@ class AuthManager {
 
     async checkAuth() {
         try {
-            const headers = {};
-            if (this.token) {
-                headers['Authorization'] = `Bearer ${this.token}`;
-            }
-
-            const response = await fetch(`${this.API_URL}/api/auth/me`, {
-                headers,
-                credentials: 'include',
-            });
+            const response = await this.fetchWithAuth('/api/auth/me');
 
             if (response.ok) {
                 const data = await response.json();
@@ -111,16 +143,9 @@ class AuthManager {
 
     async logout(showNotification = true) {
         try {
-            const headers = {};
-            if (this.token) {
-                headers['Authorization'] = `Bearer ${this.token}`;
-            }
-
             // Call server logout endpoint to clear HTTP-only cookie
-            await fetch(`${this.API_URL}/api/auth/logout`, {
+            await this.fetchWithAuth('/api/auth/logout', {
                 method: 'POST',
-                headers,
-                credentials: 'include',
             });
         } catch (error) {
             console.error('Logout API error:', error);
@@ -150,9 +175,7 @@ class AuthManager {
         }
 
         try {
-            const response = await fetch(`${this.API_URL}/api/auth/check-limit`, {
-                headers: {'Authorization': `Bearer ${this.token}`}
-            });
+            const response = await this.fetchWithAuth('/api/auth/check-limit');
 
             if (response.ok) {
                 return await response.json();
@@ -304,9 +327,7 @@ class AuthManager {
      */
     async checkGoogleOAuthStatus() {
         try {
-            const response = await fetch(`${this.API_URL}/api/auth/google/status`, {
-                method: 'GET',
-            });
+            const response = await this.fetchWithAuth('/api/auth/google/status');
 
             if (!response.ok) {
                 console.warn('[GOOGLE-AUTH] Status check failed, assuming OAuth disabled');
@@ -358,9 +379,8 @@ class AuthManager {
             console.log('[GOOGLE-AUTH] Initiating Google OAuth flow...');
 
             // Request authorization URL from backend
-            const response = await fetch(`${this.API_URL}/api/auth/google/login`, {
+            const response = await this.fetchWithAuth('/api/auth/google/login', {
                 method: 'GET',
-                credentials: 'include', // Include cookies for session
             });
 
             if (!response.ok) {
