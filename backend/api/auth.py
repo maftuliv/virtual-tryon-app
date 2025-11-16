@@ -250,6 +250,72 @@ def create_auth_blueprint(
             logger.error(f"Login failed: {e}", exc_info=True)
             return jsonify({"error": str(e)}), 500
 
+    @auth_bp.route("/api/auth/admin/login", methods=["POST"])
+    def admin_login():
+        """
+        Admin-only login endpoint.
+
+        Принимает логин/пароль, проверяет пользователя через AuthService.login и
+        создаёт серверную admin-сессию только если роль пользователя = 'admin'.
+        """
+        if not auth_service.is_available():
+            return jsonify({"error": "Authentication not available"}), 503
+
+        try:
+            data = request.get_json()
+
+            if not data:
+                return jsonify({"error": "No data provided"}), 400
+
+            email = data.get("email", "").strip()
+            password = data.get("password", "")
+
+            logger.info(f"[ADMIN-AUTH] Admin login request: email={email}")
+
+            # Используем тот же путь логина, что и обычные пользователи
+            result = auth_service.login(email=email, password=password)
+            if not result or not result.get("success"):
+                logger.warning(f"[ADMIN-AUTH] Admin login failed: invalid credentials for {email}")
+                return jsonify({"error": "Invalid email or password"}), 401
+
+            user_data = result.get("user", {}) or {}
+            token = result.get("token")
+
+            # Разрешаем доступ только пользователям с ролью admin
+            if user_data.get("role") != "admin":
+                logger.warning(f"[ADMIN-AUTH] Non-admin user tried to login to admin panel: {email}")
+                return jsonify({"error": "Access denied"}), 403
+
+            # Ответ + установка cookie (JWT + admin_session)
+            response = make_response(
+                jsonify(
+                    {
+                        "success": True,
+                        "message": "Admin login successful",
+                        "user": user_data,
+                        "token": token,
+                    }
+                ),
+                200,
+            )
+            if token:
+                set_auth_cookie(response, token)
+            _activate_admin_session(response, user_data)
+
+            logger.info(
+                f"[ADMIN-AUTH] Admin login successful, admin session created for {email} (id={user_data.get('id')})"
+            )
+
+            return response
+
+        except ValueError as e:
+            logger.warning(f"[ADMIN-AUTH] Admin login validation failed: {e}")
+            return jsonify({"error": str(e)}), 400
+
+        except Exception as e:
+            logger.error(f"[ADMIN-AUTH] Admin login failed: {e}", exc_info=True)
+            return jsonify({"error": str(e)}), 500
+
     @auth_bp.route("/api/auth/me", methods=["GET"])
     def get_current_user():
         """

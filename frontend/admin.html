@@ -17,21 +17,42 @@
                 <h1>🛡️ Админ панель</h1>
                 <div class="admin-header-actions">
                     <span class="admin-user-info" id="adminUserInfo"></span>
+                    <button class="btn btn-secondary" id="adminLogoutBtn" onclick="handleLogout()" title="Выйти из админки" style="display: none;">
+                        ⇦ Выйти
+                    </button>
                     <a href="/" class="btn btn-secondary">← На главную</a>
                 </div>
             </div>
         </header>
 
-        <!-- Navigation Tabs -->
-        <nav class="admin-tabs">
-            <button class="admin-tab active" data-tab="dashboard">📊 Дашборд</button>
-            <button class="admin-tab" data-tab="users">👥 Пользователи</button>
-            <button class="admin-tab" data-tab="feedback">💬 Обратная связь</button>
-            <button class="admin-tab" data-tab="audit">📋 Аудит</button>
-        </nav>
+        <!-- Simple admin login form (показывается, если админ-сессии нет) -->
+        <div id="adminLoginContainer" class="admin-login-container" style="display: none;">
+            <div class="admin-login-card">
+                <h2>Вход в админку</h2>
+                <p class="admin-login-subtitle">Введите ваш админский логин и пароль. Доступ только для владельца.</p>
+                <form id="adminLoginForm">
+                    <div class="form-group">
+                        <input type="email" id="adminLoginEmail" class="form-input" placeholder="Admin email" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="password" id="adminLoginPassword" class="form-input" placeholder="Пароль" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Войти в админку</button>
+                    <div id="adminLoginError" class="auth-error" style="margin-top: 8px;"></div>
+                </form>
+            </div>
+        </div>
 
         <!-- Main Content -->
-        <main class="admin-content">
+        <main class="admin-content" id="adminMainContent" style="display: none;">
+            <!-- Navigation Tabs -->
+            <nav class="admin-tabs">
+                <button class="admin-tab active" data-tab="dashboard">📊 Дашборд</button>
+                <button class="admin-tab" data-tab="users">👥 Пользователи</button>
+                <button class="admin-tab" data-tab="feedback">💬 Обратная связь</button>
+                <button class="admin-tab" data-tab="audit">📋 Аудит</button>
+            </nav>
+
             <!-- Dashboard Tab -->
             <section class="admin-section active" id="dashboard-section">
                 <h2>Статистика</h2>

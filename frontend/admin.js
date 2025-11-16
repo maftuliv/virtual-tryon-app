@@ -18,29 +18,101 @@ class AdminPanel {
             return;
         }
 
-        // Refresh general auth state for UI (ignore result)
-        await auth.checkAuth();
-
+        // Проверяем, есть ли уже активная admin-сессия
         const adminUser = await auth.getAdminSessionUser();
 
         if (!adminUser) {
-            alert('❌ Сессия администратора отсутствует или истекла. Войдите заново.');
-            window.location.href = '/';
+            // Нет сессии — показываем форму логина в админку
+            this.showAdminLoginForm();
             return;
         }
 
+        // Есть валидная admin-сессия — инициализируем панель
+        this.onAdminReady(adminUser);
+    }
+
+    onAdminReady(adminUser) {
         this.currentAdmin = adminUser;
 
+        // Синхронизируем auth.user, чтобы в шапке/других местах роль была корректной
         if (!auth.user || auth.user.id === adminUser.id) {
             auth.user = {...(auth.user || {}), ...adminUser};
             auth.updateUI();
         }
 
-        document.getElementById('adminUserInfo').textContent = `Admin: ${adminUser.email}`;
+        const adminInfo = document.getElementById('adminUserInfo');
+        const logoutBtn = document.getElementById('adminLogoutBtn');
+        const mainContent = document.getElementById('adminMainContent');
+        const loginContainer = document.getElementById('adminLoginContainer');
+
+        if (adminInfo) {
+            adminInfo.textContent = `Admin: ${adminUser.email}`;
+        }
+        if (logoutBtn) {
+            logoutBtn.style.display = 'inline-flex';
+        }
+        if (loginContainer) {
+            loginContainer.style.display = 'none';
+        }
+        if (mainContent) {
+            mainContent.style.display = 'block';
+        }
 
         this.setupTabs();
         this.setupSearch();
         this.loadDashboard();
+    }
+
+    showAdminLoginForm() {
+        const loginContainer = document.getElementById('adminLoginContainer');
+        const mainContent = document.getElementById('adminMainContent');
+        const logoutBtn = document.getElementById('adminLogoutBtn');
+        const form = document.getElementById('adminLoginForm');
+        const errorEl = document.getElementById('adminLoginError');
+
+        if (mainContent) mainContent.style.display = 'none';
+        if (logoutBtn) logoutBtn.style.display = 'none';
+        if (loginContainer) loginContainer.style.display = 'flex';
+
+        if (form) {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                if (errorEl) errorEl.textContent = '';
+
+                const emailInput = document.getElementById('adminLoginEmail');
+                const passwordInput = document.getElementById('adminLoginPassword');
+
+                const email = emailInput ? emailInput.value.trim() : '';
+                const password = passwordInput ? passwordInput.value : '';
+
+                if (!email || !password) {
+                    if (errorEl) errorEl.textContent = 'Введите email и пароль';
+                    return;
+                }
+
+                try {
+                    const response = await auth.fetchWithAuth('/api/auth/admin/login', {
+                        method: 'POST',
+                        body: JSON.stringify({ email, password }),
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok || !data.success) {
+                        const message = data.error || 'Ошибка входа';
+                        if (errorEl) errorEl.textContent = message;
+                        return;
+                    }
+
+                    // Сервер уже создал admin_session и, при необходимости, auth_token cookie
+                    const adminUser = data.user;
+                    this.onAdminReady(adminUser);
+                } catch (error) {
+                    console.error('[ADMIN] Admin login failed:', error);
+                    if (errorEl) errorEl.textContent = 'Ошибка соединения с сервером';
+                }
+            }, { once: true });
+        }
     }
 
     setupTabs() {

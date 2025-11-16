@@ -87,10 +87,17 @@ class AuthManager {
             const data = await response.json();
 
             if (data.success) {
-                // Server sets HTTP-only cookie automatically
-                this.token = data.user.token;  // Still store in localStorage for API calls
+                // Server sets HTTP-only cookie automatically.
+                // Backend returns JWT in top-level "token" field, not inside user object.
+                const token = data.token;
+                if (token) {
+                    this.token = token;
+                    localStorage.setItem('auth_token', this.token);
+                } else {
+                    console.warn('[AUTH] Register: token missing in response');
+                }
+
                 this.user = data.user;
-                localStorage.setItem('auth_token', this.token);
                 this.updateUI();
                 closeAuthModal();
                 this.showSuccess('Регистрация успешна!');
@@ -116,10 +123,17 @@ class AuthManager {
             const data = await response.json();
 
             if (data.success) {
-                // Server sets HTTP-only cookie automatically
-                this.token = data.user.token;  // Still store in localStorage for API calls
+                // Server sets HTTP-only cookie automatically.
+                // Backend returns JWT in top-level "token" field, not inside user object.
+                const token = data.token;
+                if (token) {
+                    this.token = token;
+                    localStorage.setItem('auth_token', this.token);
+                } else {
+                    console.warn('[AUTH] Login: token missing in response');
+                }
+
                 this.user = data.user;
-                localStorage.setItem('auth_token', this.token);
                 this.updateUI();
                 closeAuthModal();
                 this.showSuccess(`Добро пожаловать, ${this.user.full_name}!`);
