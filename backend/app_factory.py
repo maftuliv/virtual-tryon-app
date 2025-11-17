@@ -104,6 +104,28 @@ def _apply_pending_migrations(db_conn, logger):
             db_conn.commit()
             logger.info("[MIGRATION] Successfully created admin_audit_logs table")
 
+        # Check if generations table has R2 storage columns (Migration 007)
+        cursor.execute("""
+            SELECT EXISTS (
+                SELECT FROM information_schema.columns
+                WHERE table_name = 'generations' AND column_name = 'result_r2_key'
+            )
+        """)
+        has_r2_columns = cursor.fetchone()[0]
+
+        if not has_r2_columns:
+            logger.info("[MIGRATION] Adding R2 storage columns to generations table...")
+            cursor.execute("""
+                ALTER TABLE generations ADD COLUMN IF NOT EXISTS result_r2_key TEXT;
+                ALTER TABLE generations ADD COLUMN IF NOT EXISTS result_r2_url TEXT;
+                ALTER TABLE generations ADD COLUMN IF NOT EXISTS thumbnail_url TEXT;
+                ALTER TABLE generations ADD COLUMN IF NOT EXISTS title VARCHAR(255);
+                ALTER TABLE generations ADD COLUMN IF NOT EXISTS is_favorite BOOLEAN DEFAULT FALSE;
+                ALTER TABLE generations ADD COLUMN IF NOT EXISTS r2_upload_size INTEGER;
+            """)
+            db_conn.commit()
+            logger.info("[MIGRATION] Successfully added R2 storage columns (result_r2_key, result_r2_url, thumbnail_url, title, is_favorite, r2_upload_size)")
+
         cursor.close()
     except Exception as e:
         logger.warning(f"[MIGRATION] Auto-migration failed (non-critical): {e}")
