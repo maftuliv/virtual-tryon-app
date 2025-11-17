@@ -2,11 +2,10 @@
 
 from functools import wraps
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, current_app
 
 from backend.auth import AuthManager, get_token_from_request
 from backend.logger import get_logger
-from backend.utils.db_helpers import get_db_connection
 from backend.repositories.generation_repository import GenerationRepository
 
 logger = get_logger(__name__)
@@ -55,7 +54,7 @@ def create_user_tryons_blueprint(auth_manager: AuthManager) -> Blueprint:
             limit = min(limit, 100)
             offset = max(offset, 0)
 
-            conn = get_db_connection()
+            conn = current_app.config.get("db_connection")
             if not conn:
                 return jsonify({"error": "Database not available"}), 503
 
@@ -90,7 +89,7 @@ def create_user_tryons_blueprint(auth_manager: AuthManager) -> Blueprint:
                 total = cursor.fetchone()[0]
 
                 cursor.close()
-                conn.close()
+                # Don't close conn - it's shared app connection
 
                 tryons = []
                 for row in rows:
@@ -119,8 +118,6 @@ def create_user_tryons_blueprint(auth_manager: AuthManager) -> Blueprint:
                 })
 
             except Exception as e:
-                if conn:
-                    conn.close()
                 logger.error(f"Error fetching user tryons: {e}", exc_info=True)
                 return jsonify({"error": "Failed to fetch tryons"}), 500
 
@@ -140,14 +137,13 @@ def create_user_tryons_blueprint(auth_manager: AuthManager) -> Blueprint:
             data = request.get_json() or {}
             is_favorite = data.get("is_favorite", True)
 
-            conn = get_db_connection()
+            conn = current_app.config.get("db_connection")
             if not conn:
                 return jsonify({"error": "Database not available"}), 503
 
             try:
                 repo = GenerationRepository(conn)
                 success = repo.set_favorite(tryon_id, user_id, is_favorite)
-                conn.close()
 
                 if success:
                     return jsonify({
@@ -158,8 +154,6 @@ def create_user_tryons_blueprint(auth_manager: AuthManager) -> Blueprint:
                     return jsonify({"error": "Try-on not found or not owned by user"}), 404
 
             except Exception as e:
-                if conn:
-                    conn.close()
                 logger.error(f"Error toggling favorite: {e}", exc_info=True)
                 return jsonify({"error": "Failed to update favorite"}), 500
 
@@ -185,14 +179,13 @@ def create_user_tryons_blueprint(auth_manager: AuthManager) -> Blueprint:
             if len(title) > 255:
                 return jsonify({"error": "Title too long (max 255 characters)"}), 400
 
-            conn = get_db_connection()
+            conn = current_app.config.get("db_connection")
             if not conn:
                 return jsonify({"error": "Database not available"}), 503
 
             try:
                 repo = GenerationRepository(conn)
                 success = repo.set_title(tryon_id, user_id, title)
-                conn.close()
 
                 if success:
                     return jsonify({
@@ -203,8 +196,6 @@ def create_user_tryons_blueprint(auth_manager: AuthManager) -> Blueprint:
                     return jsonify({"error": "Try-on not found or not owned by user"}), 404
 
             except Exception as e:
-                if conn:
-                    conn.close()
                 logger.error(f"Error updating title: {e}", exc_info=True)
                 return jsonify({"error": "Failed to update title"}), 500
 
@@ -221,7 +212,7 @@ def create_user_tryons_blueprint(auth_manager: AuthManager) -> Blueprint:
             if not user_id:
                 return jsonify({"error": "Invalid user"}), 401
 
-            conn = get_db_connection()
+            conn = current_app.config.get("db_connection")
             if not conn:
                 return jsonify({"error": "Database not available"}), 503
 
@@ -274,7 +265,7 @@ def create_user_tryons_blueprint(auth_manager: AuthManager) -> Blueprint:
                 storage_bytes = cursor.fetchone()[0]
 
                 cursor.close()
-                conn.close()
+                # Don't close conn - it's shared app connection
 
                 return jsonify({
                     "success": True,
@@ -288,8 +279,6 @@ def create_user_tryons_blueprint(auth_manager: AuthManager) -> Blueprint:
                 })
 
             except Exception as e:
-                if conn:
-                    conn.close()
                 logger.error(f"Error fetching user stats: {e}", exc_info=True)
                 return jsonify({"error": "Failed to fetch stats"}), 500
 
