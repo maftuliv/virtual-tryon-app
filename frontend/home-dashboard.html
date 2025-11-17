@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Главная - Tap to look</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="home-dashboard.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+</head>
+<body>
+    <div class="app-wrapper">
+        <!-- Top Bar -->
+        <header class="top-bar">
+            <div class="top-bar-content">
+                <a href="home-dashboard.html" class="logo-container">
+                    <div class="logo-icon">
+                        <span class="logo-tap">Tap</span>
+                    </div>
+                    <span class="logo-text">to l<span class="logo-smile">oo</span>k</span>
+                </a>
+                <div class="top-bar-right">
+                    <div id="userProfile" class="user-profile">
+                        <div class="user-info-compact">
+                            <img id="userAvatar" src="" class="user-avatar-small" alt="User">
+                            <div class="user-details">
+                                <span id="userName" class="user-name-text">User</span>
+                                <span id="userStatus" class="user-status-badge premium">Premium</span>
+                            </div>
+                        </div>
+                        <button class="logout-btn" onclick="handleLogout()" title="Выход">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Dashboard Content -->
+        <main class="dashboard-container">
+            <!-- Hero Section with Greeting -->
+            <section class="dashboard-hero">
+                <div class="hero-content">
+                    <h1 class="hero-greeting">
+                        Привет, <span id="userNameHero">Илья</span> 👋
+                    </h1>
+                    <p class="hero-tagline">Здесь твоя зона стиля. Продолжим примерку?</p>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat-card-premium">
+                        <div class="stat-icon">💎</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Премиум</div>
+                            <div class="stat-value" id="statsRemaining">50 примерок осталось</div>
+                            <div class="stat-period">в этом месяце</div>
+                        </div>
+                        <div class="stat-progress">
+                            <div class="stat-progress-bar" id="statsProgressBar" style="width: 100%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Main Action CTA -->
+            <section class="main-action-section">
+                <a href="index.html?create=true" class="create-new-look-card">
+                    <div class="create-card-content">
+                        <div class="create-card-icon">✨</div>
+                        <div class="create-card-text">
+                            <h2 class="create-card-title">Создать новый образ</h2>
+                            <p class="create-card-subtitle">Загрузи фото или используй уже сохранённые</p>
+                        </div>
+                    </div>
+                    <svg class="create-card-arrow" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                    </svg>
+                </a>
+            </section>
+
+            <!-- Content Grid -->
+            <div class="dashboard-content-grid">
+                <!-- Left Column: My Tryons -->
+                <section class="dashboard-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Мои примерки</h2>
+                        <a href="dashboard.html" class="section-link">
+                            Смотреть все
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                        </a>
+                    </div>
+
+                    <div class="tryons-grid" id="tryonsGrid">
+                        <!-- Loading state -->
+                        <div class="tryons-loading" id="tryonsLoading">
+                            <div class="spinner-small"></div>
+                            <p>Загрузка примерок...</p>
+                        </div>
+
+                        <!-- Empty state -->
+                        <div class="tryons-empty" id="tryonsEmpty" style="display: none;">
+                            <div class="empty-icon">📸</div>
+                            <p class="empty-text">У вас пока нет примерок</p>
+                            <a href="index.html?create=true" class="empty-action-btn">Создать первую</a>
+                        </div>
+
+                        <!-- Tryons will be loaded here -->
+                    </div>
+                </section>
+
+                <!-- Right Column: My Wardrobe & Recommendations -->
+                <aside class="dashboard-sidebar">
+                    <!-- My Wardrobe -->
+                    <section class="dashboard-section">
+                        <div class="section-header">
+                            <h2 class="section-title">Моя одежда</h2>
+                            <button class="section-icon-btn" onclick="showWardrobeModal()" title="Добавить одежду">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="12" y1="5" x2="12" y2="19"/>
+                                    <line x1="5" y1="12" x2="19" y2="12"/>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div class="wardrobe-grid" id="wardrobeGrid">
+                            <!-- Coming soon placeholder -->
+                            <div class="wardrobe-coming-soon">
+                                <div class="coming-soon-icon">👕</div>
+                                <p class="coming-soon-text">Скоро здесь появится ваш гардероб</p>
+                                <p class="coming-soon-subtext">Сохраняйте понравившиеся вещи</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Recommendations -->
+                    <section class="dashboard-section">
+                        <div class="section-header">
+                            <h2 class="section-title">Рекомендации</h2>
+                        </div>
+
+                        <div class="recommendations-list">
+                            <a href="index.html?create=true&category=tops" class="recommendation-item">
+                                <div class="recommendation-icon">👔</div>
+                                <div class="recommendation-text">
+                                    <div class="recommendation-title">Образ для вечеринки</div>
+                                    <div class="recommendation-subtitle">Попробуй стильный пиджак</div>
+                                </div>
+                            </a>
+
+                            <a href="index.html?create=true&category=bottoms" class="recommendation-item">
+                                <div class="recommendation-icon">👖</div>
+                                <div class="recommendation-text">
+                                    <div class="recommendation-title">Casual стиль</div>
+                                    <div class="recommendation-subtitle">Джинсы всегда в тренде</div>
+                                </div>
+                            </a>
+
+                            <a href="index.html?create=true&category=one-pieces" class="recommendation-item">
+                                <div class="recommendation-icon">👗</div>
+                                <div class="recommendation-text">
+                                    <div class="recommendation-title">Элегантный образ</div>
+                                    <div class="recommendation-subtitle">Платье для особого случая</div>
+                                </div>
+                            </a>
+                        </div>
+                    </section>
+
+                    <!-- Settings Quick Access -->
+                    <section class="dashboard-section">
+                        <div class="section-header">
+                            <h2 class="section-title">Настройки</h2>
+                        </div>
+
+                        <div class="settings-quick-links">
+                            <a href="dashboard.html" class="settings-link">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="3"/>
+                                    <path d="M12 1v6m0 6v6"/>
+                                </svg>
+                                Профиль
+                            </a>
+
+                            <a href="#" class="settings-link" onclick="showSubscriptionModal(); return false;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                                </svg>
+                                Подписка
+                            </a>
+
+                            <a href="feedback-stats.html" class="settings-link">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                </svg>
+                                Связь
+                            </a>
+
+                            <button class="settings-link" onclick="handleLogout()">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
+                                </svg>
+                                Выйти
+                            </button>
+                        </div>
+                    </section>
+                </aside>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer-section">
+            <div class="footer-text">© 2024 Tap to look. Все права защищены.</div>
+        </footer>
+    </div>
+
+    <script src="auth.js"></script>
+    <script src="home-dashboard.js"></script>
+</body>
+</html>

@@ -153,6 +153,16 @@ let currentStep = 1;
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', async () => {
+    // Check if user is logged in and redirect to dashboard
+    await auth.checkAuth();
+
+    // If user is logged in and visiting index.html, redirect to home-dashboard
+    // UNLESS they explicitly want to create a new try-on (via URL parameter)
+    if (auth.user && !window.location.search.includes('create=true')) {
+        window.location.href = 'home-dashboard.html';
+        return;
+    }
+
     setupUploadZones();
     setupEventListeners();
     setupStepper();
