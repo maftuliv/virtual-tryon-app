@@ -6,6 +6,7 @@ from typing import Dict, List, Optional
 from flask import Request
 
 from backend.clients.nanobanana_client import NanoBananaClient
+from backend.clients.r2_storage_client import r2_storage
 from backend.logger import get_logger
 from backend.repositories.generation_repository import GenerationRepository
 from backend.services.image_service import ImageService
@@ -201,11 +202,12 @@ class TryonService:
             # No successful results - don't increment
             updated_limit = limit_status
 
-        # 5. Track generation (optional)
+        # 5. Track generation (optional) and upload to R2
         if self.generation_repo and successful_results:
             try:
                 for result in successful_results:
-                    self.generation_repo.create(
+                    # Create generation record first
+                    generation_record = self.generation_repo.create(
                         user_id=user_id,
                         device_fingerprint=device_fingerprint,
                         category=garment_category,
@@ -214,6 +216,40 @@ class TryonService:
                         result_image_url=result.get("result_url"),
                         status="completed",
                     )
+
+                    # Upload to R2 if configured and user is logged in
+                    if user_id and r2_storage.is_configured():
+                        try:
+                            result_path = result.get("result_path")
+                            if result_path and os.path.exists(result_path):
+                                with open(result_path, 'rb') as f:
+                                    image_data = f.read()
+
+                                r2_result = r2_storage.upload_tryon_result(
+                                    image_data=image_data,
+                                    user_id=user_id,
+                                    generation_id=generation_record['id']
+                                )
+
+                                # Update generation with R2 info
+                                self.generation_repo.update_r2_storage(
+                                    generation_id=generation_record['id'],
+                                    r2_key=r2_result['key'],
+                                    r2_url=r2_result['url'],
+                                    upload_size=r2_result.get('size')
+                                )
+
+                                # Add R2 URL to result
+                                result['r2_url'] = r2_result['url']
+
+                                self.logger.info(
+                                    f"Uploaded to R2: {r2_result['url']} "
+                                    f"({r2_result.get('size', 0)} bytes)"
+                                )
+                        except Exception as e:
+                            self.logger.warning(f"Failed to upload to R2: {e}")
+                            # Don't fail the request if R2 upload fails
+
                 self.logger.info(f"Tracked {len(successful_results)} generations in database")
             except Exception as e:
                 self.logger.error(f"Failed to track generation: {e}")

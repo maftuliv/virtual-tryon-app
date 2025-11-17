@@ -186,6 +186,123 @@ class GenerationRepository:
             logger.error(f"Error updating generation {generation_id}: {e}", exc_info=True)
             raise
 
+    def update_r2_storage(
+        self,
+        generation_id: int,
+        r2_key: str,
+        r2_url: str,
+        upload_size: int = None
+    ) -> bool:
+        """
+        Update generation with R2 storage information.
+
+        Args:
+            generation_id: Generation record ID
+            r2_key: Object key in R2 bucket
+            r2_url: Public URL for the result
+            upload_size: Size of uploaded file in bytes
+
+        Returns:
+            True if updated successfully
+        """
+        try:
+            cursor = self.db.cursor()
+
+            cursor.execute(
+                """
+                UPDATE generations
+                SET result_r2_key = %s,
+                    result_r2_url = %s,
+                    r2_upload_size = %s,
+                    updated_at = NOW()
+                WHERE id = %s
+                """,
+                (r2_key, r2_url, upload_size, generation_id),
+            )
+
+            self.db.commit()
+            cursor.close()
+
+            logger.info(f"Updated R2 storage for generation {generation_id}: {r2_url}")
+            return True
+
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Error updating R2 storage for generation {generation_id}: {e}", exc_info=True)
+            return False
+
+    def set_favorite(self, generation_id: int, user_id: int, is_favorite: bool = True) -> bool:
+        """
+        Mark generation as favorite/unfavorite.
+
+        Args:
+            generation_id: Generation record ID
+            user_id: User ID (for ownership verification)
+            is_favorite: True to favorite, False to unfavorite
+
+        Returns:
+            True if updated successfully
+        """
+        try:
+            cursor = self.db.cursor()
+
+            cursor.execute(
+                """
+                UPDATE generations
+                SET is_favorite = %s,
+                    updated_at = NOW()
+                WHERE id = %s AND user_id = %s
+                """,
+                (is_favorite, generation_id, user_id),
+            )
+
+            affected = cursor.rowcount
+            self.db.commit()
+            cursor.close()
+
+            return affected > 0
+
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Error setting favorite for generation {generation_id}: {e}", exc_info=True)
+            return False
+
+    def set_title(self, generation_id: int, user_id: int, title: str) -> bool:
+        """
+        Set title for a generation.
+
+        Args:
+            generation_id: Generation record ID
+            user_id: User ID (for ownership verification)
+            title: New title
+
+        Returns:
+            True if updated successfully
+        """
+        try:
+            cursor = self.db.cursor()
+
+            cursor.execute(
+                """
+                UPDATE generations
+                SET title = %s,
+                    updated_at = NOW()
+                WHERE id = %s AND user_id = %s
+                """,
+                (title, generation_id, user_id),
+            )
+
+            affected = cursor.rowcount
+            self.db.commit()
+            cursor.close()
+
+            return affected > 0
+
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Error setting title for generation {generation_id}: {e}", exc_info=True)
+            return False
+
     def list_by_user(
         self, user_id: int, limit: int = 100, offset: int = 0
     ) -> List[Dict[str, Any]]:

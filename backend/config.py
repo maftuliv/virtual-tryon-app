@@ -114,6 +114,32 @@ class Settings(BaseSettings):
 
     cleanup_max_age_hours: int = Field(default=1, ge=1, description="Maximum file age in hours before cleanup")
 
+    # ==================== CLOUDFLARE R2 STORAGE (OPTIONAL) ====================
+    r2_access_key_id: Optional[str] = Field(
+        default=None,
+        description="Cloudflare R2 Access Key ID for image storage"
+    )
+
+    r2_secret_access_key: Optional[str] = Field(
+        default=None,
+        description="Cloudflare R2 Secret Access Key"
+    )
+
+    r2_endpoint_url: Optional[str] = Field(
+        default=None,
+        description="Cloudflare R2 S3-compatible endpoint URL"
+    )
+
+    r2_bucket_name: str = Field(
+        default="taptolook",
+        description="R2 bucket name for storing images"
+    )
+
+    r2_public_url: Optional[str] = Field(
+        default=None,
+        description="Public URL base for R2 bucket (e.g., https://pub-xxx.r2.dev)"
+    )
+
     # ==================== VALIDATORS ====================
 
     @field_validator("jwt_secret_key")
@@ -202,6 +228,8 @@ class Settings(BaseSettings):
             "telegram_bot_token",
             "device_fingerprint_secret",
             "google_client_secret",
+            "r2_access_key_id",
+            "r2_secret_access_key",
         ]
 
         for key in sensitive_keys:
