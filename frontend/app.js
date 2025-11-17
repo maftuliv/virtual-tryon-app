@@ -61,6 +61,7 @@ async function updateFreeGenerationsIndicator(limitData = null) {
     const counter = document.getElementById('freeGenerationsCounter');
     const countEl = document.getElementById('freeGenCount');
     const progressBar = document.getElementById('freeGenProgressBar');
+    const iconEl = document.getElementById('freeGenIcon');
 
     if (!counter || !countEl) {
         console.log('[FREE-GEN] Elements not found');
@@ -94,6 +95,14 @@ async function updateFreeGenerationsIndicator(limitData = null) {
         if (n === 1) word = 'примерка';
         else if (n >= 2 && n <= 4) word = 'примерки';
         countEl.textContent = n + ' ' + word;
+
+        // Update icon based on remaining count
+        if (iconEl) {
+            if (n >= 3) iconEl.textContent = '😍';
+            else if (n === 2) iconEl.textContent = '🥰';
+            else if (n === 1) iconEl.textContent = '😊';
+            else iconEl.textContent = '😢';
+        }
 
         // Update progress bar
         if (progressBar && limitData.limit) {

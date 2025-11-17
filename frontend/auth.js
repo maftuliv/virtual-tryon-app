@@ -355,7 +355,13 @@ class AuthManager {
         } else {
             // Free user: 3 generations per week (or any other limit)
             const word = this.getPluralForm(limit.remaining, 'примерка', 'примерки', 'примерок');
-            if (userGenIcon) userGenIcon.textContent = '🎁';
+            // Dynamic emoji based on remaining count
+            if (userGenIcon) {
+                if (limit.remaining >= 3) userGenIcon.textContent = '😍';
+                else if (limit.remaining === 2) userGenIcon.textContent = '🥰';
+                else if (limit.remaining === 1) userGenIcon.textContent = '😊';
+                else userGenIcon.textContent = '😢';
+            }
             if (userGenTitle) userGenTitle.textContent = `${limit.remaining} ${word}`;
             if (userGenRemaining) userGenRemaining.textContent = 'осталось на этой неделе';
             // Calculate progress percentage
