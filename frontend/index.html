@@ -360,20 +360,33 @@
 
                         <!-- Free generations counter for guests -->
                         <div style="text-align: center;">
-                            <div id="freeGenerationsCounter" class="free-generations-counter">
-                                <span class="free-gen-sparkle">✨</span>
-                                <span id="freeGenRemaining" class="free-gen-number">3 примерки</span>
-                                <span class="free-gen-total">бесплатно</span>
+                            <div id="freeGenerationsCounter" class="generation-counter-card">
+                                <div class="gen-counter-icon">📦</div>
+                                <div class="gen-counter-content">
+                                    <div class="gen-counter-header">
+                                        <span class="gen-counter-title">Бесплатно</span>
+                                        <span id="freeGenCount" class="gen-counter-value">3 примерки</span>
+                                    </div>
+                                    <div class="gen-counter-progress">
+                                        <div id="freeGenProgressBar" class="gen-counter-progress-bar" style="width: 100%;"></div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
                         <!-- Generations counter for logged-in users -->
                         <div style="text-align: center;">
-                            <div id="userGenerationsCounter" class="free-generations-counter" style="display: none;">
-                                <span class="free-gen-sparkle">✨</span>
-                                <span id="userGenLabel"></span>
-                                <span id="userGenRemaining" class="free-gen-number">3 примерки</span>
-                                <span id="userGenTotal" class="free-gen-total">осталось на этой неделе</span>
+                            <div id="userGenerationsCounter" class="generation-counter-card" style="display: none;">
+                                <div class="gen-counter-icon" id="userGenIcon">📦</div>
+                                <div class="gen-counter-content">
+                                    <div class="gen-counter-header">
+                                        <span class="gen-counter-title" id="userGenTitle">Премиум</span>
+                                        <span id="userGenRemaining" class="gen-counter-value">50 примерок</span>
+                                    </div>
+                                    <div class="gen-counter-progress">
+                                        <div id="userGenProgressBar" class="gen-counter-progress-bar" style="width: 100%;"></div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 

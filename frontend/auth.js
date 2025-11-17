@@ -305,8 +305,9 @@ class AuthManager {
         const userLimitBadge = document.getElementById('userLimit');
         const userGenCounter = document.getElementById('userGenerationsCounter');
         const userGenRemaining = document.getElementById('userGenRemaining');
-        const userGenTotal = document.getElementById('userGenTotal');
-        const userGenLabel = document.getElementById('userGenLabel');
+        const userGenTitle = document.getElementById('userGenTitle');
+        const userGenIcon = document.getElementById('userGenIcon');
+        const userGenProgressBar = document.getElementById('userGenProgressBar');
 
         if (!this.user) {
             // Hide limit indicators when not logged in
@@ -326,7 +327,7 @@ class AuthManager {
 
         // Update counters based on server-returned limit
         if (userGenCounter) {
-            userGenCounter.style.display = 'block';
+            userGenCounter.style.display = 'inline-flex';
         }
 
         if (limit.limit === -1) {
@@ -337,23 +338,30 @@ class AuthManager {
                 userLimitBadge.style.background = 'rgba(139, 92, 246, 0.1)';
                 userLimitBadge.style.color = '#8b5cf6';
             }
+            if (userGenIcon) userGenIcon.textContent = '👑';
+            if (userGenTitle) userGenTitle.textContent = 'Админ';
             if (userGenRemaining) userGenRemaining.textContent = '∞ примерок';
-            if (userGenTotal) userGenTotal.textContent = '';
-            if (userGenLabel) userGenLabel.textContent = '';
+            if (userGenProgressBar) userGenProgressBar.style.width = '100%';
             return;
         } else if (limit.limit === 50) {
             // Premium user: 50 generations per month
             const word = this.getPluralForm(limit.remaining, 'примерка', 'примерки', 'примерок');
+            if (userGenIcon) userGenIcon.textContent = '📦';
+            if (userGenTitle) userGenTitle.textContent = 'Премиум';
             if (userGenRemaining) userGenRemaining.textContent = `${limit.remaining} ${word}`;
-            if (userGenTotal) userGenTotal.textContent = ' осталось в этом месяце';
+            // Calculate progress percentage
+            const progressPercent = (limit.remaining / limit.limit) * 100;
+            if (userGenProgressBar) userGenProgressBar.style.width = `${progressPercent}%`;
         } else {
             // Free user: 3 generations per week (or any other limit)
             const word = this.getPluralForm(limit.remaining, 'примерка', 'примерки', 'примерок');
+            if (userGenIcon) userGenIcon.textContent = '🎁';
+            if (userGenTitle) userGenTitle.textContent = 'Бесплатно';
             if (userGenRemaining) userGenRemaining.textContent = `${limit.remaining} ${word}`;
-            if (userGenTotal) userGenTotal.textContent = ' осталось на этой неделе';
+            // Calculate progress percentage
+            const progressPercent = (limit.remaining / limit.limit) * 100;
+            if (userGenProgressBar) userGenProgressBar.style.width = `${progressPercent}%`;
         }
-
-        if (userGenLabel) userGenLabel.textContent = '';
 
         const limitBanner = document.getElementById('limitBanner');
         const limitText = document.getElementById('limitText');
