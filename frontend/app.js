@@ -59,9 +59,10 @@ async function checkDeviceLimit() {
 
 async function updateFreeGenerationsIndicator(limitData = null) {
     const counter = document.getElementById('freeGenerationsCounter');
-    const remainingEl = document.getElementById('freeGenRemaining');
+    const countEl = document.getElementById('freeGenCount');
+    const progressBar = document.getElementById('freeGenProgressBar');
 
-    if (!counter || !remainingEl) {
+    if (!counter || !countEl) {
         console.log('[FREE-GEN] Elements not found');
         return;
     }
@@ -74,14 +75,14 @@ async function updateFreeGenerationsIndicator(limitData = null) {
         } catch (error) {
             console.error('[FREE-GEN] CRITICAL Error fetching limit data:', error);
             // Show error state instead of fake data
-            remainingEl.textContent = '?';
+            countEl.textContent = '?';
             return;
         }
     }
 
     // Update the number
     if (limitData && limitData.error) {
-        remainingEl.textContent = '—';
+        countEl.textContent = '—';
         console.warn('[FREE-GEN] Limit indicator error state:', limitData.error);
         return;
     }
@@ -92,11 +93,18 @@ async function updateFreeGenerationsIndicator(limitData = null) {
         let word = 'примерок';
         if (n === 1) word = 'примерка';
         else if (n >= 2 && n <= 4) word = 'примерки';
-        remainingEl.textContent = n + ' ' + word;
+        countEl.textContent = n + ' ' + word;
+
+        // Update progress bar
+        if (progressBar && limitData.limit) {
+            const progressPercent = (limitData.remaining / limitData.limit) * 100;
+            progressBar.style.width = `${progressPercent}%`;
+        }
+
         console.log('[FREE-GEN] Updated counter to:', limitData.remaining);
     } else {
         console.error('[FREE-GEN] Invalid limit data:', limitData);
-        remainingEl.textContent = '?';
+        countEl.textContent = '?';
     }
 }
 
