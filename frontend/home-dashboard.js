@@ -51,8 +51,14 @@ function updateUserUI() {
         userName.textContent = firstName;
     }
 
-    if (userAvatar && auth.user.avatar_url) {
-        userAvatar.src = auth.user.avatar_url;
+    if (userAvatar) {
+        if (auth.user.avatar_url) {
+            userAvatar.src = auth.user.avatar_url;
+        } else {
+            // Fallback: generate colored avatar with first letter
+            const firstLetter = firstName.charAt(0).toUpperCase();
+            userAvatar.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Ccircle cx='20' cy='20' r='20' fill='%23c084fc'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='0.35em' fill='white' font-size='18' font-weight='600'%3E${firstLetter}%3C/text%3E%3C/svg%3E`;
+        }
     }
 
     if (userStatus) {
