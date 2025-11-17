@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="История примерок - Tap to look">
+    <title>Мои примерки - Tap to look</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+</head>
+<body>
+    <div class="app-wrapper">
+        <!-- Top Bar -->
+        <header class="top-bar">
+            <div class="top-bar-content">
+                <a href="index.html" class="logo-container">
+                    <div class="logo-icon">
+                        <span class="logo-tap">Tap</span>
+                    </div>
+                    <span class="logo-text">to l<span class="logo-smile">oo</span>k</span>
+                </a>
+                <div class="top-bar-right">
+                    <a href="index.html" class="dashboard-nav-link">← Назад к примерке</a>
+                    <div id="userProfile" class="user-profile">
+                        <img id="userAvatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Ccircle cx='16' cy='16' r='16' fill='%23ec4899'/%3E%3C/svg%3E" class="user-avatar" alt="User">
+                        <div class="user-info">
+                            <span id="userName" class="user-name">User</span>
+                            <span id="userStatus" class="user-status-badge free">Free</span>
+                        </div>
+                        <button class="logout-btn" onclick="handleLogout()" title="Выход">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="2"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dashboard Content -->
+        <main class="dashboard-main">
+            <div class="dashboard-container">
+                <!-- Page Header -->
+                <div class="dashboard-header">
+                    <h1 class="dashboard-title">Мои примерки</h1>
+                    <p class="dashboard-subtitle">История ваших виртуальных примерок</p>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="stats-grid" id="statsGrid">
+                    <div class="stat-card">
+                        <div class="stat-icon">📸</div>
+                        <div class="stat-value" id="statTotal">0</div>
+                        <div class="stat-label">Всего примерок</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⭐</div>
+                        <div class="stat-value" id="statFavorites">0</div>
+                        <div class="stat-label">Избранное</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">💾</div>
+                        <div class="stat-value" id="statStorage">0 MB</div>
+                        <div class="stat-label">Использовано</div>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="filters-bar">
+                    <div class="filter-group">
+                        <button class="filter-btn active" data-filter="all">Все</button>
+                        <button class="filter-btn" data-filter="favorites">⭐ Избранное</button>
+                    </div>
+                    <div class="sort-group">
+                        <select id="sortSelect" class="sort-select">
+                            <option value="newest">Сначала новые</option>
+                            <option value="oldest">Сначала старые</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Gallery Grid -->
+                <div class="gallery-grid" id="galleryGrid">
+                    <!-- Loading state -->
+                    <div class="gallery-loading" id="galleryLoading">
+                        <div class="loading-spinner-small"></div>
+                        <p>Загрузка истории...</p>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div class="empty-state" id="emptyState" style="display: none;">
+                    <div class="empty-icon">📷</div>
+                    <h3>Пока нет примерок</h3>
+                    <p>Сделайте первую примерку, и она появится здесь</p>
+                    <a href="index.html" class="btn-primary">Сделать примерку</a>
+                </div>
+
+                <!-- Load More -->
+                <div class="load-more-container" id="loadMoreContainer" style="display: none;">
+                    <button class="btn-load-more" id="loadMoreBtn" onclick="loadMore()">
+                        Загрузить ещё
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Image Modal -->
+    <div class="image-modal" id="imageModal" onclick="closeImageModal(event)">
+        <div class="image-modal-content">
+            <button class="image-modal-close" onclick="closeImageModal()">&times;</button>
+            <img id="modalImage" src="" alt="Результат примерки">
+            <div class="image-modal-actions">
+                <button class="modal-action-btn" id="modalFavoriteBtn" onclick="toggleFavoriteFromModal()">
+                    <span id="modalFavoriteIcon">☆</span> Избранное
+                </button>
+                <a class="modal-action-btn" id="modalDownloadBtn" href="#" download="tryon-result.png">
+                    ⬇️ Скачать
+                </a>
+            </div>
+            <div class="image-modal-info">
+                <p id="modalDate"></p>
+                <p id="modalCategory"></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="device-fingerprint.js"></script>
+    <script src="auth.js"></script>
+    <script src="dashboard.js"></script>
+</body>
+</html>

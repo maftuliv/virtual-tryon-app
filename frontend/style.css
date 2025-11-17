@@ -4464,6 +4464,19 @@ body::before {
     min-width: 0;
 }
 
+.user-dashboard-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: inherit;
+    transition: opacity 0.2s ease;
+}
+
+.user-dashboard-link:hover {
+    opacity: 0.8;
+}
+
 .user-name {
     font-size: 0.8125rem;
     font-weight: 600;
