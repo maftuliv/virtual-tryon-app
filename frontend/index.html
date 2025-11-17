@@ -148,58 +148,112 @@
 
         <!-- User Dashboard (shown only for logged-in users) -->
         <div id="userDashboard" class="user-dashboard-container" style="display: none;">
+            <!-- Top Banner -->
+            <div class="dashboard-top-banner">
+                <p>✨✨ Здесь рождается твой новый стиль — просто нажми, чтобы посмотреть! ✨✨</p>
+            </div>
+
             <div class="dashboard-content">
-                <!-- Greeting & CTA Section -->
-                <div class="dashboard-hero">
-                    <div class="dashboard-greeting">
-                        <h1 class="dashboard-greeting-title">Привет, <span id="dashboardGreetingName">Пользователь</span> 👋</h1>
-                        <p class="dashboard-greeting-subtitle">Готовы примерить что-то новое?</p>
+                <!-- Top Row: Greeting + Premium + Liked -->
+                <div class="dashboard-top-row">
+                    <!-- Greeting Card -->
+                    <div class="dashboard-card dashboard-greeting-card">
+                        <h1 class="dashboard-greeting-title">Привет, <span id="dashboardGreetingName">Илья</span> 👋</h1>
+                        <p class="dashboard-greeting-subtitle">Здесь твоя зона стиля, Продолжим примерку или создадим новый образ?</p>
+                        <button class="dashboard-create-btn" onclick="createNewLook()">
+                            ⭐ Создать новый образ
+                        </button>
                     </div>
-                    <button class="dashboard-create-btn" onclick="createNewLook()">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"/>
-                            <line x1="12" y1="8" x2="12" y2="16"/>
-                            <line x1="8" y1="12" x2="16" y2="12"/>
-                        </svg>
-                        Создать новый образ
-                    </button>
+
+                    <!-- Premium Card -->
+                    <div class="dashboard-card dashboard-premium-card">
+                        <h3 class="dashboard-card-title">Премиум</h3>
+                        <p class="dashboard-premium-count" id="dashboardPremiumCount">50 примерок осталось<br>в этом месяце</p>
+                        <div class="dashboard-premium-progress">
+                            <div class="dashboard-premium-bar" style="width: 100%;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Liked Looks Card -->
+                    <div class="dashboard-card dashboard-liked-card">
+                        <h3 class="dashboard-card-title">Лайкнутые<br>образы</h3>
+                        <p class="dashboard-liked-subtitle">Это образы, которые я отметите как пурекнемуд</p>
+                        <div class="dashboard-liked-actions">
+                            <button class="dashboard-liked-btn">👗 Ушечника</button>
+                            <button class="dashboard-liked-btn">Отпровлть</button>
+                        </div>
+                        <div class="dashboard-liked-number">24</div>
+                    </div>
                 </div>
 
-                <!-- User Info Pill -->
-                <div class="dashboard-user-pill">
-                    <div class="dashboard-user-avatar" id="dashboardUserAvatar">A</div>
-                    <div class="dashboard-user-info">
-                        <div class="dashboard-user-name" id="dashboardUserName">Пользователь</div>
-                        <div class="dashboard-user-badge" id="dashboardUserBadge">Free</div>
+                <!-- Main Grid: Tryons + Photos + Recommendations -->
+                <div class="dashboard-main-grid">
+                    <!-- My Tryons -->
+                    <div class="dashboard-section">
+                        <div class="dashboard-section-header">
+                            <h2>Мои примерки</h2>
+                            <button class="dashboard-section-arrow">›</button>
+                        </div>
+                        <div class="dashboard-tryons-grid" id="dashboardTryonsContainer">
+                            <div class="tryon-card-small">
+                                <div class="tryon-card-image"></div>
+                                <p class="tryon-card-title">Вечеринка в баре</p>
+                                <p class="tryon-card-date">44 апреля 2024</p>
+                            </div>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Premium Stats -->
-                <div class="dashboard-stats-card">
-                    <div class="dashboard-stats-header">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
-                        </svg>
-                        <h3>Ваш премиум-статус</h3>
+                    <!-- My Photos -->
+                    <div class="dashboard-section">
+                        <div class="dashboard-section-header">
+                            <h2>Мои фото</h2>
+                        </div>
+                        <div class="dashboard-photos-grid">
+                            <div class="dashboard-photo-card">
+                                <div class="dashboard-photo-placeholder">👔</div>
+                                <p>Фото в полный рост</p>
+                            </div>
+                            <div class="dashboard-photo-card">
+                                <div class="dashboard-photo-placeholder">🎨</div>
+                                <p>Портрет</p>
+                            </div>
+                        </div>
+                        <button class="dashboard-add-photo-btn">📁 Добавить фото</button>
                     </div>
-                    <div class="dashboard-stats-content">
-                        <p class="dashboard-stats-count" id="dashboardPremiumCount">50 примерок осталось в этом месяце</p>
-                        <div class="dashboard-stats-progress">
-                            <div class="premium-progress-fill" style="width: 100%;"></div>
+
+                    <!-- Recommendations -->
+                    <div class="dashboard-section">
+                        <div class="dashboard-section-header">
+                            <h2>Рекомендации</h2>
+                        </div>
+                        <div class="dashboard-recommendations">
+                            <div class="dashboard-rec-number">24</div>
+                            <p class="dashboard-rec-text">попритьме востик оево</p>
+                            <div class="dashboard-rec-tags">
+                                <span class="dashboard-rec-tag">👗 Вечинка</span>
+                                <span class="dashboard-rec-tag">👔 Сфис</span>
+                                <span class="dashboard-rec-tag">📦 Сторона</span>
+                                <span class="dashboard-rec-tag">👚 Путешествие</span>
+                            </div>
+                            <button class="dashboard-catalog-btn">☰ Открыть каталог</button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Recent Tryons -->
-                <div class="dashboard-section">
-                    <div class="dashboard-section-header">
-                        <h2>Недавние примерки</h2>
-                        <a href="dashboard.html" class="dashboard-view-all">Посмотреть все →</a>
-                    </div>
-                    <div class="dashboard-tryons-grid" id="dashboardTryonsContainer">
-                        <div class="tryon-card">
-                            <div class="tryon-thumb">Загрузка...</div>
+                <!-- Bottom Section: Share Opinion -->
+                <div class="dashboard-bottom-section">
+                    <div class="dashboard-share-opinion">
+                        <div class="dashboard-share-left">
+                            <h3>Поделитесь мнением</h3>
+                            <p>Это поможет нам улучшить Tapto look</p>
                         </div>
+                        <button class="dashboard-share-btn">💌 Отправить отзыв</button>
+                    </div>
+
+                    <div class="dashboard-newsletter">
+                        <h3>Исоилиум сожки &лушшить</h3>
+                        <p>Испокуся яжами, вы согншетеся с устлшвей и полнэной яндица</p>
+                        <button class="dashboard-newsletter-btn">➕ Отправить отем</button>
                     </div>
                 </div>
             </div>

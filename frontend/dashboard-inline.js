@@ -66,25 +66,9 @@ function updateDashboardUI() {
 
     const firstName = auth.user.full_name?.split(' ')[0] || auth.user.email.split('@')[0];
 
-    // Update greeting
+    // Update greeting name
     const greetingName = document.getElementById('dashboardGreetingName');
     if (greetingName) greetingName.textContent = firstName;
-
-    // Update user pill
-    const userPillName = document.getElementById('dashboardUserName');
-    const userPillAvatar = document.getElementById('dashboardUserAvatar');
-    const userPillBadge = document.getElementById('dashboardUserBadge');
-
-    if (userPillName) userPillName.textContent = firstName;
-
-    if (userPillAvatar) {
-        const firstLetter = firstName.charAt(0).toUpperCase();
-        userPillAvatar.textContent = firstLetter;
-    }
-
-    if (userPillBadge) {
-        userPillBadge.textContent = auth.user.is_premium ? 'Premium' : 'Free';
-    }
 }
 
 async function loadDashboardStats() {
@@ -102,11 +86,11 @@ async function loadDashboardStats() {
         // Update premium count
         const premiumCount = document.getElementById('dashboardPremiumCount');
         if (premiumCount) {
-            premiumCount.textContent = remaining + ' примерок осталось в этом месяце';
+            premiumCount.innerHTML = remaining + ' примерок осталось<br>в этом месяце';
         }
 
         // Update progress bar
-        const progressBar = document.querySelector('.premium-progress-fill');
+        const progressBar = document.querySelector('.dashboard-premium-bar');
         if (progressBar) {
             progressBar.style.width = percentage + '%';
         }
@@ -129,7 +113,13 @@ async function loadDashboardTryons() {
             const tryonsHTML = data.tryons.map(tryon => createDashboardTryonCard(tryon)).join('');
             tryonsContainer.innerHTML = tryonsHTML;
         } else {
-            tryonsContainer.innerHTML = '<div class="tryon-card"><div class="tryon-thumb">Нет примерок</div></div>';
+            tryonsContainer.innerHTML = `
+                <div class="tryon-card-small">
+                    <div class="tryon-card-image"></div>
+                    <p class="tryon-card-title">Нет примерок</p>
+                    <p class="tryon-card-date">Создайте первую</p>
+                </div>
+            `;
         }
     } catch (error) {
         console.error('Error loading dashboard tryons:', error);
@@ -146,17 +136,18 @@ function createDashboardTryonCard(tryon) {
 
     const title = tryon.title || 'Примерка';
 
-    return '<div class="tryon-card">' +
-        '<div class="tryon-thumb" style="background-image: url(\'' + tryon.result_url + '\'); background-size: cover; background-position: center;"></div>' +
-        '<div class="tryon-body">' +
-        '<div class="tryon-name">' + title + '</div>' +
-        '<div class="tryon-date">' + formattedDate + '</div>' +
-        '<div class="tryon-actions">' +
-        '<button class="btn-small btn-small-solid" onclick="window.location.href=\'dashboard.html\'">Открыть</button>' +
-        '<a class="btn-small btn-small-outline" href="' + tryon.result_url + '" download>Скачать</a>' +
-        '</div>' +
-        '</div>' +
-        '</div>';
+    // Create card with image background
+    const imageStyle = tryon.result_url
+        ? `background-image: url('${tryon.result_url}'); background-size: cover; background-position: center;`
+        : '';
+
+    return `
+        <div class="tryon-card-small" onclick="window.location.href='dashboard.html'">
+            <div class="tryon-card-image" style="${imageStyle}"></div>
+            <p class="tryon-card-title">${title}</p>
+            <p class="tryon-card-date">${formattedDate}</p>
+        </div>
+    `;
 }
 
 function createNewLook() {
