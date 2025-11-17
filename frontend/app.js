@@ -466,6 +466,43 @@ function setupEventListeners() {
             }
         });
     }
+
+    // Sample garment selection
+    document.querySelectorAll('.sample-garment-item').forEach(item => {
+        item.addEventListener('click', async () => {
+            const sampleNum = item.dataset.sample;
+            const imageUrl = `/assets/samples/${sampleNum}.jpg`;
+
+            console.log('[SAMPLE] Loading sample garment:', imageUrl);
+
+            try {
+                // Fetch the image
+                const response = await fetch(imageUrl);
+                if (!response.ok) {
+                    throw new Error('Failed to load sample image');
+                }
+
+                const blob = await response.blob();
+
+                // Create File object from blob
+                const file = new File([blob], `sample_${sampleNum}.jpg`, { type: 'image/jpeg' });
+
+                // Process as garment image
+                processGarmentImage(file);
+
+                // Visual feedback - add selected state
+                document.querySelectorAll('.sample-garment-item').forEach(el => {
+                    el.classList.remove('selected');
+                });
+                item.classList.add('selected');
+
+                console.log('[SAMPLE] Successfully loaded sample garment');
+            } catch (error) {
+                console.error('[SAMPLE] Error loading sample:', error);
+                showError('Не удалось загрузить образец. Попробуйте снова.');
+            }
+        });
+    });
 }
 
 // Server Health Check
