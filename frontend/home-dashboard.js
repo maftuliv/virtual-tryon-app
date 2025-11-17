@@ -68,7 +68,8 @@ function updateUserUI() {
 
 async function loadUserStats() {
     try {
-        const response = await auth.fetchWithAuth('/api/user/tryons/stats');
+        // Use check-limit endpoint which has correct weekly/monthly logic
+        const response = await auth.fetchWithAuth('/api/auth/check-limit');
 
         if (!response.ok) {
             console.error('Failed to load stats:', response.status);
@@ -77,22 +78,24 @@ async function loadUserStats() {
 
         const data = await response.json();
 
-        if (data.success && data.stats) {
-            const statsRemaining = document.getElementById('statsRemaining');
-            const statsProgressBar = document.getElementById('statsProgressBar');
+        const statsRemaining = document.getElementById('statsRemaining');
+        const statsProgressBar = document.getElementById('statsProgressBar');
 
-            const total = data.stats.total || 0;
-            const monthlyLimit = auth.user.is_premium ? 50 : 3;
-            const remaining = Math.max(0, monthlyLimit - (total % monthlyLimit));
-            const percentage = ((monthlyLimit - remaining) / monthlyLimit) * 100;
+        const remaining = data.remaining || 0;
+        const used = data.used || 0;
+        const limit = data.limit || 50;
+        const percentage = limit > 0 ? (used / limit) * 100 : 0;
 
-            if (statsRemaining) {
-                statsRemaining.textContent = `${remaining} ${pluralize(remaining, 'примерка', 'примерки', 'примерок')} ${remaining === 0 ? 'не осталось' : 'осталось'}`;
+        if (statsRemaining) {
+            if (remaining === 0) {
+                statsRemaining.textContent = `Лимит исчерпан`;
+            } else {
+                statsRemaining.textContent = `${remaining} ${pluralize(remaining, 'примерка', 'примерки', 'примерок')} осталось`;
             }
+        }
 
-            if (statsProgressBar) {
-                statsProgressBar.style.width = `${percentage}%`;
-            }
+        if (statsProgressBar) {
+            statsProgressBar.style.width = `${percentage}%`;
         }
     } catch (error) {
         console.error('Error loading user stats:', error);
