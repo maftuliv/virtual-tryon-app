@@ -365,9 +365,13 @@ def create_app(config: Optional[Settings] = None) -> Flask:
         logger.info("  - Google OAuth blueprint registered (OAuth disabled - will return 503)")
 
     # User tryons history blueprint
-    from backend.api.user_tryons import user_tryons_bp
-    app.register_blueprint(user_tryons_bp)
-    logger.info("  - User tryons blueprint registered")
+    if auth_manager:
+        from backend.api.user_tryons import create_user_tryons_blueprint
+        user_tryons_bp = create_user_tryons_blueprint(auth_manager)
+        app.register_blueprint(user_tryons_bp)
+        logger.info("  - User tryons blueprint registered")
+    else:
+        logger.warning("  - User tryons blueprint skipped (auth not available)")
 
     # Static files blueprint (must be last for SPA fallback)
     static_bp = create_static_blueprint(upload_folder, results_folder, frontend_folder)
