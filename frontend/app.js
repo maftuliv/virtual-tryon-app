@@ -153,14 +153,16 @@ let currentStep = 1;
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', async () => {
-    // Check if user is logged in and redirect to dashboard
+    // Check authentication
     await auth.checkAuth();
 
-    // If user is logged in and visiting index.html, redirect to home-dashboard
-    // UNLESS they explicitly want to create a new try-on (via URL parameter)
+    // Show dashboard or upload interface based on auth state
     if (auth.user && !window.location.search.includes('create=true')) {
-        window.location.href = 'home-dashboard.html';
-        return;
+        // Show dashboard for logged-in users
+        showDashboard();
+    } else {
+        // Show upload interface for guests or create mode
+        showUploadInterface();
     }
 
     setupUploadZones();
@@ -2347,6 +2349,14 @@ function goToHome(event) {
     if (event) {
         event.preventDefault();
     }
-    // Полное обновление страницы - возврат на главную
-    window.location.href = '/';
+    // Toggle between dashboard and upload interface
+    if (auth.user) {
+        // If logged in, show dashboard
+        showDashboard();
+    } else {
+        // If not logged in, show upload interface
+        showUploadInterface();
+    }
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
