@@ -339,16 +339,16 @@ class AuthManager {
                 userLimitBadge.style.color = '#8b5cf6';
             }
             if (userGenIcon) userGenIcon.textContent = '👑';
-            if (userGenTitle) userGenTitle.textContent = 'Админ';
-            if (userGenRemaining) userGenRemaining.textContent = '∞ примерок';
+            if (userGenTitle) userGenTitle.textContent = '∞ примерок';
+            if (userGenRemaining) userGenRemaining.textContent = '';
             if (userGenProgressBar) userGenProgressBar.style.width = '100%';
             return;
         } else if (limit.limit === 50) {
             // Premium user: 50 generations per month
             const word = this.getPluralForm(limit.remaining, 'примерка', 'примерки', 'примерок');
             if (userGenIcon) userGenIcon.textContent = '📦';
-            if (userGenTitle) userGenTitle.textContent = 'Премиум';
-            if (userGenRemaining) userGenRemaining.textContent = `${limit.remaining} ${word}`;
+            if (userGenTitle) userGenTitle.textContent = `${limit.remaining} ${word}`;
+            if (userGenRemaining) userGenRemaining.textContent = 'осталось в этом месяце';
             // Calculate progress percentage
             const progressPercent = (limit.remaining / limit.limit) * 100;
             if (userGenProgressBar) userGenProgressBar.style.width = `${progressPercent}%`;
@@ -356,8 +356,8 @@ class AuthManager {
             // Free user: 3 generations per week (or any other limit)
             const word = this.getPluralForm(limit.remaining, 'примерка', 'примерки', 'примерок');
             if (userGenIcon) userGenIcon.textContent = '🎁';
-            if (userGenTitle) userGenTitle.textContent = 'Бесплатно';
-            if (userGenRemaining) userGenRemaining.textContent = `${limit.remaining} ${word}`;
+            if (userGenTitle) userGenTitle.textContent = `${limit.remaining} ${word}`;
+            if (userGenRemaining) userGenRemaining.textContent = 'осталось на этой неделе';
             // Calculate progress percentage
             const progressPercent = (limit.remaining / limit.limit) * 100;
             if (userGenProgressBar) userGenProgressBar.style.width = `${progressPercent}%`;
