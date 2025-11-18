@@ -195,6 +195,33 @@ export default function AuthModal({ isOpen, onClose, initialTab = 'login' }: Aut
               {isLoading ? 'Вход...' : 'Войти'}
             </Button>
 
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-4 bg-white text-gray-500">или</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+                window.location.href = `${apiUrl}/api/auth/google/login`;
+              }}
+              disabled={isLoading}
+              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19.8 10.2273C19.8 9.51819 19.7364 8.83637 19.6182 8.18182H10.2V12.05H15.5818C15.3273 13.3 14.5636 14.3591 13.4091 15.0682V17.5773H16.7364C18.7091 15.8364 19.8 13.2727 19.8 10.2273Z" fill="#4285F4"/>
+                <path d="M10.2 20C12.9 20 15.1727 19.1045 16.7364 17.5773L13.4091 15.0682C12.4636 15.6682 11.2727 16.0227 10.2 16.0227C7.59091 16.0227 5.37273 14.2636 4.54091 11.9H1.09091V14.4909C2.64545 17.5909 6.16364 20 10.2 20Z" fill="#34A853"/>
+                <path d="M4.54091 11.9C4.32273 11.3 4.2 10.6591 4.2 10C4.2 9.34091 4.32273 8.7 4.54091 8.1V5.50909H1.09091C0.395455 6.89091 0 8.44545 0 10C0 11.5545 0.395455 13.1091 1.09091 14.4909L4.54091 11.9Z" fill="#FBBC05"/>
+                <path d="M10.2 3.97727C11.3818 3.97727 12.4409 4.37727 13.2864 5.18182L16.2091 2.25909C15.1682 1.29545 12.9045 0 10.2 0C6.16364 0 2.64545 2.40909 1.09091 5.50909L4.54091 8.1C5.37273 5.73636 7.59091 3.97727 10.2 3.97727Z" fill="#EA4335"/>
+              </svg>
+              <span className="font-medium text-gray-700">Войти через Google</span>
+            </button>
+
             <p className="text-xs text-center text-gray-500 mt-4">
               Нет аккаунта?{' '}
               <button
@@ -290,6 +317,33 @@ export default function AuthModal({ isOpen, onClose, initialTab = 'login' }: Aut
             >
               {isLoading ? 'Регистрация...' : 'Зарегистрироваться'}
             </Button>
+
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-4 bg-white text-gray-500">или</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+                window.location.href = `${apiUrl}/api/auth/google/login`;
+              }}
+              disabled={isLoading}
+              className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19.8 10.2273C19.8 9.51819 19.7364 8.83637 19.6182 8.18182H10.2V12.05H15.5818C15.3273 13.3 14.5636 14.3591 13.4091 15.0682V17.5773H16.7364C18.7091 15.8364 19.8 13.2727 19.8 10.2273Z" fill="#4285F4"/>
+                <path d="M10.2 20C12.9 20 15.1727 19.1045 16.7364 17.5773L13.4091 15.0682C12.4636 15.6682 11.2727 16.0227 10.2 16.0227C7.59091 16.0227 5.37273 14.2636 4.54091 11.9H1.09091V14.4909C2.64545 17.5909 6.16364 20 10.2 20Z" fill="#34A853"/>
+                <path d="M4.54091 11.9C4.32273 11.3 4.2 10.6591 4.2 10C4.2 9.34091 4.32273 8.7 4.54091 8.1V5.50909H1.09091C0.395455 6.89091 0 8.44545 0 10C0 11.5545 0.395455 13.1091 1.09091 14.4909L4.54091 11.9Z" fill="#FBBC05"/>
+                <path d="M10.2 3.97727C11.3818 3.97727 12.4409 4.37727 13.2864 5.18182L16.2091 2.25909C15.1682 1.29545 12.9045 0 10.2 0C6.16364 0 2.64545 2.40909 1.09091 5.50909L4.54091 8.1C5.37273 5.73636 7.59091 3.97727 10.2 3.97727Z" fill="#EA4335"/>
+              </svg>
+              <span className="font-medium text-gray-700">Войти через Google</span>
+            </button>
 
             <p className="text-xs text-center text-gray-500 mt-4">
               Уже есть аккаунт?{' '}
