@@ -1,0 +1,102 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+}
+
+/* Glassmorphism утилиты */
+@layer utilities {
+  .glass {
+    @apply bg-white/25 backdrop-blur-3xl backdrop-saturate-180;
+    @apply border border-white/50 rounded-4xl;
+    @apply shadow-glass;
+  }
+
+  .glass-hover {
+    @apply hover:shadow-glass-hover hover:bg-white/30;
+    @apply transition-all duration-200;
+  }
+
+  .glass-strong {
+    @apply bg-white/15 backdrop-blur-4xl backdrop-saturate-180;
+    @apply border border-white/40 rounded-4xl;
+    @apply shadow-glass;
+  }
+}
+
+/* Кастомные компоненты */
+@layer components {
+  .btn-primary {
+    @apply px-6 py-3 rounded-xl;
+    @apply bg-primary text-white font-medium;
+    @apply hover:bg-primary-hover;
+    @apply transition-all duration-200;
+    @apply shadow-md hover:shadow-lg;
+    @apply active:scale-95;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 rounded-xl;
+    @apply bg-white/20 backdrop-blur-xl;
+    @apply border border-white/40;
+    @apply hover:bg-white/30;
+    @apply transition-all duration-200;
+    @apply active:scale-95;
+  }
+
+  .input-glass {
+    @apply w-full px-4 py-3 rounded-xl;
+    @apply bg-white/20 backdrop-blur-xl;
+    @apply border border-white/40;
+    @apply focus:outline-none focus:ring-2 focus:ring-primary/50;
+    @apply transition-all duration-200;
+    @apply placeholder:text-gray-500;
+  }
+}
+
+/* Оптимизация производительности */
+@layer base {
+  /* GPU ускорение для анимаций */
+  .animate-fade-in,
+  .animate-slide-up,
+  .animate-scale-in {
+    will-change: transform, opacity;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+
+  /* Оптимизация рендеринга текста */
+  h1, h2, h3, h4, h5, h6 {
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Плавная прокрутка */
+  html {
+    scroll-behavior: smooth;
+  }
+}
