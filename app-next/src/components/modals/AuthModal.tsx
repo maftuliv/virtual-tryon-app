@@ -88,6 +88,27 @@ export default function AuthModal({ isOpen, onClose, initialTab = 'login' }: Aut
     }
   };
 
+  const handleGoogleLogin = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/auth/google/login');
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to initiate Google login');
+      }
+
+      // Redirect to Google's authorization URL
+      window.location.href = data.authorization_url;
+    } catch (err) {
+      const error = err as Error;
+      setError(error.message || 'Не удалось войти через Google');
+      setIsLoading(false);
+    }
+  };
+
   const handleClose = () => {
     if (!isLoading) {
       onClose();
@@ -206,9 +227,7 @@ export default function AuthModal({ isOpen, onClose, initialTab = 'login' }: Aut
 
             <button
               type="button"
-              onClick={() => {
-                window.location.href = '/api/auth/google/login';
-              }}
+              onClick={handleGoogleLogin}
               disabled={isLoading}
               className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -328,9 +347,7 @@ export default function AuthModal({ isOpen, onClose, initialTab = 'login' }: Aut
 
             <button
               type="button"
-              onClick={() => {
-                window.location.href = '/api/auth/google/login';
-              }}
+              onClick={handleGoogleLogin}
               disabled={isLoading}
               className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
