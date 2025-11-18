@@ -51,4 +51,4 @@ feedback/*
 !feedback/.gitkeep
 
 # Logs
-*.log
+*.logfrontend-legacy/
