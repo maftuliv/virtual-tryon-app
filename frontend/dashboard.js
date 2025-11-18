@@ -176,13 +176,18 @@ function createTryonCard(tryon) {
     const favoriteIcon = tryon.is_favorite ? '⭐' : '☆';
     const favoriteClass = tryon.is_favorite ? 'is-favorite' : '';
 
+    // Check if URL is R2 (permanent) or local (temporary)
+    const isR2Url = tryon.result_url && tryon.result_url.includes('r2.dev');
+    const warningBadge = !isR2Url ? '<span class="temp-badge" title="Временный файл - может быть удален">⚠️</span>' : '';
+
     return `
         <div class="gallery-item ${favoriteClass}" data-id="${tryon.id}">
             <div class="gallery-image-wrapper" onclick="openImageModal(${tryon.id})">
-                <img src="${tryon.result_url}" alt="Результат примерки" class="gallery-image" loading="lazy">
+                <img src="${tryon.result_url}" alt="Результат примерки" class="gallery-image" loading="lazy" onerror="handleImageError(this, ${tryon.id})">
                 <div class="gallery-overlay">
                     <span class="gallery-view-icon">🔍</span>
                 </div>
+                ${warningBadge}
             </div>
             <div class="gallery-item-footer">
                 <div class="gallery-item-info">
@@ -200,6 +205,18 @@ function createTryonCard(tryon) {
             </div>
         </div>
     `;
+}
+
+function handleImageError(img, tryonId) {
+    // Replace broken image with placeholder
+    img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="300" height="400"%3E%3Crect fill="%23f3f4f6" width="100%25" height="100%25"/%3E%3Ctext x="50%25" y="45%25" text-anchor="middle" fill="%239ca3af" font-size="48"%3E📷%3C/text%3E%3Ctext x="50%25" y="55%25" text-anchor="middle" fill="%239ca3af" font-size="14"%3EФайл удален%3C/text%3E%3C/svg%3E';
+    img.style.opacity = '0.7';
+
+    // Mark tryon as having missing image
+    const tryon = tryons.find(t => t.id === tryonId);
+    if (tryon) {
+        tryon._imageMissing = true;
+    }
 }
 
 async function toggleFavorite(tryonId, event) {

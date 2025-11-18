@@ -1,27 +1,28 @@
 'use client';
 
-import DashboardSection from './DashboardSection';
-import Button from '../Button';
-
 export default function StylePlan() {
   return (
-    <DashboardSection title="Style Plan">
-      <p className="text-sm text-gray-600 mb-4">
-        Персональные рекомендации по стилю от AI
-      </p>
-      <div className="space-y-2 mb-4">
-        <div className="glass rounded-xl p-3">
-          <p className="text-sm font-medium">Весна 2024</p>
-          <p className="text-xs text-gray-600">Пастельные оттенки, легкие ткани</p>
-        </div>
-        <div className="glass rounded-xl p-3">
-          <p className="text-sm font-medium">Деловой стиль</p>
-          <p className="text-xs text-gray-600">Классика + современность</p>
-        </div>
+    <article className="card">
+      <div className="section-header">
+        <div className="section-title">План стиля на месяц</div>
+        <div className="section-link">Подробнее</div>
       </div>
-      <Button variant="primary" size="sm" fullWidth>
-        Создать новый план
-      </Button>
-    </DashboardSection>
+
+      <p className="card-subtitle">
+        Следите за прогрессом, чтобы шаг за шагом прокачивать свой стиль.
+      </p>
+
+      <ul className="m-0 pl-4 text-[13px] text-[var(--text-muted)] space-y-1.5 mb-3">
+        <li className="text-[#34a853]">Загрузить базовое фото в полный рост</li>
+        <li className="text-[#34a853]">Сделать 3 примерки с разной одеждой</li>
+        <li>Создать 1 образ для работы</li>
+        <li>Создать 1 образ для свидания</li>
+        <li>Собрать капсулу из брендов на неделю</li>
+      </ul>
+
+      <button className="btn-gradient w-full">
+        Продолжить план
+      </button>
+    </article>
   );
 }

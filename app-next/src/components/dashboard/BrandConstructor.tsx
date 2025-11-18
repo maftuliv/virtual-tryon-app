@@ -1,33 +1,45 @@
 'use client';
 
-import DashboardSection from './DashboardSection';
-import Button from '../Button';
-
 const BRANDS = [
-  { id: 'zara', name: 'Zara', color: 'from-black to-gray-800' },
-  { id: 'hm', name: 'H&M', color: 'from-red-500 to-red-700' },
-  { id: 'mango', name: 'Mango', color: 'from-orange-400 to-yellow-500' },
+  { id: 'zara', name: 'Zara · Осень', tagline: 'Плащи, джинсы, базовые свитшоты' },
+  { id: 'hm', name: 'H&M · Casual', tagline: 'На каждый день в городе' },
+  { id: 'mango', name: 'Mango · Вечер', tagline: 'Платья и вечерние комплекты' },
 ];
 
 export default function BrandConstructor() {
   return (
-    <DashboardSection title="Brand Constructor">
-      <p className="text-sm text-gray-600 mb-4">
-        Создавайте образы в стиле любимых брендов
+    <article className="card">
+      <div className="section-header">
+        <div className="section-title">Конструктор образов из брендов</div>
+        <div className="section-link">Открыть конструктор</div>
+      </div>
+
+      <p className="card-subtitle">
+        Собирайте образы из готовых подборок Zara, H&M, Mango и других брендов. Выберите вещи — мы примерим их на вас.
       </p>
-      <div className="space-y-2">
+
+      <div className="flex flex-wrap gap-2.5 mb-3">
         {BRANDS.map((brand) => (
-          <Button
+          <div
             key={brand.id}
-            variant="secondary"
-            size="sm"
-            fullWidth
-            className={`bg-gradient-to-r ${brand.color} text-white hover:opacity-90`}
+            className="flex-1 min-w-[120px] rounded-2xl p-2 text-xs"
+            style={{
+              background: 'linear-gradient(135deg, #f4f0ff, #ffe7f0)',
+              border: '1px solid rgba(234, 219, 255, 0.95)',
+              boxShadow: '0 8px 20px rgba(40, 16, 80, 0.16)',
+            }}
           >
-            {brand.name}
-          </Button>
+            <div className="font-semibold mb-0.5">{brand.name}</div>
+            <div className="text-[11px] text-[var(--text-muted)]">
+              {brand.tagline}
+            </div>
+          </div>
         ))}
       </div>
-    </DashboardSection>
+
+      <button className="btn-gradient w-full">
+        Собрать образ из брендов
+      </button>
+    </article>
   );
 }

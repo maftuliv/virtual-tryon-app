@@ -1,21 +1,33 @@
 'use client';
 
-import Button from '../Button';
-import DashboardSection from './DashboardSection';
-
 export default function PremiumBanner() {
+  const remainingTryons = 50;
+  const totalTryons = 100;
+  const progressPercent = (remainingTryons / totalTryons) * 100;
+
   return (
-    <DashboardSection
-      title="Premium доступ"
-      variant="strong"
-      className="bg-gradient-to-br from-primary/20 to-purple-500/20"
-    >
-      <p className="text-sm text-gray-700 mb-4">
-        Получите неограниченный доступ ко всем функциям и премиум фильтрам
+    <article className="card">
+      <div className="card-title">Премиум аккаунт</div>
+      <p className="text-sm mb-2.5">{remainingTryons} примерок осталось в этом месяце</p>
+
+      {/* Progress bar */}
+      <div className="w-full h-2.5 rounded-full bg-[rgba(233,219,255,0.9)] mb-2 overflow-hidden relative">
+        <div
+          className="absolute inset-0 rounded-full"
+          style={{
+            width: `${progressPercent}%`,
+            background: 'linear-gradient(90deg, #ffcc68, #ff78d3, #9b5cff)',
+          }}
+        />
+      </div>
+
+      <p className="text-xs text-[var(--text-muted)] mb-1.5">
+        Используйте лимит, чтобы протестировать максимум образов. В следующем месяце счётчик обновится.
       </p>
-      <Button variant="primary" size="sm" fullWidth>
-        Подключить Premium
-      </Button>
-    </DashboardSection>
+
+      <button className="btn-premium w-full">
+        Подробнее о премиуме
+      </button>
+    </article>
   );
 }

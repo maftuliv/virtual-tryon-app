@@ -42,68 +42,70 @@ export default function DashboardClient() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+    <div className="min-h-screen">
       <Header />
 
-      <main className="w-full max-w-7xl mx-auto p-6 pt-24">
-        <h1 className="text-3xl font-bold mb-6">Мой кабинет</h1>
+      <main className="w-full max-w-[1200px] mx-auto px-4 pb-10">
+        {/* HERO GRID: Greeting + Premium + Liked */}
+        <section className="grid grid-cols-1 lg:grid-cols-[2.2fr_1.4fr] gap-4 mb-5">
+          {/* LEFT: Greeting card */}
+          <UserGreeting />
 
-        {/* Основная сетка Dashboard */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Левая колонка */}
-          <div className="lg:col-span-3 space-y-6">
-            <UserGreeting />
+          {/* RIGHT: Premium + Liked */}
+          <div className="grid grid-rows-2 gap-3.5">
             <PremiumBanner />
-            <Recommendations />
             <LikedItems />
           </div>
+        </section>
 
-          {/* Правая колонка */}
-          <div className="lg:col-span-9">
-            {/* My Photos - галерея всех примерок */}
-            <div className="mb-6">
-              <MyPhotos />
-            </div>
-
-            {/* Недавние примерки - на всю ширину */}
-            <div className="mb-6">
-              <RecentTryons />
-            </div>
-
-            {/* Нижняя сетка - 3 колонки */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-              <LooksSection />
-              <div className="space-y-6">
-                <BrandConstructor />
-              </div>
-              <div className="space-y-6">
-                <StylePlan />
-                <ServiceUpdates />
-              </div>
-            </div>
+        {/* MAIN GRID: Try-ons+Looks | Photos+Brands+Recommendations */}
+        <section className="grid grid-cols-1 lg:grid-cols-[2.05fr_1.6fr] gap-5 mb-6">
+          {/* LEFT COLUMN: Try-ons + Looks */}
+          <div className="flex flex-col gap-4">
+            <RecentTryons />
+            <LooksSection />
           </div>
+
+          {/* RIGHT COLUMN: Photos + Brands + Recommendations */}
+          <div className="flex flex-col gap-4">
+            <MyPhotos />
+            <BrandConstructor />
+            <Recommendations />
+          </div>
+        </section>
+
+        {/* LOWER GRID: Style Plan + Service Updates */}
+        <section className="grid grid-cols-1 lg:grid-cols-[1.8fr_1.6fr] gap-4 mb-4">
+          <StylePlan />
+          <ServiceUpdates />
+        </section>
+
+        {/* FEEDBACK CARD */}
+        <section className="card mb-3.5">
+          <div className="section-header">
+            <div className="section-title">Поделитесь мнением</div>
+            <div className="section-link">Подробнее</div>
+          </div>
+          <p className="card-subtitle">
+            Расскажите, что улучшить. Ваши идеи и замечания напрямую влияют на развитие сервиса.
+          </p>
+          <div className="flex flex-wrap gap-2 mb-3">
+            <button className="btn-chip">🐞 Сообщить об ошибке</button>
+            <button className="btn-chip">💡 Предложить идею</button>
+            <button className="btn-chip">⭐ Оценить качество примерки</button>
+          </div>
+        </section>
+
+        {/* FOOTER BAR */}
+        <div className="flex flex-wrap gap-2.5 justify-end mb-2.5">
+          <button className="btn-ghost text-sm">📜 История примерок</button>
+          <button className="btn-ghost text-sm">🛟 Поддержка</button>
+          <button className="btn-gradient text-sm">💌 Отправить отзыв</button>
         </div>
-
-        {/* Нижняя секция - Feedback */}
-        <div className="mt-8 glass rounded-4xl p-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div>
-              <h3 className="text-lg font-semibold mb-1">Поделитесь мнением</h3>
-              <p className="text-sm text-gray-600">Это поможет нам улучшить Tap to look</p>
-            </div>
-            <button className="btn-primary">
-              💌 Отправить отзыв
-            </button>
-          </div>
+        <div className="text-[11px] text-[var(--text-muted)] text-center opacity-90">
+          Используя сервис, вы соглашаетесь с условиями и политикой конфиденциальности. Все права защищены.
         </div>
       </main>
-
-      {/* Footer */}
-      <footer className="py-12 px-6 border-t border-white/20 mt-12">
-        <div className="max-w-7xl mx-auto text-center text-sm text-gray-600">
-          <p>&copy; 2024 Tap to look. Все права защищены.</p>
-        </div>
-      </footer>
     </div>
   );
 }

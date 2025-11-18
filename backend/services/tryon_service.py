@@ -219,6 +219,7 @@ class TryonService:
 
                     # Upload to R2 if configured and user is logged in
                     if user_id and r2_storage.is_configured():
+                        r2_key_to_cleanup = None
                         try:
                             result_path = result.get("result_path")
                             if result_path and os.path.exists(result_path):
@@ -231,13 +232,22 @@ class TryonService:
                                     generation_id=generation_record['id']
                                 )
 
+                                # Save key for cleanup in case DB update fails
+                                r2_key_to_cleanup = r2_result['key']
+
                                 # Update generation with R2 info
-                                self.generation_repo.update_r2_storage(
+                                db_updated = self.generation_repo.update_r2_storage(
                                     generation_id=generation_record['id'],
                                     r2_key=r2_result['key'],
                                     r2_url=r2_result['url'],
                                     upload_size=r2_result.get('size')
                                 )
+
+                                if not db_updated:
+                                    raise Exception("Database update failed after R2 upload")
+
+                                # Clear cleanup flag on success
+                                r2_key_to_cleanup = None
 
                                 # Add R2 URL to result
                                 result['r2_url'] = r2_result['url']
@@ -248,6 +258,13 @@ class TryonService:
                                 )
                         except Exception as e:
                             self.logger.warning(f"Failed to upload to R2: {e}")
+                            # Cleanup orphaned R2 file if upload succeeded but DB failed
+                            if r2_key_to_cleanup:
+                                try:
+                                    r2_storage.delete_image(r2_key_to_cleanup)
+                                    self.logger.info(f"Cleaned up orphaned R2 file: {r2_key_to_cleanup}")
+                                except Exception as cleanup_error:
+                                    self.logger.error(f"Failed to cleanup R2 file {r2_key_to_cleanup}: {cleanup_error}")
                             # Don't fail the request if R2 upload fails
 
                 self.logger.info(f"Tracked {len(successful_results)} generations in database")

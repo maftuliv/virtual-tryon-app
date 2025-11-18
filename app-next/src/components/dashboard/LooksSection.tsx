@@ -1,35 +1,44 @@
 'use client';
 
-import DashboardSection from './DashboardSection';
-import Button from '../Button';
-
 const LOOKS = [
-  { id: 1, name: 'Casual', emoji: '👕' },
-  { id: 2, name: 'Business', emoji: '👔' },
-  { id: 3, name: 'Party', emoji: '🎉' },
-  { id: 4, name: 'Sport', emoji: '⚽' },
-  { id: 5, name: 'Beach', emoji: '🏖️' },
+  { id: 1, name: 'Образ для свидания', tag: 'Элегантный вечерний стиль' },
+  { id: 2, name: 'Образ для офиса', tag: 'Минимализм и нейтральные оттенки' },
+  { id: 3, name: 'Образ для путешествия', tag: 'Удобно и стильно на каждый день' },
 ];
 
 export default function LooksSection() {
   return (
-    <DashboardSection title="Looks - AI фильтры стиля">
-      <p className="text-sm text-gray-600 mb-4">
-        Примерьте образы под разные случаи жизни
+    <article className="card">
+      <div className="section-header">
+        <div className="section-title">Мои образы</div>
+        <div className="section-link">Открыть все</div>
+      </div>
+
+      <p className="card-subtitle">
+        Образы, созданные с помощью фильтров: свидание, офис, вечеринка, путешествие и другие.
       </p>
-      <div className="grid grid-cols-2 gap-2">
+
+      <div className="flex flex-wrap gap-3 mb-3.5">
         {LOOKS.map((look) => (
-          <Button
+          <div
             key={look.id}
-            variant="secondary"
-            size="sm"
-            className="flex items-center justify-center gap-2"
+            className="flex-1 min-w-[150px] rounded-[18px] p-2.5 text-[13px]"
+            style={{
+              background: 'linear-gradient(135deg, #fbefff, #ffe5f2)',
+              border: '1px solid rgba(244, 221, 255, 0.9)',
+              boxShadow: '0 10px 24px rgba(58, 12, 94, 0.18)',
+            }}
           >
-            <span className="text-xl">{look.emoji}</span>
-            <span>{look.name}</span>
-          </Button>
+            <div className="font-semibold mb-1">{look.name}</div>
+            <div className="text-xs text-[var(--text-muted)] mb-2">{look.tag}</div>
+            <button className="btn-chip">✨ Открыть образ</button>
+          </div>
         ))}
       </div>
-    </DashboardSection>
+
+      <button className="btn-gradient w-full">
+        Создать новый образ по фильтрам
+      </button>
+    </article>
   );
 }

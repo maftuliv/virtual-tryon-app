@@ -6,7 +6,12 @@ import boto3
 from botocore.config import Config
 import os
 import uuid
+import hashlib
 from datetime import datetime
+
+from backend.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class R2StorageClient:
@@ -20,22 +25,30 @@ class R2StorageClient:
         self.public_url_base = os.getenv('R2_PUBLIC_URL', 'https://pub-ff55d0b20eb2407da9bb491891732a84.r2.dev')
 
         self.client = None
+        self._init_error = None
         if self.access_key_id and self.secret_access_key and self.endpoint_url:
             self._init_client()
+        else:
+            logger.info("[R2] Not configured - missing credentials or endpoint")
 
     def _init_client(self):
         """Initialize boto3 S3 client for R2"""
-        self.client = boto3.client(
-            's3',
-            endpoint_url=self.endpoint_url,
-            aws_access_key_id=self.access_key_id,
-            aws_secret_access_key=self.secret_access_key,
-            config=Config(
-                signature_version='s3v4',
-                retries={'max_attempts': 3}
-            ),
-            region_name='auto'  # R2 uses 'auto' as region
-        )
+        try:
+            self.client = boto3.client(
+                's3',
+                endpoint_url=self.endpoint_url,
+                aws_access_key_id=self.access_key_id,
+                aws_secret_access_key=self.secret_access_key,
+                config=Config(
+                    signature_version='s3v4',
+                    retries={'max_attempts': 3}
+                ),
+                region_name='auto'  # R2 uses 'auto' as region
+            )
+            logger.info("[R2] Client initialized successfully")
+        except Exception as e:
+            self._init_error = str(e)
+            logger.error(f"[R2] CRITICAL: Failed to initialize client: {e}")
 
     def is_configured(self) -> bool:
         """Check if R2 is properly configured"""
@@ -94,20 +107,47 @@ class R2StorageClient:
         Returns:
             dict with storage info
         """
+        if not self.is_configured():
+            logger.error(f"[R2] Cannot upload - client not configured (generation_id={generation_id})")
+            raise Exception("R2 storage is not configured")
+
         timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
         unique_id = str(uuid.uuid4())[:8]
 
-        if generation_id:
-            key = f"tryons/{user_id}/{generation_id}_{timestamp}_{unique_id}.jpg"
-        else:
-            key = f"tryons/{user_id}/{timestamp}_{unique_id}.jpg"
+        # Use hash of user_id for privacy (prevents enumeration)
+        user_hash = hashlib.sha256(f"{user_id}_{self.access_key_id}".encode()).hexdigest()[:12]
 
-        self.client.put_object(
-            Bucket=self.bucket_name,
-            Key=key,
-            Body=image_data,
-            ContentType='image/jpeg'
-        )
+        if generation_id:
+            key = f"tryons/{user_hash}/{generation_id}_{timestamp}_{unique_id}.jpg"
+        else:
+            key = f"tryons/{user_hash}/{timestamp}_{unique_id}.jpg"
+
+        try:
+            logger.info(f"[R2] Uploading image for generation_id={generation_id}, size={len(image_data)} bytes")
+
+            self.client.put_object(
+                Bucket=self.bucket_name,
+                Key=key,
+                Body=image_data,
+                ContentType='image/jpeg'
+            )
+
+            # Verify upload was successful
+            head_response = self.client.head_object(
+                Bucket=self.bucket_name,
+                Key=key
+            )
+
+            actual_size = head_response.get('ContentLength', 0)
+            if actual_size != len(image_data):
+                logger.error(f"[R2] Upload verification FAILED: expected {len(image_data)} bytes, got {actual_size}")
+                raise Exception(f"Upload verification failed: size mismatch")
+
+            logger.info(f"[R2] Upload verified successfully: {key}")
+
+        except Exception as e:
+            logger.error(f"[R2] Upload FAILED for generation_id={generation_id}: {e}")
+            raise
 
         public_url = f"{self.public_url_base.rstrip('/')}/{key}"
 
