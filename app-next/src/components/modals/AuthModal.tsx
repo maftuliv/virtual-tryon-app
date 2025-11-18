@@ -207,8 +207,7 @@ export default function AuthModal({ isOpen, onClose, initialTab = 'login' }: Aut
             <button
               type="button"
               onClick={() => {
-                const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-                window.location.href = `${apiUrl}/api/auth/google/login`;
+                window.location.href = '/api/auth/google/login';
               }}
               disabled={isLoading}
               className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -330,8 +329,7 @@ export default function AuthModal({ isOpen, onClose, initialTab = 'login' }: Aut
             <button
               type="button"
               onClick={() => {
-                const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-                window.location.href = `${apiUrl}/api/auth/google/login`;
+                window.location.href = '/api/auth/google/login';
               }}
               disabled={isLoading}
               className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
