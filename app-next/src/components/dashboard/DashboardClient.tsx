@@ -43,11 +43,11 @@ export default function DashboardClient() {
 
   return (
     <div className="min-h-screen">
-      {/* EXACT page structure from HTML file */}
-      <div className="w-full max-w-[1200px] mx-auto px-4 py-6 pb-10">
-        <Header />
-        {/* HERO GRID: Greeting + Premium + Liked - EXACT from HTML */}
-        <section className="grid grid-cols-1 lg:grid-cols-[2.2fr_1.4fr] gap-[18px] mb-[22px]">
+      <Header />
+
+      <main className="w-full max-w-[1200px] mx-auto px-4 pb-10">
+        {/* HERO GRID: Greeting + Premium + Liked */}
+        <section className="grid grid-cols-1 lg:grid-cols-[2.2fr_1.4fr] gap-4 mb-5">
           {/* LEFT: Greeting card */}
           <UserGreeting />
 
@@ -58,7 +58,7 @@ export default function DashboardClient() {
           </div>
         </section>
 
-        {/* MAIN GRID: Try-ons+Looks | Photos+Brands+Recommendations - EXACT from HTML */}
+        {/* MAIN GRID: Try-ons+Looks | Photos+Brands+Recommendations */}
         <section className="grid grid-cols-1 lg:grid-cols-[2.05fr_1.6fr] gap-5 mb-6">
           {/* LEFT COLUMN: Try-ons + Looks */}
           <div className="flex flex-col gap-4">
@@ -74,8 +74,8 @@ export default function DashboardClient() {
           </div>
         </section>
 
-        {/* LOWER GRID: Style Plan + Service Updates - EXACT from HTML */}
-        <section className="grid grid-cols-1 lg:grid-cols-[1.8fr_1.6fr] gap-[18px] mb-4">
+        {/* LOWER GRID: Style Plan + Service Updates */}
+        <section className="grid grid-cols-1 lg:grid-cols-[1.8fr_1.6fr] gap-4 mb-4">
           <StylePlan />
           <ServiceUpdates />
         </section>
@@ -105,7 +105,7 @@ export default function DashboardClient() {
         <div className="text-[11px] text-[var(--text-muted)] text-center opacity-90">
           Используя сервис, вы соглашаетесь с условиями и политикой конфиденциальности. Все права защищены.
         </div>
-      </div>
+      </main>
     </div>
   );
 }
