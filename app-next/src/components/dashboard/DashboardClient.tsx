@@ -100,7 +100,7 @@ export default function DashboardClient() {
         <div className="flex flex-wrap gap-2.5 justify-end mb-2.5">
           <button className="btn-ghost text-sm">📜 История примерок</button>
           <button className="btn-ghost text-sm">🛟 Поддержка</button>
-          <button className="btn-gradient text-sm">💌 Отправить отзыв</button>
+          <button className="btn-accent text-sm">💌 Отправить отзыв</button>
         </div>
         <div className="text-[11px] text-[var(--text-muted)] text-center opacity-90">
           Используя сервис, вы соглашаетесь с условиями и политикой конфиденциальности. Все права защищены.

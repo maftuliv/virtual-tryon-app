@@ -24,7 +24,7 @@ export default function RecentTryons() {
       {isLoading ? (
         <div className="text-sm text-[var(--text-muted)]">Загрузка...</div>
       ) : (
-        <div className="flex gap-3.5 overflow-x-auto pb-1">
+        <div className="card-row">
           {recentTryons.map((tryon) => (
             <div
               key={tryon.id}

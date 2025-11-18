@@ -11,14 +11,14 @@ export default function Recommendations() {
         Сегодняшняя рекомендация: попробуйте образ для свидания с тёмным низом и светлым верхом.
       </p>
 
-      <div className="flex flex-wrap gap-2 mb-3">
+      <div className="flex flex-wrap gap-2 my-2 mb-3">
         <button className="btn-chip">💼 На работу</button>
         <button className="btn-chip">❤️ На свидание</button>
         <button className="btn-chip">🧳 В путешествие</button>
         <button className="btn-chip">🎉 На вечеринку</button>
       </div>
 
-      <ul className="m-0 pl-4 text-[13px] text-[var(--text-muted)] space-y-1 mb-3">
+      <ul className="m-0 pl-[18px] text-[13px] text-[var(--text-muted)] space-y-0 mb-3">
         <li>
           Вы уже протестировали 8 образов. Ещё 2 — и мы соберём для вас подборку "Топ-3 образа месяца".
         </li>
@@ -27,9 +27,9 @@ export default function Recommendations() {
         </li>
       </ul>
 
-      <button className="btn-ghost w-full text-sm">
-        Создать образ по сегодняшней рекомендации
-      </button>
+      <div className="mt-3">
+        <button className="btn btn-ghost">Создать образ по сегодняшней рекомендации</button>
+      </div>
     </article>
   );
 }

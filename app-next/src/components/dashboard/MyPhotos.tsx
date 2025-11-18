@@ -72,7 +72,7 @@ export default function MyPhotos() {
       </div>
 
       <div className="mt-2.5">
-        <button className="btn-ghost text-sm">Обновить базовое фото</button>
+        <button className="btn btn-ghost">Обновить базовое фото</button>
       </div>
     </article>
   );

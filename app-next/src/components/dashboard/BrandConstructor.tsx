@@ -18,7 +18,7 @@ export default function BrandConstructor() {
         Собирайте образы из готовых подборок Zara, H&M, Mango и других брендов. Выберите вещи — мы примерим их на вас.
       </p>
 
-      <div className="flex flex-wrap gap-2.5 mb-3">
+      <div className="flex flex-wrap gap-2.5 mt-1.5">
         {BRANDS.map((brand) => (
           <div
             key={brand.id}
@@ -37,9 +37,9 @@ export default function BrandConstructor() {
         ))}
       </div>
 
-      <button className="btn-gradient w-full">
-        Собрать образ из брендов
-      </button>
+      <div className="mt-3">
+        <button className="btn btn-gradient">Собрать образ из брендов</button>
+      </div>
     </article>
   );
 }

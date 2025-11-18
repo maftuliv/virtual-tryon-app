@@ -178,6 +178,17 @@ body {
     color: var(--text-main);
   }
 
+  .btn-accent {
+    background: linear-gradient(120deg, #9b5cff, #ff53c0);
+    color: #fff;
+    border-radius: 999px;
+    padding: 9px 18px;
+    font-size: 14px;
+    border: none;
+    box-shadow: 0 12px 30px rgba(142, 69, 255, 0.5);
+    cursor: pointer;
+  }
+
   .input-glass {
     @apply w-full px-4 py-3 rounded-xl;
     @apply bg-white/20 backdrop-blur-xl;
@@ -325,4 +336,25 @@ body {
   *::-webkit-scrollbar-track {
     background: transparent;
   }
+}
+
+/* Horizontal scroll container - from HTML */
+.card-row {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.card-row::-webkit-scrollbar {
+  height: 6px;
+}
+
+.card-row::-webkit-scrollbar-thumb {
+  background: rgba(155, 92, 255, 0.35);
+  border-radius: 999px;
+}
+
+.card-row::-webkit-scrollbar-track {
+  background: transparent;
 }

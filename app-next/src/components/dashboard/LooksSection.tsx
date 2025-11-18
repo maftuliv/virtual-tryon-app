@@ -18,7 +18,7 @@ export default function LooksSection() {
         Образы, созданные с помощью фильтров: свидание, офис, вечеринка, путешествие и другие.
       </p>
 
-      <div className="flex flex-wrap gap-3 mb-3.5">
+      <div className="flex flex-wrap gap-3 mt-1.5">
         {LOOKS.map((look) => (
           <div
             key={look.id}
@@ -36,9 +36,9 @@ export default function LooksSection() {
         ))}
       </div>
 
-      <button className="btn-gradient w-full">
-        Создать новый образ по фильтрам
-      </button>
+      <div className="mt-3.5">
+        <button className="btn btn-gradient">Создать новый образ по фильтрам</button>
+      </div>
     </article>
   );
 }
