@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import ClientProviders from '@/components/ClientProviders';
 import '@/styles/globals.css';
-import '@/styles/dashboard.css';
 
 export const metadata: Metadata = {
   title: 'Tap to look - Виртуальная примерка одежды',
