@@ -77,7 +77,19 @@ class GoogleAuthService:
 
         self.enabled = True
         self.logger.info("[GOOGLE-AUTH] Google OAuth 2.0 service initialized")
-        self.logger.info(f"[GOOGLE-AUTH] Redirect URI: {settings.google_redirect_uri}")
+        
+        # Log configuration (masked for security)
+        client_id_masked = self._mask_sensitive(settings.google_client_id) if settings.google_client_id else "NOT SET"
+        redirect_uri = settings.google_redirect_uri
+        self.logger.info(f"[GOOGLE-AUTH] Client ID: {client_id_masked}")
+        self.logger.info(f"[GOOGLE-AUTH] Redirect URI: {redirect_uri}")
+        
+        # Validate Client ID format
+        if settings.google_client_id and not settings.google_client_id.endswith(".apps.googleusercontent.com"):
+            self.logger.warning(
+                f"[GOOGLE-AUTH] Client ID format may be incorrect. "
+                f"Expected format: *.apps.googleusercontent.com, got: {client_id_masked}"
+            )
 
     def is_enabled(self) -> bool:
         """
@@ -107,22 +119,38 @@ class GoogleAuthService:
         state = secrets.token_urlsafe(32)
 
         try:
+            # Log configuration details for debugging (masked)
+            client_id_masked = self._mask_sensitive(self.settings.google_client_id)
+            self.logger.info(
+                f"[GOOGLE-AUTH] Generating authorization URL with Client ID: {client_id_masked}, "
+                f"Redirect URI: {self.settings.google_redirect_uri}"
+            )
+            
+            # Validate Client ID format before making request
+            if not self.settings.google_client_id or not self.settings.google_client_id.strip():
+                raise ValueError("GOOGLE_CLIENT_ID is empty or contains only whitespace")
+            
+            if not self.settings.google_client_id.endswith(".apps.googleusercontent.com"):
+                self.logger.warning(
+                    f"[GOOGLE-AUTH] Client ID format may be incorrect: {client_id_masked}"
+                )
+            
             # Create OAuth 2.0 flow
             flow = Flow.from_client_config(
                 client_config={
                     "web": {
-                        "client_id": self.settings.google_client_id,
-                        "client_secret": self.settings.google_client_secret,
+                        "client_id": self.settings.google_client_id.strip(),  # Strip whitespace
+                        "client_secret": self.settings.google_client_secret.strip() if self.settings.google_client_secret else "",
                         "auth_uri": "https://accounts.google.com/o/oauth2/auth",
                         "token_uri": "https://oauth2.googleapis.com/token",
-                        "redirect_uris": [self.settings.google_redirect_uri],
+                        "redirect_uris": [self.settings.google_redirect_uri.strip()],
                     }
                 },
                 scopes=self.SCOPES,
                 state=state,
             )
 
-            flow.redirect_uri = self.settings.google_redirect_uri
+            flow.redirect_uri = self.settings.google_redirect_uri.strip()
 
             # Generate authorization URL
             authorization_url, _ = flow.authorization_url(
@@ -131,12 +159,29 @@ class GoogleAuthService:
                 prompt="consent",  # Force consent screen to ensure refresh token
             )
 
-            self.logger.info(f"[GOOGLE-AUTH] Generated authorization URL (state={state[:8]}...)")
+            self.logger.info(
+                f"[GOOGLE-AUTH] Generated authorization URL (state={state[:8]}...), "
+                f"URL length: {len(authorization_url)} chars"
+            )
+            
+            # Log first part of URL for debugging (before query params)
+            url_base = authorization_url.split("?")[0] if "?" in authorization_url else authorization_url
+            self.logger.debug(f"[GOOGLE-AUTH] Authorization URL base: {url_base}")
 
             return authorization_url, state
 
+        except ValueError as e:
+            self.logger.error(f"[GOOGLE-AUTH] Validation error: {e}")
+            raise RuntimeError(f"Invalid OAuth configuration: {e}")
         except Exception as e:
-            self.logger.error(f"[GOOGLE-AUTH] Error generating authorization URL: {e}", exc_info=True)
+            self.logger.error(
+                f"[GOOGLE-AUTH] Error generating authorization URL: {e}", 
+                exc_info=True
+            )
+            self.logger.error(
+                f"[GOOGLE-AUTH] Client ID (masked): {self._mask_sensitive(self.settings.google_client_id)}, "
+                f"Redirect URI: {self.settings.google_redirect_uri}"
+            )
             raise RuntimeError(f"Failed to generate Google authorization URL: {e}")
 
     def exchange_code_for_token(
@@ -336,6 +381,23 @@ class GoogleAuthService:
         except Exception as e:
             self.logger.error(f"[GOOGLE-AUTH] Error finding/creating user: {e}", exc_info=True)
             raise ValueError(f"Failed to create or find user: {e}")
+
+    def _mask_sensitive(self, value: Optional[str]) -> str:
+        """
+        Mask sensitive value for logging (shows first 10 and last 4 chars).
+        
+        Args:
+            value: Value to mask
+            
+        Returns:
+            Masked string or "NOT SET" if value is None/empty
+        """
+        if not value:
+            return "NOT SET"
+        value = value.strip()
+        if len(value) <= 14:
+            return "***" * len(value)
+        return f"{value[:10]}...{value[-4:]}"
 
     def handle_oauth_callback(
         self, authorization_code: str, state: str, expected_state: str

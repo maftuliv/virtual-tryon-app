@@ -204,7 +204,10 @@ def create_google_auth_blueprint(
             {
                 "enabled": bool,
                 "configured": bool,
-                "redirect_uri": str (if configured)
+                "redirect_uri": str (if configured),
+                "client_id_masked": str (masked for security),
+                "client_id_format_valid": bool,
+                "config_issues": list of strings (if any)
             }
         """
         try:
@@ -216,8 +219,41 @@ def create_google_auth_blueprint(
             }
 
             if is_enabled:
+                settings = google_auth_service.settings
+                
                 # Return redirect URI for debugging (not sensitive)
-                response["redirect_uri"] = google_auth_service.settings.google_redirect_uri
+                response["redirect_uri"] = settings.google_redirect_uri
+                
+                # Mask Client ID for security
+                client_id = settings.google_client_id
+                if client_id:
+                    if len(client_id) > 14:
+                        client_id_masked = f"{client_id[:10]}...{client_id[-4:]}"
+                    else:
+                        client_id_masked = "***"
+                    response["client_id_masked"] = client_id_masked
+                    response["client_id_format_valid"] = client_id.endswith(".apps.googleusercontent.com")
+                else:
+                    response["client_id_masked"] = "NOT SET"
+                    response["client_id_format_valid"] = False
+                
+                # Check for configuration issues
+                config_issues = []
+                if not settings.google_client_id or not settings.google_client_id.strip():
+                    config_issues.append("GOOGLE_CLIENT_ID is empty or contains only whitespace")
+                elif not settings.google_client_id.endswith(".apps.googleusercontent.com"):
+                    config_issues.append("GOOGLE_CLIENT_ID format may be incorrect (should end with .apps.googleusercontent.com)")
+                
+                if not settings.google_client_secret or not settings.google_client_secret.strip():
+                    config_issues.append("GOOGLE_CLIENT_SECRET is empty or contains only whitespace")
+                
+                if not settings.google_redirect_uri or not settings.google_redirect_uri.strip():
+                    config_issues.append("GOOGLE_REDIRECT_URI is empty or contains only whitespace")
+                
+                if config_issues:
+                    response["config_issues"] = config_issues
+                else:
+                    response["config_issues"] = []
 
             return jsonify(response), 200
 
