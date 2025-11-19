@@ -108,7 +108,10 @@ def create_google_auth_blueprint(
             frontend_url = current_app.config.get("SETTINGS").frontend_url
             if not frontend_url:
                 # Fallback: try to detect from request origin or use default
-                frontend_url = request.headers.get("Origin") or "https://testtaptolooknet-production.up.railway.app"
+                # Note: Origin header may be from Google, so use default test frontend URL
+                frontend_url = "https://testtaptolooknet-production.up.railway.app"
+            
+            logger.info(f"[GOOGLE-AUTH-API] Using frontend URL for redirect: {frontend_url}")
             
             # Check if Google OAuth is enabled
             if not google_auth_service.is_enabled():
