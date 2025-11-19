@@ -1,6 +1,5 @@
 'use client';
 
-import '@/styles/dashboard.css';
 import { useAuth } from '@/hooks/useAuth';
 import { useTryons } from '@/hooks/useTryons';
 import { useRouter } from 'next/navigation';
