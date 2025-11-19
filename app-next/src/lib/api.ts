@@ -184,4 +184,13 @@ export const authApi = {
   async getCurrentUser() {
     return api.get('api/auth/me').json();
   },
+
+  // Получить данные пользователя по токену (для Google OAuth)
+  async me(token: string) {
+    return api.get('api/auth/me', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }).json();
+  },
 };
