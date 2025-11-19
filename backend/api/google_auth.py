@@ -192,7 +192,10 @@ def create_google_auth_blueprint(
             # Validation error (state mismatch, invalid token, etc.)
             logger.error(f"[GOOGLE-AUTH-API] Validation error: {e}")
             from flask import current_app
-            frontend_url = current_app.config.get("SETTINGS").frontend_url or "https://testtaptolooknet-production.up.railway.app"
+            frontend_url = (
+                current_app.config.get("SETTINGS").frontend_url 
+                or "https://testtaptolooknet-production.up.railway.app"
+            )
             fragment = urlencode({"google_auth_error": "1", "message": f"Validation failed: {str(e)}"})
             return redirect(f"{frontend_url}/#{fragment}")
 
@@ -200,7 +203,10 @@ def create_google_auth_blueprint(
             # Unexpected error
             logger.error(f"[GOOGLE-AUTH-API] Callback failed: {e}", exc_info=True)
             from flask import current_app
-            frontend_url = current_app.config.get("SETTINGS").frontend_url or "https://testtaptolooknet-production.up.railway.app"
+            frontend_url = (
+                current_app.config.get("SETTINGS").frontend_url 
+                or "https://testtaptolooknet-production.up.railway.app"
+            )
             fragment = urlencode({"google_auth_error": "1", "message": f"Internal error: {str(e)}"})
             return redirect(f"{frontend_url}/#{fragment}")
 
