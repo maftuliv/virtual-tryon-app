@@ -74,6 +74,11 @@ class Settings(BaseSettings):
         description="Google OAuth 2.0 Redirect URI (must match Google Cloud Console configuration)",
     )
 
+    frontend_url: Optional[str] = Field(
+        default=None,
+        description="Frontend URL for OAuth redirects (e.g., https://testtaptolooknet-production.up.railway.app)",
+    )
+
     # ==================== NOTIFICATIONS CONFIGURATION (OPTIONAL) ====================
     telegram_bot_token: Optional[str] = Field(default=None, description="Telegram bot token for feedback notifications")
 

@@ -168,6 +168,16 @@ def create_app(config: Optional[Settings] = None) -> Flask:
     app.config["SETTINGS"] = config
     app.config["SECRET_KEY"] = config.jwt_secret_key  # For Flask session management (Google OAuth)
     app.config["db_connection"] = None  # Will be set later after DB connection is established
+    
+    # Configure Flask sessions for OAuth (critical for state token storage)
+    # In production (HTTPS), cookies must be secure and same-site
+    # In development (HTTP), secure cookies are disabled
+    is_production = config.flask_env == "production"
+    app.config["SESSION_COOKIE_SECURE"] = is_production  # Only send cookies over HTTPS in production
+    app.config["SESSION_COOKIE_HTTPONLY"] = True  # Prevent JavaScript access
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"  # CSRF protection, allow OAuth redirects
+    app.config["PERMANENT_SESSION_LIFETIME"] = 1800  # 30 minutes session timeout
+    logger.info(f"[CONFIG] Session cookie secure: {is_production} (env: {config.flask_env})")
 
     # Configure CORS
     # Note: supports_credentials=True requires specific origins (cannot use "*")
@@ -176,7 +186,13 @@ def create_app(config: Optional[Settings] = None) -> Flask:
         "http://127.0.0.1:5000",
         "https://taptolook.net",
         "https://www.taptolook.net",
+        "https://testtaptolooknet-production.up.railway.app",  # Test frontend
     ]
+    
+    # Add frontend URL from config if provided
+    if config.frontend_url:
+        if config.frontend_url not in allowed_origins:
+            allowed_origins.append(config.frontend_url)
 
     CORS(
         app,
