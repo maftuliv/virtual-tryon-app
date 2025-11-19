@@ -129,7 +129,15 @@ export const tryonApi = {
 
   // Получить историю примерок пользователя
   async getUserTryons(): Promise<UserTryon[]> {
-    return api.get('api/user/tryons').json();
+    const response = await api.get('api/user/tryons').json<{
+      success: boolean;
+      tryons: UserTryon[];
+      total: number;
+      limit: number;
+      offset: number;
+      has_more: boolean;
+    }>();
+    return response.tryons || [];
   },
 
   // Получить статистику пользователя
