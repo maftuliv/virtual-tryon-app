@@ -28,7 +28,7 @@ export default function Header() {
 
   // Получаем первую букву имени или email для аватара
   const getUserInitial = () => {
-    if (user?.name) return user.name.charAt(0).toUpperCase();
+    if (user?.full_name) return user.full_name.charAt(0).toUpperCase();
     if (user?.email) return user.email.charAt(0).toUpperCase();
     return 'U';
   };
@@ -110,7 +110,7 @@ export default function Header() {
             <div className="user-pill">
               <div className="user-avatar">{getUserInitial()}</div>
               <span className="font-medium text-[var(--text-main)]">
-                {user?.name || 'ilia'}
+                {user?.full_name || user?.email?.split('@')[0] || 'User'}
               </span>
               <span className="badge-premium">Premium</span>
             </div>

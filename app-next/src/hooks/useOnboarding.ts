@@ -39,6 +39,6 @@ export function useOnboarding() {
     shouldShowOnboarding,
     isChecking,
     completeOnboarding,
-    userName: user?.name,
+    userName: user?.full_name,
   };
 }

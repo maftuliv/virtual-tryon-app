@@ -8,7 +8,7 @@ export default function UserGreeting() {
   const { user } = useAuth();
   const { tryons } = useTryons();
 
-  const userName = user?.name || user?.email?.split('@')[0] || 'Пользователь';
+  const userName = user?.full_name || user?.email?.split('@')[0] || 'Пользователь';
   const tryonCount = tryons?.length || 0;
   const favoritesCount = tryons?.filter((t) => t.is_favorite).length || 0;
 
