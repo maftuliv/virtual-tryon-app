@@ -1,10 +1,10 @@
-import HomeClient from '@/components/HomeClient';
+import LandingPage from '@/components/LandingPage';
 
-// Server Component - статический контент рендерится на сервере
+// Server Component - главная страница с новым дизайном из taptolook_dashboard.html
 export default function Home() {
   return (
     <>
-      <HomeClient />
+      <LandingPage />
 
       {/* About Section - Server Component */}
       <section id="about" className="py-20 px-6 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
