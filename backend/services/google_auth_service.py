@@ -283,21 +283,34 @@ class GoogleAuthService:
 
         try:
             # Create OAuth 2.0 flow
+            # Note: Use the same state that was in authorization URL (signed_state)
+            # But we validate the state separately, so we can use the original state here
             flow = Flow.from_client_config(
                 client_config={
                     "web": {
-                        "client_id": self.settings.google_client_id,
-                        "client_secret": self.settings.google_client_secret,
+                        "client_id": self.settings.google_client_id.strip(),
+                        "client_secret": self.settings.google_client_secret.strip() if self.settings.google_client_secret else "",
                         "auth_uri": "https://accounts.google.com/o/oauth2/auth",
                         "token_uri": "https://oauth2.googleapis.com/token",
-                        "redirect_uris": [self.settings.google_redirect_uri],
+                        "redirect_uris": [self.settings.google_redirect_uri.strip()],
                     }
                 },
                 scopes=self.SCOPES,
-                state=state,
+                state=state,  # Use validated state (already verified)
             )
 
-            flow.redirect_uri = self.settings.google_redirect_uri
+            flow.redirect_uri = self.settings.google_redirect_uri.strip()
+
+            # Log for debugging
+            client_id_masked = self._mask_sensitive(self.settings.google_client_id)
+            client_secret_masked = self._mask_sensitive(self.settings.google_client_secret) if self.settings.google_client_secret else "NOT SET"
+            self.logger.info(
+                f"[GOOGLE-AUTH] Exchanging code for token (state={state[:8]}..., "
+                f"client_id={client_id_masked}, client_secret={client_secret_masked})"
+            )
+            self.logger.info(
+                f"[GOOGLE-AUTH] Redirect URI: {self.settings.google_redirect_uri}"
+            )
 
             # Exchange code for token
             flow.fetch_token(code=authorization_code)
