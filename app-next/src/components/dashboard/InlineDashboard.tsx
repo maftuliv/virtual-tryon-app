@@ -13,7 +13,7 @@ export default function InlineDashboard() {
   return (
     <div className="w-full max-w-7xl mx-auto p-6 mt-8">
       {/* Заголовок Dashboard */}
-      <h2 className="text-3xl font-bold mb-6 text-center">Ваш кабинет</h2>
+      <h2 className="text-3xl font-bold mb-6 text-center">Ваш кабинет 😊</h2>
 
       {/* Основная сетка Dashboard */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
