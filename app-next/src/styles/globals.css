@@ -358,6 +358,3 @@ body {
 .card-row::-webkit-scrollbar-track {
   background: transparent;
 }
-
-/* Dashboard styles */
-@import './dashboard.css';
