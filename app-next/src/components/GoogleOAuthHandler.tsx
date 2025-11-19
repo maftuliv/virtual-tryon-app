@@ -61,12 +61,12 @@ export default function GoogleOAuthHandler() {
 
         try {
           // Fetch user data using the token
-          const user = await authApi.me(token) as User;
+          const response = await authApi.me(token) as { user: User };
 
           // Store user and token in auth store (persists to localStorage)
-          login(user, token);
+          login(response.user, token);
 
-          console.log('[GoogleOAuthHandler] User logged in:', user.email);
+          console.log('[GoogleOAuthHandler] User logged in:', response.user.email);
 
           // Clean up URL (remove hash)
           window.history.replaceState(null, '', window.location.pathname);
