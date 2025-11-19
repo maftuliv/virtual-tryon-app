@@ -5,7 +5,10 @@ Handles Google OAuth flow: authorization URL generation, token exchange,
 user profile retrieval, and user creation/login.
 """
 
+import hmac
+import hashlib
 import secrets
+import time
 from typing import Dict, Optional, Tuple
 from urllib.parse import urlencode
 
@@ -100,14 +103,68 @@ class GoogleAuthService:
         """
         return self.enabled
 
+    def _sign_state(self, state: str) -> str:
+        """
+        Sign state token with HMAC for CSRF protection.
+        State is signed so it can be validated without session storage.
+        
+        Args:
+            state: Random state token
+            
+        Returns:
+            Signed state token (state.timestamp.signature)
+        """
+        timestamp = str(int(time.time()))
+        secret = self.settings.jwt_secret_key.encode('utf-8')
+        message = f"{state}.{timestamp}".encode('utf-8')
+        signature = hmac.new(secret, message, hashlib.sha256).hexdigest()[:16]
+        return f"{state}.{timestamp}.{signature}"
+    
+    def _verify_state(self, signed_state: str) -> Optional[str]:
+        """
+        Verify signed state token and extract original state.
+        
+        Args:
+            signed_state: Signed state token (state.timestamp.signature)
+            
+        Returns:
+            Original state token if valid, None otherwise
+        """
+        try:
+            parts = signed_state.split('.')
+            if len(parts) != 3:
+                return None
+            
+            state, timestamp_str, signature = parts
+            timestamp = int(timestamp_str)
+            
+            # Check expiration (5 minutes)
+            if time.time() - timestamp > 300:
+                self.logger.warning(f"[GOOGLE-AUTH] State token expired (age: {time.time() - timestamp}s)")
+                return None
+            
+            # Verify signature
+            secret = self.settings.jwt_secret_key.encode('utf-8')
+            message = f"{state}.{timestamp_str}".encode('utf-8')
+            expected_signature = hmac.new(secret, message, hashlib.sha256).hexdigest()[:16]
+            
+            if not hmac.compare_digest(signature, expected_signature):
+                self.logger.warning("[GOOGLE-AUTH] State token signature invalid")
+                return None
+            
+            return state
+        except (ValueError, IndexError) as e:
+            self.logger.warning(f"[GOOGLE-AUTH] State token verification failed: {e}")
+            return None
+
     def generate_authorization_url(self) -> Tuple[str, str]:
         """
-        Generate Google OAuth authorization URL with state token.
+        Generate Google OAuth authorization URL with signed state token.
 
         Returns:
-            Tuple of (authorization_url, state_token)
+            Tuple of (authorization_url, signed_state_token)
             - authorization_url: URL to redirect user to Google login
-            - state_token: Random state token for CSRF protection (store in session)
+            - signed_state_token: Signed state token for CSRF protection (includes in URL, no session needed)
 
         Raises:
             RuntimeError: If Google OAuth is not enabled
@@ -117,6 +174,9 @@ class GoogleAuthService:
 
         # Generate random state for CSRF protection
         state = secrets.token_urlsafe(32)
+        
+        # Sign state token (so it can be validated without session)
+        signed_state = self._sign_state(state)
 
         try:
             # Log configuration details for debugging (masked)
@@ -136,6 +196,7 @@ class GoogleAuthService:
                 )
             
             # Create OAuth 2.0 flow
+            # Note: Use signed_state in Flow so it's included in the authorization URL
             flow = Flow.from_client_config(
                 client_config={
                     "web": {
@@ -147,12 +208,13 @@ class GoogleAuthService:
                     }
                 },
                 scopes=self.SCOPES,
-                state=state,
+                state=signed_state,  # Use signed state so it's included in URL
             )
 
             flow.redirect_uri = self.settings.google_redirect_uri.strip()
 
             # Generate authorization URL
+            # The signed_state will be included in the URL as the 'state' parameter
             authorization_url, _ = flow.authorization_url(
                 access_type="offline",  # Request refresh token
                 include_granted_scopes="true",
@@ -168,7 +230,7 @@ class GoogleAuthService:
             url_base = authorization_url.split("?")[0] if "?" in authorization_url else authorization_url
             self.logger.debug(f"[GOOGLE-AUTH] Authorization URL base: {url_base}")
 
-            return authorization_url, state
+            return authorization_url, signed_state
 
         except ValueError as e:
             self.logger.error(f"[GOOGLE-AUTH] Validation error: {e}")

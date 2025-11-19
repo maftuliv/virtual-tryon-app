@@ -57,13 +57,11 @@ def create_google_auth_blueprint(
                     503,  # Service Unavailable
                 )
 
-            # Generate authorization URL with state token
-            authorization_url, state = google_auth_service.generate_authorization_url()
+            # Generate authorization URL with signed state token
+            # State is signed, so no session storage needed (works across domains)
+            authorization_url, signed_state = google_auth_service.generate_authorization_url()
 
-            # Store state in session for validation (CSRF protection)
-            session["google_oauth_state"] = state
-
-            logger.info(f"[GOOGLE-AUTH-API] Generated auth URL (state={state[:8]}...)")
+            logger.info(f"[GOOGLE-AUTH-API] Generated auth URL (signed_state={signed_state[:20]}...)")
 
             return (
                 jsonify(
@@ -126,31 +124,28 @@ def create_google_auth_blueprint(
                 fragment = urlencode({"google_auth_error": "1", "message": f"{error} - {error_description}"})
                 return redirect(f"{frontend_url}/#{fragment}")
 
-            # Get authorization code and state
+            # Get authorization code and signed state
             authorization_code = request.args.get("code")
-            state = request.args.get("state")
+            signed_state = request.args.get("state")
 
-            if not authorization_code or not state:
+            if not authorization_code or not signed_state:
                 logger.error("[GOOGLE-AUTH-API] Missing code or state in callback")
                 fragment = urlencode({"google_auth_error": "1", "message": "Missing authorization code or state"})
                 return redirect(f"{frontend_url}/#{fragment}")
 
-            # Get expected state from session
-            expected_state = session.get("google_oauth_state")
-            if not expected_state:
-                logger.error("[GOOGLE-AUTH-API] No state found in session")
-                logger.error(f"[GOOGLE-AUTH-API] Session keys: {list(session.keys())}")
-                fragment = urlencode({"google_auth_error": "1", "message": "Invalid session state"})
+            # Verify signed state token (no session needed - works across domains)
+            state = google_auth_service._verify_state(signed_state)
+            if not state:
+                logger.error("[GOOGLE-AUTH-API] Invalid or expired state token")
+                fragment = urlencode({"google_auth_error": "1", "message": "Invalid or expired state token"})
                 return redirect(f"{frontend_url}/#{fragment}")
 
-            # Clear state from session (one-time use)
-            session.pop("google_oauth_state", None)
-
             # Handle OAuth callback: exchange code, get user info, create/login user
+            # Note: state is already verified, so we pass it as both state and expected_state
             result = google_auth_service.handle_oauth_callback(
                 authorization_code=authorization_code,
                 state=state,
-                expected_state=expected_state,
+                expected_state=state,  # Already verified, so same value
             )
 
             if not result.get("success"):
