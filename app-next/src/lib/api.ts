@@ -152,10 +152,15 @@ export const tryonApi = {
 
 export interface AuthResponse {
   user: {
-    id: string;
+    id: number;
     email: string;
-    name?: string;
-    createdAt: string;
+    full_name?: string;
+    avatar_url?: string;
+    role: string;
+    provider: string;
+    is_premium: boolean;
+    premium_until?: string | null;
+    created_at: string;
   };
   token: string;
 }
