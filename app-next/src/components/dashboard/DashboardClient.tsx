@@ -1,22 +1,15 @@
 'use client';
 
+import '@/styles/dashboard.css';
 import { useAuth } from '@/hooks/useAuth';
+import { useTryons } from '@/hooks/useTryons';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import Header from '@/components/Header';
-import UserGreeting from './UserGreeting';
-import PremiumBanner from './PremiumBanner';
-import LikedItems from './LikedItems';
-import RecentTryons from './RecentTryons';
-import MyPhotos from './MyPhotos';
-import Recommendations from './Recommendations';
-import LooksSection from './LooksSection';
-import BrandConstructor from './BrandConstructor';
-import StylePlan from './StylePlan';
-import ServiceUpdates from './ServiceUpdates';
+import Link from 'next/link';
 
 export default function DashboardClient() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
+  const { tryons } = useTryons();
   const router = useRouter();
 
   useEffect(() => {
@@ -41,70 +34,388 @@ export default function DashboardClient() {
     return null;
   }
 
+  const userName = user?.full_name || user?.email?.split('@')[0] || 'Пользователь';
+  const tryonCount = tryons?.length || 0;
+  const favoritesCount = tryons?.filter((t) => t.is_favorite).length || 0;
+
   return (
-    <div className="min-h-screen">
-      {/* EXACT page structure from HTML file */}
-      <div className="w-full max-w-[1200px] mx-auto px-4 py-6 pb-10">
-        <Header />
-        {/* HERO GRID: Greeting + Premium + Liked - EXACT from HTML */}
-        <section className="grid grid-cols-1 lg:grid-cols-[2.2fr_1.4fr] gap-[18px] mb-[22px]">
-          {/* LEFT: Greeting card */}
-          <UserGreeting />
-
-          {/* RIGHT: Premium + Liked */}
-          <div className="grid grid-rows-2 gap-3.5">
-            <PremiumBanner />
-            <LikedItems />
+    <div className="page">
+      {/* HEADER */}
+      <header className="header">
+        <div className="logo">
+          <div className="logo-pill">Tap</div>
+          <div className="logo-text">to look</div>
+        </div>
+        <div className="header-center">
+          ✨✨ Здесь рождается твой новый стиль — просто нажми, чтобы посмотреть! ✨✨
+        </div>
+        <div className="header-right">
+          <nav className="nav-links">
+            <Link href="/dashboard" className="nav-link nav-link_active">Дашборд</Link>
+            <Link href="/#tryon" className="nav-link">Примерка</Link>
+            <div className="nav-link">Образы</div>
+            <div className="nav-link">Моя одежда</div>
+            <div className="nav-link">История</div>
+          </nav>
+          <div className="user-pill">
+            <div className="user-avatar">
+              {user?.avatar_url ? (
+                <img src={user.avatar_url} alt={userName} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+              ) : (
+                userName.charAt(0).toUpperCase()
+              )}
+            </div>
+            <span className="user-name">{userName}</span>
+            {user?.is_premium && <span className="badge-premium">Premium</span>}
           </div>
-        </section>
+        </div>
+      </header>
 
-        {/* MAIN GRID: Try-ons+Looks | Photos+Brands+Recommendations - EXACT from HTML */}
-        <section className="grid grid-cols-1 lg:grid-cols-[2.05fr_1.6fr] gap-5 mb-6">
-          {/* LEFT COLUMN: Try-ons + Looks */}
-          <div className="flex flex-col gap-4">
-            <RecentTryons />
-            <LooksSection />
+      {/* HERO: GREETING + MODES + PREMIUM + LIKED */}
+      <section className="hero-grid">
+        {/* LEFT: greeting + modes */}
+        <article className="card">
+          <h1 className="hero-main-title">Привет, {userName} 👋</h1>
+          <p className="hero-subtitle">
+            Здесь твоя зона стиля. Что сделаем сейчас: примерку, новый образ или соберём look из брендов?
+          </p>
+
+          <div className="hero-modes">
+            <Link href="/#tryon" className="btn btn-gradient mode-btn">
+              <span className="mode-icon">👗</span> Сделать примерку
+            </Link>
+            <button className="btn btn-ghost mode-btn">
+              <span className="mode-icon">✨</span> Создать образ по фильтрам
+            </button>
+            <button className="btn btn-ghost mode-btn">
+              <span className="mode-icon">🧩</span> Собрать образ из брендов
+            </button>
           </div>
 
-          {/* RIGHT COLUMN: Photos + Brands + Recommendations */}
-          <div className="flex flex-col gap-4">
-            <MyPhotos />
-            <BrandConstructor />
-            <Recommendations />
+          <div className="hero-meta-row">
+            <div className="meta-pill">
+              <span className="meta-dot"></span>
+              Последняя примерка: <strong>недавно</strong>
+            </div>
+            <div className="meta-pill">
+              👕 Образов создано: <strong>{tryonCount}</strong>
+            </div>
+            <div className="meta-pill">
+              ⭐ Лайкнутые образы: <strong>{favoritesCount}</strong>
+            </div>
           </div>
-        </section>
+        </article>
 
-        {/* LOWER GRID: Style Plan + Service Updates - EXACT from HTML */}
-        <section className="grid grid-cols-1 lg:grid-cols-[1.8fr_1.6fr] gap-[18px] mb-4">
-          <StylePlan />
-          <ServiceUpdates />
-        </section>
+        {/* RIGHT: premium + liked */}
+        <div className="hero-side">
+          <article className="card">
+            <div className="card-title">Премиум аккаунт</div>
+            <p className="premium-count">50 примерок осталось в этом месяце</p>
+            <div className="premium-progress">
+              <div className="premium-progress-fill"></div>
+            </div>
+            <p className="premium-note">
+              Используйте лимит, чтобы протестировать максимум образов. В следующем месяце счётчик обновится.
+            </p>
+            <button className="btn btn-premium">Подробнее о премиуме</button>
+          </article>
 
-        {/* FEEDBACK CARD */}
-        <section className="card mb-3.5">
+          <article className="card">
+            <div className="section-header">
+              <div className="section-title">Лайкнутые образы</div>
+              <div className="section-link">Открыть галерею</div>
+            </div>
+            <div className="liked-count">{favoritesCount}</div>
+            <p className="card-subtitle">
+              Ваши любимые результаты. Можно вернуться к ним и доработать детали.
+            </p>
+            <div className="liked-preview-row">
+              {tryons && tryons.filter(t => t.is_favorite).slice(0, 3).map((tryon, idx) => (
+                <div key={tryon.id} className="liked-thumb">
+                  <img src={tryon.r2_url} alt={`Look ${idx + 1}`} style={{ width: '100%', height: '100%', borderRadius: '14px', objectFit: 'cover' }} />
+                </div>
+              ))}
+              {(!tryons || tryons.filter(t => t.is_favorite).length === 0) && (
+                <>
+                  <div className="liked-thumb">Look 1</div>
+                  <div className="liked-thumb">Look 2</div>
+                  <div className="liked-thumb">Look 3</div>
+                </>
+              )}
+            </div>
+          </article>
+        </div>
+      </section>
+
+      {/* MAIN GRID */}
+      <section className="main-grid">
+        {/* LEFT COLUMN: try-ons + looks */}
+        <div className="stacked">
+          {/* MY TRY-ONS */}
+          <article className="card">
+            <div className="section-header">
+              <div className="section-title">Мои примерки</div>
+              <div className="section-link">Посмотреть все</div>
+            </div>
+            <p className="card-subtitle">
+              Последние результаты примерки. Откройте, чтобы сохранить, поделиться или создать похожий образ.
+            </p>
+            <div className="card-row">
+              {tryons && tryons.length > 0 ? (
+                tryons.slice(0, 4).map((tryon) => (
+                  <div key={tryon.id} className="tryon-card">
+                    <div className="tryon-thumb">
+                      <img src={tryon.r2_url} alt={tryon.title || 'Превью образа'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                    <div className="tryon-body">
+                      <div className="tryon-name">{tryon.title || 'Примерка'}</div>
+                      <div className="tryon-date">
+                        {new Date(tryon.created_at).toLocaleDateString('ru-RU', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                        })}
+                      </div>
+                      <div className="tryon-actions">
+                        <button className="btn-small btn-small-solid">Открыть</button>
+                        <button className="btn-small btn-small-outline">Похожий</button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <>
+                  <div className="tryon-card">
+                    <div className="tryon-thumb">Превью образа</div>
+                    <div className="tryon-body">
+                      <div className="tryon-name">Вечеринка в баре</div>
+                      <div className="tryon-date">4 апреля 2025</div>
+                      <div className="tryon-actions">
+                        <button className="btn-small btn-small-solid">Открыть</button>
+                        <button className="btn-small btn-small-outline">Похожий</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="tryon-card">
+                    <div className="tryon-thumb">Превью образа</div>
+                    <div className="tryon-body">
+                      <div className="tryon-name">Деловая встреча</div>
+                      <div className="tryon-date">16 марта 2025</div>
+                      <div className="tryon-actions">
+                        <button className="btn-small btn-small-solid">Открыть</button>
+                        <button className="btn-small btn-small-outline">Похожий</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="tryon-card">
+                    <div className="tryon-thumb">Превью образа</div>
+                    <div className="tryon-body">
+                      <div className="tryon-name">Путешествие</div>
+                      <div className="tryon-date">1 марта 2025</div>
+                      <div className="tryon-actions">
+                        <button className="btn-small btn-small-solid">Открыть</button>
+                        <button className="btn-small btn-small-outline">Похожий</button>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+              <div className="tryon-card">
+                <div className="tryon-thumb">Новый образ</div>
+                <div className="tryon-body">
+                  <div className="tryon-name">Создать с нуля</div>
+                  <div className="tryon-date">Черновик</div>
+                  <div className="tryon-actions">
+                    <Link href="/#tryon" className="btn-small btn-small-solid">Создать</Link>
+                    <button className="btn-small btn-small-outline">Шаблон</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          {/* MY LOOKS (AI FILTERS) */}
+          <article className="card">
+            <div className="section-header">
+              <div className="section-title">Мои образы</div>
+              <div className="section-link">Открыть все</div>
+            </div>
+            <p className="card-subtitle">
+              Образы, созданные с помощью фильтров: свидание, офис, вечеринка, путешествие и другие.
+            </p>
+            <div className="looks-grid">
+              <div className="look-card">
+                <div className="look-name">Образ для свидания</div>
+                <div className="look-tag">Элегантный вечерний стиль</div>
+                <button className="btn-chip">✨ Открыть образ</button>
+              </div>
+              <div className="look-card">
+                <div className="look-name">Образ для офиса</div>
+                <div className="look-tag">Минимализм и нейтральные оттенки</div>
+                <button className="btn-chip">✨ Открыть образ</button>
+              </div>
+              <div className="look-card">
+                <div className="look-name">Образ для путешествия</div>
+                <div className="look-tag">Удобно и стильно на каждый день</div>
+                <button className="btn-chip">✨ Открыть образ</button>
+              </div>
+            </div>
+            <div style={{ marginTop: '14px' }}>
+              <button className="btn btn-gradient">Создать новый образ по фильтрам</button>
+            </div>
+          </article>
+        </div>
+
+        {/* RIGHT COLUMN: photos + brands + recommendations */}
+        <div className="stacked">
+          {/* MY PHOTOS */}
+          <article className="card">
+            <div className="section-header">
+              <div className="section-title">Мои фото</div>
+              <div className="section-link">Управлять</div>
+            </div>
+            <p className="card-subtitle">
+              Базовые фотографии, с которыми мы работаем. Рекомендуем периодически обновлять их.
+            </p>
+            <div className="photo-grid">
+              <div className="photo-card">
+                <div>Фото в полный рост</div>
+                <div className="photo-label">Основное для примерок</div>
+                <div className="photo-status">Рекомендовано ✔</div>
+              </div>
+              <div className="photo-card">
+                <div>Портрет</div>
+                <div className="photo-label">Подходит для аватаров и тестов</div>
+              </div>
+              <div className="photo-card">
+                <div>Фото сбоку</div>
+                <div className="photo-label">Для более точной посадки</div>
+              </div>
+              <div className="photo-card photo-card-add">
+                <div>+</div>
+                <div className="photo-label">Добавить новое фото</div>
+              </div>
+            </div>
+            <div style={{ marginTop: '10px' }}>
+              <button className="btn-ghost">Обновить базовое фото</button>
+            </div>
+          </article>
+
+          {/* BRAND CONSTRUCTOR */}
+          <article className="card">
+            <div className="section-header">
+              <div className="section-title">Конструктор образов из брендов</div>
+              <div className="section-link">Открыть конструктор</div>
+            </div>
+            <p className="card-subtitle">
+              Собирайте образы из готовых подборок Zara, H&M, Mango и других брендов. Выберите вещи — мы примерим их на вас.
+            </p>
+            <div className="brand-row">
+              <div className="brand-card">
+                <div className="brand-name">Zara · Осень</div>
+                <div className="brand-tagline">Плащи, джинсы, базовые свитшоты</div>
+              </div>
+              <div className="brand-card">
+                <div className="brand-name">H&M · Casual</div>
+                <div className="brand-tagline">На каждый день в городе</div>
+              </div>
+              <div className="brand-card">
+                <div className="brand-name">Mango · Вечер</div>
+                <div className="brand-tagline">Платья и вечерние комплекты</div>
+              </div>
+            </div>
+            <div style={{ marginTop: '12px' }}>
+              <button className="btn btn-gradient">Собрать образ из брендов</button>
+            </div>
+          </article>
+
+          {/* RECOMMENDATIONS */}
+          <article className="card">
+            <div className="section-header">
+              <div className="section-title">Рекомендации</div>
+            </div>
+            <p className="card-subtitle">
+              Сегодняшняя рекомендация: попробуйте образ для свидания с тёмным низом и светлым верхом.
+            </p>
+            <div className="chip-row">
+              <button className="btn-chip">💼 На работу</button>
+              <button className="btn-chip">❤️ На свидание</button>
+              <button className="btn-chip">🧳 В путешествие</button>
+              <button className="btn-chip">🎉 На вечеринку</button>
+            </div>
+            <ul className="reco-list">
+              <li>Вы уже протестировали {tryonCount} образов. Ещё 2 — и мы соберём для вас подборку &quot;Топ-3 образа месяца&quot;.</li>
+              <li>Попробуйте создать капсулу из 5–7 вещей для ближайших недель.</li>
+            </ul>
+            <div style={{ marginTop: '12px' }}>
+              <button className="btn btn-ghost">Создать образ по сегодняшней рекомендации</button>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      {/* LOWER GRID: PLAN + UPDATES */}
+      <section className="lower-grid">
+        {/* STYLE PLAN */}
+        <article className="card">
           <div className="section-header">
-            <div className="section-title">Поделитесь мнением</div>
+            <div className="section-title">План стиля на месяц</div>
             <div className="section-link">Подробнее</div>
           </div>
           <p className="card-subtitle">
-            Расскажите, что улучшить. Ваши идеи и замечания напрямую влияют на развитие сервиса.
+            Следите за прогрессом, чтобы шаг за шагом прокачивать свой стиль.
           </p>
-          <div className="flex flex-wrap gap-2 mb-3">
-            <button className="btn-chip">🐞 Сообщить об ошибке</button>
-            <button className="btn-chip">💡 Предложить идею</button>
-            <button className="btn-chip">⭐ Оценить качество примерки</button>
+          <ul className="plan-list">
+            <li className="done">Загрузить базовое фото в полный рост</li>
+            <li className="done">Сделать 3 примерки с разной одеждой</li>
+            <li className="todo">Создать 1 образ для работы</li>
+            <li className="todo">Создать 1 образ для свидания</li>
+            <li className="todo">Собрать капсулу из брендов на неделю</li>
+          </ul>
+          <div style={{ marginTop: '12px' }}>
+            <button className="btn btn-gradient">Продолжить план</button>
           </div>
-        </section>
+        </article>
 
-        {/* FOOTER BAR */}
-        <div className="flex flex-wrap gap-2.5 justify-end mb-2.5">
-          <button className="btn-ghost text-sm">📜 История примерок</button>
-          <button className="btn-ghost text-sm">🛟 Поддержка</button>
-          <button className="btn-accent text-sm">💌 Отправить отзыв</button>
+        {/* UPDATES */}
+        <article className="card">
+          <div className="section-header">
+            <div className="section-title">Обновления сервиса</div>
+          </div>
+          <p className="card-subtitle">
+            Мы постоянно улучшаем Tap to look, чтобы примерка была точнее, а образы — интереснее.
+          </p>
+          <ul className="updates-list">
+            <li>Добавили новые образы для новогодних вечеринок.</li>
+            <li>Улучшили качество примерок для тёмной одежды.</li>
+            <li>Скоро: полноценный конструктор образов из Zara и H&M.</li>
+          </ul>
+        </article>
+      </section>
+
+      {/* FEEDBACK + FOOTER */}
+      <section className="card" style={{ marginBottom: '14px' }}>
+        <div className="section-header">
+          <div className="section-title">Поделитесь мнением</div>
+          <div className="section-link">Подробнее</div>
         </div>
-        <div className="text-[11px] text-[var(--text-muted)] text-center opacity-90">
-          Используя сервис, вы соглашаетесь с условиями и политикой конфиденциальности. Все права защищены.
+        <p className="card-subtitle">
+          Расскажите, что улучшить. Ваши идеи и замечания напрямую влияют на развитие сервиса.
+        </p>
+        <div className="chip-row">
+          <button className="btn-chip">🐞 Сообщить об ошибке</button>
+          <button className="btn-chip">💡 Предложить идею</button>
+          <button className="btn-chip">⭐ Оценить качество примерки</button>
         </div>
+      </section>
+
+      <div className="footer-bar">
+        <button className="btn-ghost">📜 История примерок</button>
+        <button className="btn-ghost">🛟 Поддержка</button>
+        <button className="btn-accent">💌 Отправить отзыв</button>
+      </div>
+      <div className="footer-legal">
+        Используя сервис, вы соглашаетесь с условиями и политикой конфиденциальности. Все права защищены.
       </div>
     </div>
   );
