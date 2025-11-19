@@ -4,6 +4,13 @@ import { useEffect } from 'react';
 import { useAuthStore } from '@/store/auth.store';
 import { authApi } from '@/lib/api';
 
+interface User {
+  id: string;
+  email: string;
+  name?: string;
+  createdAt: string;
+}
+
 /**
  * Component to handle Google OAuth callback with JWT token in URL hash
  *
@@ -54,7 +61,7 @@ export default function GoogleOAuthHandler() {
 
         try {
           // Fetch user data using the token
-          const user = await authApi.me(token);
+          const user = await authApi.me(token) as User;
 
           // Store user and token in auth store (persists to localStorage)
           login(user, token);
