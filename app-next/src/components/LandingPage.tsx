@@ -27,9 +27,6 @@ export default function LandingPage() {
           <div className="logo-pill">Tap</div>
           <div className="logo-text">to look</div>
         </div>
-        <div className="header-center">
-          ✨✨ Здесь рождается твой новый стиль — просто нажми, чтобы посмотреть! ✨✨
-        </div>
         <div className="header-right">
           <nav className="nav-links">
             <div className="nav-link nav-link_active">Дашборд</div>
