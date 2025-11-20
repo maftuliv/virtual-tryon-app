@@ -2,7 +2,6 @@
 
 import { useAuth } from '@/hooks/useAuth';
 import { useTryons } from '@/hooks/useTryons';
-import { useLimit } from '@/hooks/useLimit';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
@@ -11,7 +10,6 @@ import TryonFormStepped from './TryonFormStepped';
 export default function TryonPage() {
   const { user, isAuthenticated, logout } = useAuth();
   const { tryons } = useTryons();
-  const { limitData } = useLimit();
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -19,13 +17,6 @@ export default function TryonPage() {
   const userName = user?.full_name || user?.email?.split('@')[0] || 'Пользователь';
   const userInitial = userName.charAt(0).toUpperCase();
   const favoritesCount = tryons?.filter((t) => t.is_favorite).length || 0;
-
-  const isPremium = user?.is_premium || false;
-  const isAdmin = user?.role === 'admin';
-  const used = limitData?.used ?? 0;
-  const limit = limitData?.limit ?? 3;
-  const remaining = limit === -1 ? Infinity : Math.max(0, limit - used);
-  const progressPercent = limit === -1 ? 100 : Math.min(100, (used / limit) * 100);
 
   const handleLoginClick = async () => {
     try {
