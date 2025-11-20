@@ -403,10 +403,11 @@ body {
   gap: 16px;
 }
 
-/* TRY-ONS */
+/* TRY-ONS - 3 visible at once with horizontal scroll */
 
 .card-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 14px;
   overflow-x: auto;
   padding-bottom: 4px;
@@ -422,7 +423,6 @@ body {
 }
 
 .tryon-card {
-  flex: 0 0 170px;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.97);
   border: 1px solid rgba(241, 229, 255, 0.9);
@@ -430,6 +430,7 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-width: 140px;
 }
 
 .tryon-thumb {
@@ -488,18 +489,16 @@ body {
   color: var(--text-main);
 }
 
-/* LOOKS */
+/* LOOKS - 3 in a row */
 
 .looks-grid {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
   margin-top: 6px;
 }
 
 .look-card {
-  flex: 1 1 160px;
-  min-width: 150px;
   border-radius: 18px;
   padding: 10px 12px;
   background: linear-gradient(135deg, #fbefff, #ffe5f2);
@@ -519,16 +518,15 @@ body {
   margin-bottom: 8px;
 }
 
-/* PHOTOS */
+/* PHOTOS - 3 in a row */
 
 .photo-grid {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
-  flex-wrap: wrap;
 }
 
 .photo-card {
-  flex: 0 0 120px;
   height: 140px;
   border-radius: 18px;
   background: linear-gradient(135deg, #f7efff, #ffe9f4);
