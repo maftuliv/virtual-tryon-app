@@ -49,6 +49,11 @@ export default function LandingPage() {
         </div>
       </header>
 
+      {/* TRY-ON SECTION */}
+      <section id="tryon" className="py-20">
+        <VirtualTryonForm />
+      </section>
+
       {/* HERO: GREETING + MODES + PREMIUM + LIKED */}
       <section className="hero-grid">
         {/* LEFT: greeting + modes */}
@@ -337,11 +342,6 @@ export default function LandingPage() {
           <button className="btn-chip">💡 Предложить идею</button>
           <button className="btn-chip">⭐ Оценить качество примерки</button>
         </div>
-      </section>
-
-      {/* TRY-ON SECTION */}
-      <section id="tryon" className="py-20">
-        <VirtualTryonForm />
       </section>
 
       <div className="footer-bar">
