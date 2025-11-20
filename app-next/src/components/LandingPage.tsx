@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/hooks/useAuth';
 import { useTryons } from '@/hooks/useTryons';
+import { useLimit } from '@/hooks/useLimit';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
@@ -9,6 +10,7 @@ import { useState, useRef, useEffect } from 'react';
 export default function LandingPage() {
   const { user, isAuthenticated, logout } = useAuth();
   const { tryons } = useTryons();
+  const { limitData } = useLimit();
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -16,6 +18,15 @@ export default function LandingPage() {
   const userName = user?.full_name || user?.email?.split('@')[0] || 'Пользователь';
   const userInitial = userName.charAt(0).toUpperCase();
   const favoritesCount = tryons?.filter((t) => t.is_favorite).length || 0;
+
+  // Calculate tariff display info
+  const isPremium = user?.is_premium || false;
+  const isAdmin = user?.role === 'admin';
+  const used = limitData?.used ?? 0;
+  const limit = limitData?.limit ?? 3;
+  const period = limitData?.period ?? 'week';
+  const remaining = limit === -1 ? Infinity : Math.max(0, limit - used);
+  const progressPercent = limit === -1 ? 100 : Math.min(100, (used / limit) * 100);
 
   const handleLoginClick = async () => {
     try {
@@ -139,17 +150,51 @@ export default function LandingPage() {
           </div>
         </article>
 
-        {/* RIGHT: Премиум аккаунт */}
+        {/* RIGHT: Тарифный план */}
         <article className="card">
-          <div className="card-title">Премиум аккаунт</div>
-          <p className="premium-count">50 примерок осталось в этом месяце</p>
-          <div className="premium-progress">
-            <div className="premium-progress-fill"></div>
-          </div>
-          <p className="premium-note">
-            Используйте лимит, чтобы протестировать максимум образов. В следующем месяце счётчик обновится.
-          </p>
-          <button className="btn btn-premium">Подробнее о премиуме</button>
+          {isAdmin ? (
+            <>
+              <div className="card-title">👑 Администратор</div>
+              <p className="premium-count">Безлимитные примерки</p>
+              <div className="premium-progress">
+                <div className="premium-progress-fill" style={{ width: '100%' }}></div>
+              </div>
+              <p className="premium-note">
+                У вас есть полный доступ ко всем функциям платформы без ограничений.
+              </p>
+            </>
+          ) : isPremium ? (
+            <>
+              <div className="card-title">⭐ Премиум аккаунт</div>
+              <p className="premium-count">
+                {remaining === Infinity ? 'Безлимитно' : `${remaining} из ${limit} примерок осталось в этом месяце`}
+              </p>
+              <div className="premium-progress">
+                <div className="premium-progress-fill" style={{ width: `${progressPercent}%` }}></div>
+              </div>
+              <p className="premium-note">
+                {remaining > 0
+                  ? 'Используйте лимит, чтобы протестировать максимум образов. В следующем месяце счётчик обновится.'
+                  : 'Вы использовали весь месячный лимит. Ожидайте обновления в следующем месяце.'}
+              </p>
+            </>
+          ) : (
+            <>
+              <div className="card-title">Бесплатный план</div>
+              <p className="premium-count">
+                {remaining} из {limit} примерок осталось на этой неделе
+              </p>
+              <div className="premium-progress">
+                <div className="premium-progress-fill" style={{ width: `${progressPercent}%` }}></div>
+              </div>
+              <p className="premium-note">
+                {remaining > 0
+                  ? 'У вас есть 3 бесплатные примерки каждую неделю. Обновление каждый понедельник.'
+                  : 'Вы использовали все бесплатные примерки на этой неделе. Обновление в понедельник.'}
+              </p>
+              <button className="btn btn-premium">Перейти на Premium ($4.99/месяц)</button>
+            </>
+          )}
         </article>
       </section>
 
