@@ -1,13 +1,15 @@
 :root {
-  --bg-gradient: radial-gradient(circle at top left, #ffe7ff 0%, #f6e8ff 32%, #ffe9f3 60%, #ffe8d8 100%);
-  --card-bg: rgba(255, 255, 255, 0.9);
-  --card-border: rgba(255, 255, 255, 0.8);
+  /* Modern pink gradient background */
+  --bg-gradient: radial-gradient(circle at top left, #ffd4f4 0%, #ffe0f7 20%, #ffc9e8 40%, #ffd4f0 60%, #ffe4f1 80%, #ffd9e5 100%);
+  /* Frosted glass effect */
+  --card-bg: rgba(255, 255, 255, 0.55);
+  --card-border: rgba(255, 255, 255, 0.3);
   --primary: #ff53c0;
   --accent: #9b5cff;
   --text-main: #221b3a;
   --text-muted: #7a7698;
   --danger: #ff4b6a;
-  --shadow-soft: 0 18px 45px rgba(33, 5, 73, 0.22);
+  --shadow-soft: 0 25px 50px rgba(0, 0, 0, 0.05);
   --radius-card: 24px;
 }
 
@@ -26,9 +28,10 @@ body {
 }
 
 .page {
-  max-width: 1200px;
+  max-width: 1600px;
+  width: 100%;
   margin: 0 auto;
-  padding: 24px 16px 40px;
+  padding: 20px 32px;
 }
 
 /* HEADER */
@@ -37,13 +40,14 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 20px;
-  margin-bottom: 22px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.86);
+  padding: 16px 28px;
+  margin-bottom: 28px;
+  border-radius: 24px;
+  background: var(--card-bg);
   border: 1px solid var(--card-border);
-  box-shadow: 0 16px 45px rgba(164, 116, 255, 0.35);
-  backdrop-filter: blur(18px);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
 }
 
 .logo {
@@ -149,8 +153,16 @@ body {
   border-radius: var(--radius-card);
   border: 1px solid var(--card-border);
   box-shadow: var(--shadow-soft);
-  backdrop-filter: blur(20px);
-  padding: 20px 22px;
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  padding: 24px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card:hover {
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.08);
+  transform: translateY(-3px);
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 .card-title {
@@ -375,13 +387,14 @@ body {
   cursor: pointer;
 }
 
-/* MAIN GRID */
+/* MAIN GRID - 3 COLUMNS */
 
 .main-grid {
   display: grid;
-  grid-template-columns: minmax(0, 2.05fr) minmax(0, 1.6fr);
-  gap: 20px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
   margin-bottom: 24px;
+  width: 100%;
 }
 
 .stacked {
