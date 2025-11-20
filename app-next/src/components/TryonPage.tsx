@@ -5,7 +5,7 @@ import { useTryons } from '@/hooks/useTryons';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
-import TryonFormStepped from './TryonFormStepped';
+import TryonFormStyled from './TryonFormStyled';
 
 export default function TryonPage() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -121,7 +121,7 @@ export default function TryonPage() {
 
       {/* ФОРМА ПРИМЕРКИ - заменяет приветствие и 3 кнопки */}
       <section style={{ marginBottom: '22px' }}>
-        <TryonFormStepped />
+        <TryonFormStyled />
       </section>
 
       {/* НЕДАВНИЕ РЕЗУЛЬТАТЫ */}
