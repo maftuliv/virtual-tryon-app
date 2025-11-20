@@ -18,7 +18,9 @@ export default function LandingPage() {
   const favoritesCount = tryons?.filter((t) => t.is_favorite).length || 0;
 
   const handleLoginClick = () => {
-    router.push('/api/auth/google/login');
+    // Редирект на backend для Google OAuth
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    window.location.href = `${apiUrl}/api/auth/google/login`;
   };
 
   const handleLogout = () => {
