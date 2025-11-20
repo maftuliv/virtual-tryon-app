@@ -123,6 +123,15 @@ export default function LandingPage() {
           <p className="hero-subtitle">
             Здесь твоя зона стиля. Что сделаем сейчас: примерку, новый образ или соберём look из брендов?
           </p>
+          <div className="hero-meta-row" style={{ marginTop: '16px' }}>
+            <div className="meta-pill">
+              <span className="meta-dot"></span>
+              Последняя примерка: <strong>вчера</strong>
+            </div>
+            <div className="meta-pill">
+              🎨 Образов создано: <strong>12</strong>
+            </div>
+          </div>
         </article>
 
         {/* RIGHT: Премиум аккаунт */}
@@ -139,24 +148,6 @@ export default function LandingPage() {
         </article>
       </section>
 
-      {/* ПОДПИСЬ */}
-      <section className="hero-grid" style={{ marginTop: '-10px' }}>
-        <article className="card">
-          <div className="hero-meta-row">
-            <div className="meta-pill">
-              <span className="meta-dot"></span>
-              Последняя примерка: <strong>вчера</strong>
-            </div>
-            <div className="meta-pill">
-              🎨 Образов создано: <strong>12</strong>
-            </div>
-            <div className="meta-pill">
-              ⭐ Лайкнутые образы: <strong>{favoritesCount}</strong>
-            </div>
-          </div>
-        </article>
-        <div></div>
-      </section>
 
       {/* ТРИ ГЛАВНЫЕ КНОПКИ - новый дизайн */}
       <section className="hero-modes">
