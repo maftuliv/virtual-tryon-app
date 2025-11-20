@@ -1,0 +1,51 @@
+services:
+  # Backend API
+  - type: web
+    name: virtual-tryon-backend
+    env: python
+    region: frankfurt
+    plan: free
+    branch: staging
+    buildCommand: "cd backend && pip install -r requirements.txt"
+    startCommand: "cd backend && gunicorn --bind 0.0.0.0:$PORT --workers 2 --timeout 120 'app_factory:create_app()'"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11
+      - key: REPLICATE_API_TOKEN
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: FRONTEND_URL
+        value: https://virtual-tryon-frontend.onrender.com
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_ENDPOINT_URL
+        sync: false
+      - key: R2_PUBLIC_URL
+        sync: false
+      - key: R2_BUCKET_NAME
+        value: taptolook
+
+  # Frontend Next.js
+  - type: web
+    name: virtual-tryon-frontend
+    env: node
+    region: frankfurt
+    plan: free
+    branch: staging
+    rootDir: app-next
+    buildCommand: "npm install && npm run build"
+    startCommand: "npm start"
+    envVars:
+      - key: NODE_VERSION
+        value: 20.11.0
+      - key: NEXT_PUBLIC_API_URL
+        value: https://virtual-tryon-backend.onrender.com
