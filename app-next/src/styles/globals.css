@@ -231,22 +231,23 @@ body {
   }
 }
 
-/* Card Components - Frosted glass cards */
+/* Card Components - ULTRA Frosted glass cards */
 @layer components {
   .card {
-    background: var(--card-bg);
-    border-radius: var(--radius-card);
-    border: 1px solid var(--card-border);
-    box-shadow: var(--shadow-soft);
+    background: rgba(255, 255, 255, 0.55);
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.05);
     backdrop-filter: blur(40px) saturate(180%);
     -webkit-backdrop-filter: blur(40px) saturate(180%);
-    padding: 20px 22px;
-    transition: all 0.3s ease;
+    padding: 24px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .card:hover {
-    box-shadow: 0 24px 60px rgba(255, 83, 192, 0.18);
-    transform: translateY(-2px);
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.08);
+    transform: translateY(-3px);
+    border-color: rgba(255, 255, 255, 0.5);
   }
 
   .card-title {
@@ -369,25 +370,26 @@ body {
   background: transparent;
 }
 
-/* Wide Layout - для размещения 3 блоков в ряд */
+/* Wide Layout - REALLY WIDE для размещения 3 блоков в ряд */
 .page {
-  max-width: 1400px;
+  max-width: 1600px;
+  width: 100%;
   margin: 0 auto;
-  padding: 20px 40px;
+  padding: 20px 32px;
   min-height: 100vh;
 }
 
-/* Header */
+/* Header - Ultra glass */
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 24px;
-  margin-bottom: 24px;
-  background: var(--card-bg);
-  border-radius: var(--radius-card);
-  border: 1px solid var(--card-border);
-  box-shadow: var(--shadow-soft);
+  padding: 16px 28px;
+  margin-bottom: 28px;
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.05);
   backdrop-filter: blur(40px) saturate(180%);
   -webkit-backdrop-filter: blur(40px) saturate(180%);
 }
@@ -443,8 +445,9 @@ body {
 .hero-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  margin-bottom: 20px;
+  gap: 24px;
+  margin-bottom: 24px;
+  width: 100%;
 }
 
 .hero-main-title {
@@ -519,16 +522,18 @@ body {
 .main-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-  margin-bottom: 20px;
+  gap: 24px;
+  margin-bottom: 24px;
+  width: 100%;
 }
 
 /* Lower Grid - 2 columns */
 .lower-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  margin-bottom: 20px;
+  gap: 24px;
+  margin-bottom: 24px;
+  width: 100%;
 }
 
 /* Tryon cards */
