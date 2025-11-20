@@ -91,21 +91,34 @@ export default function LandingPage() {
         <div></div>
       </section>
 
-      {/* ТРИ КНОПКИ */}
-      <section style={{ marginBottom: '22px' }}>
-        <div className="hero-modes" style={{ maxWidth: '100%' }}>
-          <Link href="#tryon">
-            <button className="btn btn-gradient mode-btn">
-              <span className="mode-icon">👔</span> Сделать примерку
-            </button>
-          </Link>
-          <button className="btn btn-ghost mode-btn">
-            <span className="mode-icon">✨</span> Создать свой образ
-          </button>
-          <button className="btn btn-ghost mode-btn">
-            <span className="mode-icon">🧩</span> Собрать образ из брендов
-          </button>
-        </div>
+      {/* ТРИ ГЛАВНЫЕ КНОПКИ - новый дизайн */}
+      <section className="hero-modes">
+        <Link href="#tryon" className="mode-btn mode-btn-tryon">
+          <div className="mode-btn-content">
+            <div className="mode-btn-label">Инструмент</div>
+            <div className="mode-btn-title">Сделать примерку</div>
+            <div className="mode-btn-desc">Фото + одежда → новый look</div>
+          </div>
+          <div className="mode-icon">👗</div>
+        </Link>
+
+        <button className="mode-btn mode-btn-create">
+          <div className="mode-btn-content">
+            <div className="mode-btn-label">Инструмент</div>
+            <div className="mode-btn-title">Создать свой образ</div>
+            <div className="mode-btn-desc">Фильтры, стиль, настроение</div>
+          </div>
+          <div className="mode-icon">🎨</div>
+        </button>
+
+        <button className="mode-btn mode-btn-brands">
+          <div className="mode-btn-content">
+            <div className="mode-btn-label">Инструмент</div>
+            <div className="mode-btn-title">Собрать образ из брендов</div>
+            <div className="mode-btn-desc">Выбор вещей по любимым маркам</div>
+          </div>
+          <div className="mode-icon">🛍️</div>
+        </button>
       </section>
 
       {/* НЕДАВНИЕ РЕЗУЛЬТАТЫ */}
