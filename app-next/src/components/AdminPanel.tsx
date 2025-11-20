@@ -82,6 +82,7 @@ export default function AdminPanel() {
     } else if (activeTab === 'audit') {
       loadAuditLogs();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, currentPage, searchQuery]);
 
   const loadDashboardStats = async () => {

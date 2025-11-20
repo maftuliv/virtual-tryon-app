@@ -59,6 +59,7 @@ export function useLimit() {
 
   useEffect(() => {
     fetchLimit();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
   return {

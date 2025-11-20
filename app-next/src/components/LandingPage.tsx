@@ -24,7 +24,6 @@ export default function LandingPage() {
   const isAdmin = user?.role === 'admin';
   const used = limitData?.used ?? 0;
   const limit = limitData?.limit ?? 3;
-  const period = limitData?.period ?? 'week';
   const remaining = limit === -1 ? Infinity : Math.max(0, limit - used);
   const progressPercent = limit === -1 ? 100 : Math.min(100, (used / limit) * 100);
 
