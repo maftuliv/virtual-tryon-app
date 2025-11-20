@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useTryons } from '@/hooks/useTryons';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import TryonFormStepped from '@/components/TryonFormStepped';
+import VirtualTryonForm from '@/components/virtual-tryon/VirtualTryonForm';
 
 export default function LandingPage() {
   const { user, isAuthenticated } = useAuth();
@@ -341,7 +341,7 @@ export default function LandingPage() {
 
       {/* TRY-ON SECTION */}
       <section id="tryon" className="py-20">
-        <TryonFormStepped />
+        <VirtualTryonForm />
       </section>
 
       <div className="footer-bar">
