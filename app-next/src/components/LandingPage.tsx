@@ -4,11 +4,14 @@ import { useAuth } from '@/hooks/useAuth';
 import { useTryons } from '@/hooks/useTryons';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useState, useRef, useEffect } from 'react';
 
 export default function LandingPage() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
   const { tryons } = useTryons();
   const router = useRouter();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const userName = user?.full_name || user?.email?.split('@')[0] || 'Пользователь';
   const userInitial = userName.charAt(0).toUpperCase();
@@ -17,6 +20,33 @@ export default function LandingPage() {
   const handleLoginClick = () => {
     router.push('/api/auth/google/login');
   };
+
+  const handleLogout = () => {
+    logout();
+    setIsMenuOpen(false);
+  };
+
+  const handleSettings = () => {
+    router.push('/settings');
+    setIsMenuOpen(false);
+  };
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMenuOpen]);
 
   return (
     <div className="page">
@@ -35,10 +65,27 @@ export default function LandingPage() {
             <div className="nav-link">История</div>
           </nav>
           {isAuthenticated ? (
-            <div className="user-pill">
-              <div className="user-avatar">{userInitial}</div>
-              <span className="user-name">{userName}</span>
-              <span className="badge-premium">Premium</span>
+            <div className="user-menu-container" ref={menuRef}>
+              <div
+                className="user-pill"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                style={{ cursor: 'pointer' }}
+              >
+                <div className="user-avatar">{userInitial}</div>
+                <span className="user-name">{userName}</span>
+                <span className="badge-premium">Premium</span>
+              </div>
+
+              {isMenuOpen && (
+                <div className="user-dropdown">
+                  <button className="dropdown-item" onClick={handleSettings}>
+                    ⚙️ Настройки
+                  </button>
+                  <button className="dropdown-item dropdown-item-logout" onClick={handleLogout}>
+                    🚪 Выйти
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <button className="btn btn-gradient" onClick={handleLoginClick}>
