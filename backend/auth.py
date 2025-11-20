@@ -923,7 +923,7 @@ def set_auth_cookie(response: Response, token: str) -> Response:
         max_age=max_age,
         secure=not is_localhost,  # HTTPS only in production, allow HTTP on localhost
         httponly=True,  # No JS access
-        samesite="Strict",  # CSRF protection
+        samesite="None" if not is_localhost else "Lax",  # Allow cross-domain for production
         path="/",
     )
 
@@ -958,7 +958,7 @@ def set_admin_session_cookie(response: Response, session_id: str) -> Response:
         max_age=ADMIN_SESSION_MAX_AGE,
         secure=not is_localhost,
         httponly=True,
-        samesite="Strict",
+        samesite="None" if not is_localhost else "Lax",  # Allow cross-domain for production
         path="/",
     )
     return response
