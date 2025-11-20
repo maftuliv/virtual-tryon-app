@@ -670,6 +670,64 @@ body {
   color: var(--text-main);
 }
 
+/* TRYONS - 3 in a row - новый дизайн */
+
+.tryons-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.tryon-card-new {
+  border-radius: 18px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #fbefff, #ffe5f2);
+  border: 1px solid rgba(244, 221, 255, 0.9);
+  box-shadow: 0 10px 24px rgba(58, 12, 94, 0.18);
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tryon-card-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-main);
+}
+
+.tryon-card-date {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.btn-tryon-open {
+  width: 100%;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: none;
+  font-size: 13px;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(229, 216, 255, 0.9);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+
+.btn-tryon-open:hover {
+  background: rgba(246, 237, 255, 0.98);
+  color: var(--text-main);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(155, 92, 255, 0.2);
+}
+
 /* LOOKS - 3 in a row */
 
 .looks-grid {

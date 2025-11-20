@@ -197,54 +197,36 @@ export default function LandingPage() {
           <p className="card-subtitle">
             Последние результаты примерки. Откройте, чтобы сохранить, поделиться или создать похожий образ.
           </p>
-          <div className="card-row">
+          <div className="tryons-grid">
             {tryons && tryons.length > 0 ? (
               <>
                 {tryons.slice(0, 3).map((tryon, idx) => (
-                  <div key={tryon.id || idx} className="tryon-card">
-                    <div className="tryon-thumb">Превью образа</div>
-                    <div className="tryon-body">
-                      <div className="tryon-name">{tryon.title || `Образ ${idx + 1}`}</div>
-                      <div className="tryon-date">{new Date(tryon.created_at).toLocaleDateString('ru-RU')}</div>
-                      <div className="tryon-actions">
-                        <button className="btn-small btn-small-solid">Открыть</button>
-                        <button className="btn-small btn-small-outline">Похожий</button>
-                      </div>
-                    </div>
+                  <div key={tryon.id || idx} className="tryon-card-new">
+                    <div className="tryon-card-name">{tryon.title || `Образ ${idx + 1}`}</div>
+                    <div className="tryon-card-date">{new Date(tryon.created_at).toLocaleDateString('ru-RU')}</div>
+                    <button className="btn-tryon-open">✨ Открыть образ</button>
                   </div>
                 ))}
                 {/* Fill up to 3 cards minimum */}
                 {Array.from({ length: Math.max(0, 3 - tryons.length) }).map((_, idx) => (
-                  <div key={`placeholder-${idx}`} className="tryon-card">
-                    <div className="tryon-thumb">Новый образ</div>
-                    <div className="tryon-body">
-                      <div className="tryon-name">Создать с нуля</div>
-                      <div className="tryon-date">Черновик</div>
-                      <div className="tryon-actions">
-                        <Link href="#tryon">
-                          <button className="btn-small btn-small-solid">Создать</button>
-                        </Link>
-                        <button className="btn-small btn-small-outline">Шаблон</button>
-                      </div>
-                    </div>
+                  <div key={`placeholder-${idx}`} className="tryon-card-new">
+                    <div className="tryon-card-name">Создать новый образ</div>
+                    <div className="tryon-card-date">Пусто</div>
+                    <Link href="#tryon">
+                      <button className="btn-tryon-open">✨ Создать образ</button>
+                    </Link>
                   </div>
                 ))}
               </>
             ) : (
               <>
                 {Array.from({ length: 3 }).map((_, idx) => (
-                  <div key={`empty-${idx}`} className="tryon-card">
-                    <div className="tryon-thumb">Новый образ</div>
-                    <div className="tryon-body">
-                      <div className="tryon-name">Создать с нуля</div>
-                      <div className="tryon-date">Черновик</div>
-                      <div className="tryon-actions">
-                        <Link href="#tryon">
-                          <button className="btn-small btn-small-solid">Создать</button>
-                        </Link>
-                        <button className="btn-small btn-small-outline">Шаблон</button>
-                      </div>
-                    </div>
+                  <div key={`empty-${idx}`} className="tryon-card-new">
+                    <div className="tryon-card-name">Создать новый образ</div>
+                    <div className="tryon-card-date">Пусто</div>
+                    <Link href="#tryon">
+                      <button className="btn-tryon-open">✨ Создать образ</button>
+                    </Link>
                   </div>
                 ))}
               </>
