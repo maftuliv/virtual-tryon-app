@@ -199,33 +199,55 @@ export default function LandingPage() {
           </p>
           <div className="card-row">
             {tryons && tryons.length > 0 ? (
-              tryons.slice(0, 4).map((tryon, idx) => (
-                <div key={tryon.id || idx} className="tryon-card">
-                  <div className="tryon-thumb">Превью образа</div>
-                  <div className="tryon-body">
-                    <div className="tryon-name">{tryon.title || `Образ ${idx + 1}`}</div>
-                    <div className="tryon-date">{new Date(tryon.created_at).toLocaleDateString('ru-RU')}</div>
-                    <div className="tryon-actions">
-                      <button className="btn-small btn-small-solid">Открыть</button>
-                      <button className="btn-small btn-small-outline">Похожий</button>
+              <>
+                {tryons.slice(0, 3).map((tryon, idx) => (
+                  <div key={tryon.id || idx} className="tryon-card">
+                    <div className="tryon-thumb">Превью образа</div>
+                    <div className="tryon-body">
+                      <div className="tryon-name">{tryon.title || `Образ ${idx + 1}`}</div>
+                      <div className="tryon-date">{new Date(tryon.created_at).toLocaleDateString('ru-RU')}</div>
+                      <div className="tryon-actions">
+                        <button className="btn-small btn-small-solid">Открыть</button>
+                        <button className="btn-small btn-small-outline">Похожий</button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
-            ) : (
-              <div className="tryon-card">
-                <div className="tryon-thumb">Новый образ</div>
-                <div className="tryon-body">
-                  <div className="tryon-name">Создать с нуля</div>
-                  <div className="tryon-date">Черновик</div>
-                  <div className="tryon-actions">
-                    <Link href="#tryon">
-                      <button className="btn-small btn-small-solid">Создать</button>
-                    </Link>
-                    <button className="btn-small btn-small-outline">Шаблон</button>
+                ))}
+                {/* Fill up to 3 cards minimum */}
+                {Array.from({ length: Math.max(0, 3 - tryons.length) }).map((_, idx) => (
+                  <div key={`placeholder-${idx}`} className="tryon-card">
+                    <div className="tryon-thumb">Новый образ</div>
+                    <div className="tryon-body">
+                      <div className="tryon-name">Создать с нуля</div>
+                      <div className="tryon-date">Черновик</div>
+                      <div className="tryon-actions">
+                        <Link href="#tryon">
+                          <button className="btn-small btn-small-solid">Создать</button>
+                        </Link>
+                        <button className="btn-small btn-small-outline">Шаблон</button>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
+                ))}
+              </>
+            ) : (
+              <>
+                {Array.from({ length: 3 }).map((_, idx) => (
+                  <div key={`empty-${idx}`} className="tryon-card">
+                    <div className="tryon-thumb">Новый образ</div>
+                    <div className="tryon-body">
+                      <div className="tryon-name">Создать с нуля</div>
+                      <div className="tryon-date">Черновик</div>
+                      <div className="tryon-actions">
+                        <Link href="#tryon">
+                          <button className="btn-small btn-small-solid">Создать</button>
+                        </Link>
+                        <button className="btn-small btn-small-outline">Шаблон</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </>
             )}
           </div>
         </article>
@@ -250,6 +272,11 @@ export default function LandingPage() {
               <div className="look-tag">Минимализм и нейтральные оттенки</div>
               <button className="btn-chip">✨ Открыть образ</button>
             </div>
+            <div className="look-card">
+              <div className="look-name">Образ для вечеринки</div>
+              <div className="look-tag">Яркий и стильный look</div>
+              <button className="btn-chip">✨ Открыть образ</button>
+            </div>
           </div>
         </article>
 
@@ -271,6 +298,10 @@ export default function LandingPage() {
             <div className="photo-card">
               <div>Портрет</div>
               <div className="photo-label">Подходит для аватаров и лиц</div>
+            </div>
+            <div className="photo-card">
+              <div>Фото в деловом стиле</div>
+              <div className="photo-label">Для офисных образов</div>
             </div>
           </div>
         </article>
@@ -316,28 +347,25 @@ export default function LandingPage() {
         </article>
       </section>
 
-      {/* ПОДЕЛИТЕСЬ МНЕНИЕМ */}
+      {/* ОБРАТНАЯ СВЯЗЬ */}
       <section className="card" style={{ marginBottom: '14px' }}>
         <div className="section-header">
-          <div className="section-title">Поделитесь мнением</div>
+          <div className="section-title">Обратная связь</div>
           <div className="section-link">Подробнее</div>
         </div>
         <p className="card-subtitle">
           Расскажите, что улучшить. Ваши идеи и замечания напрямую влияют на развитие сервиса.
         </p>
         <div className="chip-row">
-          <button className="btn-chip">🐛 Сообщить об ошибке</button>
-          <button className="btn-chip">💡 Предложить идею</button>
-          <button className="btn-chip">⭐ Оценить качество примерки</button>
+          <button className="btn-chip btn-chip-lg">🐞 Сообщить об ошибке</button>
+          <button className="btn-chip btn-chip-lg">💡 Предложить идею</button>
+          <button className="btn-chip btn-chip-lg">⭐ Оценить качество примерки</button>
+          <button className="btn-chip btn-chip-lg">💬 Отдел заботы</button>
+          <button className="btn-chip btn-chip-lg">💌 Отправить отзыв</button>
         </div>
       </section>
 
-      {/* ПОДДЕРЖКА (FOOTER) */}
-      <div className="footer-bar">
-        <button className="btn-ghost">📜 История примерок</button>
-        <button className="btn-ghost">💬 Поддержка</button>
-        <button className="btn-accent">💌 Отправить отзыв</button>
-      </div>
+      {/* FOOTER */}
       <div className="footer-legal">
         Используя сервис, вы соглашаетесь с условиями и политикой конфиденциальности. Все права защищены.
       </div>
