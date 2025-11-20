@@ -48,6 +48,8 @@ body {
   box-shadow: var(--shadow-soft);
   backdrop-filter: blur(40px) saturate(180%);
   -webkit-backdrop-filter: blur(40px) saturate(180%);
+  position: relative;
+  z-index: 1000;
 }
 
 .logo {
