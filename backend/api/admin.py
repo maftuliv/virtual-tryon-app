@@ -108,7 +108,7 @@ def create_admin_blueprint(
                 f"[ADMIN-API] Summary requested by admin {current_user['id']}"
             )
 
-            return jsonify(summary), 200
+            return jsonify({"success": True, "data": summary}), 200
 
         except Exception as e:
             logger.error(f"[ADMIN-API] Summary failed: {e}", exc_info=True)
@@ -159,7 +159,7 @@ def create_admin_blueprint(
                 f"page={page}, search={search}"
             )
 
-            return jsonify(result), 200
+            return jsonify({"success": True, "data": result}), 200
 
         except ValueError as e:
             logger.warning(f"[ADMIN-API] Invalid request: {e}")
@@ -292,6 +292,51 @@ def create_admin_blueprint(
             )
             return jsonify({"error": str(e)}), 500
 
+    @admin_bp.route("/api/admin/users/<int:user_id>", methods=["DELETE"])
+    @require_session
+    def delete_user(current_user, user_id):
+        """
+        Delete a user from the system.
+
+        Requires: admin role
+
+        Path params:
+            user_id: Target user ID
+
+        Returns:
+            {
+                "user_id": int,
+                "deleted": bool
+            }
+        """
+        try:
+            if not admin_service.is_available():
+                return jsonify({"error": "Admin service not available"}), 503
+
+            # Get client IP
+            ip_address = request.remote_addr
+
+            # Perform action
+            result = admin_service.delete_user(
+                user_id=user_id, admin_id=current_user["id"], ip_address=ip_address
+            )
+
+            logger.info(
+                f"[ADMIN-API] User {user_id} deleted by admin {current_user['id']}"
+            )
+
+            return jsonify(result), 200
+
+        except ValueError as e:
+            logger.warning(f"[ADMIN-API] Invalid request: {e}")
+            return jsonify({"error": str(e)}), 400
+
+        except Exception as e:
+            logger.error(
+                f"[ADMIN-API] Delete user failed: {e}", exc_info=True
+            )
+            return jsonify({"error": str(e)}), 500
+
     @admin_bp.route("/api/admin/users/<int:user_id>/reset-limit", methods=["POST"])
     @require_session
     def reset_user_limit(current_user, user_id):
@@ -371,7 +416,7 @@ def create_admin_blueprint(
                 f"status={status}"
             )
 
-            return jsonify(feedback_list), 200
+            return jsonify({"success": True, "data": feedback_list}), 200
 
         except Exception as e:
             logger.error(
@@ -419,7 +464,7 @@ def create_admin_blueprint(
                 f"limit={limit}"
             )
 
-            return jsonify(logs), 200
+            return jsonify({"success": True, "data": logs}), 200
 
         except ValueError as e:
             logger.warning(f"[ADMIN-API] Invalid request: {e}")

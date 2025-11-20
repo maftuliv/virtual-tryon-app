@@ -3,6 +3,7 @@ import ClientProviders from '@/components/ClientProviders';
 import '@/styles/globals.css';
 import '@/styles/dashboard.css';
 import '@/styles/landing.css';
+import '@/styles/admin.css';
 
 export const metadata: Metadata = {
   title: 'Tap to look - Виртуальная примерка одежды',

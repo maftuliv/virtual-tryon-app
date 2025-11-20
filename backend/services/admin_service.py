@@ -382,6 +382,70 @@ class AdminService:
             )
             raise
 
+    def delete_user(
+        self, user_id: int, admin_id: int, ip_address: str = None
+    ) -> Dict:
+        """
+        Delete a user from the system.
+
+        This will cascade delete all related data (generations, feedback, etc.)
+        based on database foreign key constraints.
+
+        Args:
+            user_id: Target user ID
+            admin_id: ID of admin performing action
+            ip_address: IP address of admin
+
+        Returns:
+            Confirmation dictionary
+
+        Raises:
+            ValueError: If user not found
+        """
+        if not self.is_available():
+            raise ValueError("Admin service not available")
+
+        try:
+            cursor = self.db.cursor()
+
+            # Check if user exists and get email for audit log
+            cursor.execute("SELECT email FROM users WHERE id = %s", (user_id,))
+            row = cursor.fetchone()
+            if not row:
+                raise ValueError(f"User {user_id} not found")
+
+            user_email = row[0]
+
+            # Log audit before deletion
+            self._log_audit(
+                cursor,
+                admin_id=admin_id,
+                action="delete_user",
+                target_type="user",
+                target_id=user_id,
+                payload={"email": user_email},
+                ip_address=ip_address,
+            )
+
+            # Delete user (cascades to related tables)
+            cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
+
+            self.db.commit()
+            cursor.close()
+
+            self.logger.info(
+                f"[ADMIN] User {user_id} ({user_email}) deleted by admin {admin_id}"
+            )
+
+            return {"user_id": user_id, "deleted": True}
+
+        except Exception as e:
+            self.db.rollback()
+            self.logger.error(
+                f"[ADMIN] Failed to delete user: {e}", exc_info=True
+            )
+            raise
+
     def reset_user_limit(
         self, user_id: int, admin_id: int, ip_address: str = None
     ) -> Dict:

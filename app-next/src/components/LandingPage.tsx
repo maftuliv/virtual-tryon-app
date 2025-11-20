@@ -98,6 +98,11 @@ export default function LandingPage() {
 
               {isMenuOpen && (
                 <div className="user-dropdown">
+                  {user?.role === 'admin' && (
+                    <button className="dropdown-item" onClick={() => { router.push('/admin'); setIsMenuOpen(false); }}>
+                      🔧 Админка
+                    </button>
+                  )}
                   <button className="dropdown-item" onClick={handleSettings}>
                     ⚙️ Настройки
                   </button>
