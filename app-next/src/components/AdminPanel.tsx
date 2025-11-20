@@ -9,6 +9,7 @@ interface User {
   email: string;
   full_name: string | null;
   role: string;
+  provider: string;
   is_premium: boolean;
   created_at: string;
   last_login?: string;
@@ -179,23 +180,27 @@ export default function AdminPanel() {
     }
   };
 
-  const togglePremium = async (userId: number, currentIsPremium: boolean) => {
+  const changeTariff = async (userId: number, newTariff: string) => {
     try {
+      // Определяем параметры в зависимости от тарифа
+      const enable = newTariff === 'premium';
+      const days = 30;
+
       const response = await fetch(`${apiUrl}/api/admin/users/${userId}/premium`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ enable: !currentIsPremium, days: 30 }),
+        body: JSON.stringify({ enable, days }),
       });
       if (response.ok) {
         loadUsers();
       } else {
         const data = await response.json();
-        alert(`Ошибка при изменении премиум статуса: ${data.error || 'Неизвестная ошибка'}`);
+        alert(`Ошибка при изменении тарифа: ${data.error || 'Неизвестная ошибка'}`);
       }
     } catch (error) {
-      console.error('Error toggling premium:', error);
-      alert('Ошибка при изменении премиум статуса');
+      console.error('Error changing tariff:', error);
+      alert('Ошибка при изменении тарифа');
     }
   };
 
@@ -334,8 +339,9 @@ export default function AdminPanel() {
                     <th>ID</th>
                     <th>Email</th>
                     <th>Имя</th>
+                    <th>Провайдер</th>
                     <th>Роль</th>
-                    <th>Премиум</th>
+                    <th>Тариф</th>
                     <th>Примерок</th>
                     <th>Последний визит</th>
                     <th>Последнее действие</th>
@@ -349,6 +355,15 @@ export default function AdminPanel() {
                       <td>{u.email}</td>
                       <td>{u.full_name || '—'}</td>
                       <td>
+                        <span className="provider-badge">
+                          {u.provider === 'google' && '🔵 Google'}
+                          {u.provider === 'email' && '📧 Email'}
+                          {u.provider === 'vk' && '🔷 VK'}
+                          {u.provider === 'telegram' && '✈️ Telegram'}
+                          {!['google', 'email', 'vk', 'telegram'].includes(u.provider) && u.provider}
+                        </span>
+                      </td>
+                      <td>
                         <select
                           value={u.role}
                           onChange={(e) => changeUserRole(u.id, e.target.value)}
@@ -359,12 +374,16 @@ export default function AdminPanel() {
                         </select>
                       </td>
                       <td>
-                        <button
-                          className={`premium-badge ${u.is_premium ? 'premium-active' : ''}`}
-                          onClick={() => togglePremium(u.id, u.is_premium)}
+                        <select
+                          value={u.role === 'admin' ? 'admin' : (u.is_premium ? 'premium' : 'free')}
+                          onChange={(e) => changeTariff(u.id, e.target.value)}
+                          className="tariff-select"
+                          disabled={u.role === 'admin'}
                         >
-                          {u.is_premium ? '⭐ Premium' : 'Free'}
-                        </button>
+                          <option value="free">Free (3/неделя)</option>
+                          <option value="premium">Premium (50/месяц)</option>
+                          {u.role === 'admin' && <option value="admin">Admin (безлимит)</option>}
+                        </select>
                       </td>
                       <td>{u.generations_count || 0}</td>
                       <td>{u.last_login ? new Date(u.last_login).toLocaleString('ru-RU') : '—'}</td>
