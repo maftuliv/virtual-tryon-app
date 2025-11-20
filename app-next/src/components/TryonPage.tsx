@@ -6,8 +6,9 @@ import { useLimit } from '@/hooks/useLimit';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
+import TryonFormStepped from './TryonFormStepped';
 
-export default function LandingPage() {
+export default function TryonPage() {
   const { user, isAuthenticated, logout } = useAuth();
   const { tryons } = useTryons();
   const { limitData } = useLimit();
@@ -19,7 +20,6 @@ export default function LandingPage() {
   const userInitial = userName.charAt(0).toUpperCase();
   const favoritesCount = tryons?.filter((t) => t.is_favorite).length || 0;
 
-  // Calculate tariff display info
   const isPremium = user?.is_premium || false;
   const isAdmin = user?.role === 'admin';
   const used = limitData?.used ?? 0;
@@ -29,18 +29,16 @@ export default function LandingPage() {
 
   const handleLoginClick = async () => {
     try {
-      // Получаем authorization URL от backend
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
       const response = await fetch(`${apiUrl}/api/auth/google/login`);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
-      
+
       if (data.success && data.authorization_url) {
-        // Редиректим на Google OAuth
         window.location.href = data.authorization_url;
       } else {
         alert('Не удалось получить URL для входа через Google. Попробуйте еще раз.');
@@ -61,7 +59,6 @@ export default function LandingPage() {
     setIsMenuOpen(false);
   };
 
-  // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -88,8 +85,8 @@ export default function LandingPage() {
         </div>
         <div className="header-right">
           <nav className="nav-links">
-            <div className="nav-link nav-link_active">Дашборд</div>
-            <Link href="/tryon" className="nav-link">Примерка</Link>
+            <Link href="/" className="nav-link">Дашборд</Link>
+            <div className="nav-link nav-link_active">Примерка</div>
             <div className="nav-link">Образы</div>
             <div className="nav-link">Моя одежда</div>
             <div className="nav-link">История</div>
@@ -99,133 +96,41 @@ export default function LandingPage() {
               <div
                 className="user-pill"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                style={{ cursor: 'pointer' }}
               >
                 <div className="user-avatar">{userInitial}</div>
-                <span className="user-name">{userName}</span>
-                <span className="badge-premium">Premium</span>
+                <div className="user-name">{userName}</div>
               </div>
-
               {isMenuOpen && (
                 <div className="user-dropdown">
-                  {user?.role === 'admin' && (
-                    <button className="dropdown-item" onClick={() => { router.push('/admin'); setIsMenuOpen(false); }}>
-                      🔧 Админка
-                    </button>
-                  )}
-                  <button className="dropdown-item" onClick={handleSettings}>
+                  <Link href="/dashboard" className="dropdown-item">
+                    📊 Мой дашборд
+                  </Link>
+                  <div className="dropdown-item" onClick={handleSettings}>
                     ⚙️ Настройки
-                  </button>
-                  <button className="dropdown-item dropdown-item-logout" onClick={handleLogout}>
-                    🚪 Выйти
-                  </button>
+                  </div>
+                  {user?.role === 'admin' && (
+                    <Link href="/admin" className="dropdown-item">
+                      👑 Админ-панель
+                    </Link>
+                  )}
+                  <div className="dropdown-divider"></div>
+                  <div className="dropdown-item" onClick={handleLogout}>
+                    🚪 Выход
+                  </div>
                 </div>
               )}
             </div>
           ) : (
-            <button className="btn btn-gradient" onClick={handleLoginClick}>
+            <button className="btn btn-primary" onClick={handleLoginClick}>
               Войти
             </button>
           )}
         </div>
       </header>
 
-      {/* ПРИВЕТСТВИЕ ПОЛЬЗОВАТЕЛЯ + ПРЕМИУМ АККАУНТ */}
-      <section className="hero-grid">
-        {/* LEFT: Приветствие */}
-        <article className="card">
-          <h1 className="hero-main-title">Привет, {userName} 👋</h1>
-          <p className="hero-subtitle">
-            Здесь твоя зона стиля. Что сделаем сейчас: примерку, новый образ или соберём look из брендов?
-          </p>
-          <div className="hero-meta-row" style={{ marginTop: '16px' }}>
-            <div className="meta-pill">
-              <span className="meta-dot"></span>
-              Последняя примерка: <strong>вчера</strong>
-            </div>
-            <div className="meta-pill">
-              🎨 Образов создано: <strong>12</strong>
-            </div>
-          </div>
-        </article>
-
-        {/* RIGHT: Тарифный план */}
-        <article className="card">
-          {isAdmin ? (
-            <>
-              <div className="card-title">👑 Администратор</div>
-              <p className="premium-count">Безлимитные примерки</p>
-              <div className="premium-progress">
-                <div className="premium-progress-fill" style={{ width: '100%' }}></div>
-              </div>
-              <p className="premium-note">
-                У вас есть полный доступ ко всем функциям платформы без ограничений.
-              </p>
-            </>
-          ) : isPremium ? (
-            <>
-              <div className="card-title">⭐ Премиум аккаунт</div>
-              <p className="premium-count">
-                {remaining === Infinity ? 'Безлимитно' : `${remaining} из ${limit} примерок осталось в этом месяце`}
-              </p>
-              <div className="premium-progress">
-                <div className="premium-progress-fill" style={{ width: `${progressPercent}%` }}></div>
-              </div>
-              <p className="premium-note">
-                {remaining > 0
-                  ? 'Используйте лимит, чтобы протестировать максимум образов. В следующем месяце счётчик обновится.'
-                  : 'Вы использовали весь месячный лимит. Ожидайте обновления в следующем месяце.'}
-              </p>
-            </>
-          ) : (
-            <>
-              <div className="card-title">Бесплатный план</div>
-              <p className="premium-count">
-                {remaining} из {limit} примерок осталось на этой неделе
-              </p>
-              <div className="premium-progress">
-                <div className="premium-progress-fill" style={{ width: `${progressPercent}%` }}></div>
-              </div>
-              <p className="premium-note">
-                {remaining > 0
-                  ? 'У вас есть 3 бесплатные примерки каждую неделю. Обновление каждый понедельник.'
-                  : 'Вы использовали все бесплатные примерки на этой неделе. Обновление в понедельник.'}
-              </p>
-              <button className="btn btn-premium">Перейти на Premium ($4.99/месяц)</button>
-            </>
-          )}
-        </article>
-      </section>
-
-
-      {/* ТРИ ГЛАВНЫЕ КНОПКИ - новый дизайн */}
-      <section className="hero-modes">
-        <Link href="/tryon" className="mode-btn mode-btn-tryon">
-          <div className="mode-btn-content">
-            <div className="mode-btn-label">Инструмент</div>
-            <div className="mode-btn-title">Сделать примерку</div>
-            <div className="mode-btn-desc">Фото + одежда → новый look</div>
-          </div>
-          <div className="mode-icon">👗</div>
-        </Link>
-
-        <button className="mode-btn mode-btn-create">
-          <div className="mode-btn-content">
-            <div className="mode-btn-label">Инструмент</div>
-            <div className="mode-btn-title">Создать свой образ</div>
-            <div className="mode-btn-desc">Фильтры, стиль, настроение</div>
-          </div>
-          <div className="mode-icon">🎨</div>
-        </button>
-
-        <button className="mode-btn mode-btn-brands">
-          <div className="mode-btn-content">
-            <div className="mode-btn-label">Инструмент</div>
-            <div className="mode-btn-title">Собрать образ из брендов</div>
-            <div className="mode-btn-desc">Выбор вещей по любимым маркам</div>
-          </div>
-          <div className="mode-icon">🛍️</div>
-        </button>
+      {/* ФОРМА ПРИМЕРКИ - заменяет приветствие и 3 кнопки */}
+      <section style={{ marginBottom: '22px' }}>
+        <TryonFormStepped />
       </section>
 
       {/* НЕДАВНИЕ РЕЗУЛЬТАТЫ */}
@@ -256,14 +161,11 @@ export default function LandingPage() {
                     <button className="btn-tryon-open">✨ Открыть образ</button>
                   </div>
                 ))}
-                {/* Fill up to 3 cards minimum */}
                 {Array.from({ length: Math.max(0, 3 - tryons.length) }).map((_, idx) => (
                   <div key={`placeholder-${idx}`} className="tryon-card-new">
                     <div className="tryon-card-name">Создать новый образ</div>
                     <div className="tryon-card-date">Пусто</div>
-                    <Link href="/tryon">
-                      <button className="btn-tryon-open">✨ Создать образ</button>
-                    </Link>
+                    <button className="btn-tryon-open">✨ Создать образ</button>
                   </div>
                 ))}
               </>
@@ -273,9 +175,7 @@ export default function LandingPage() {
                   <div key={`empty-${idx}`} className="tryon-card-new">
                     <div className="tryon-card-name">Создать новый образ</div>
                     <div className="tryon-card-date">Пусто</div>
-                    <Link href="/tryon">
-                      <button className="btn-tryon-open">✨ Создать образ</button>
-                    </Link>
+                    <button className="btn-tryon-open">✨ Создать образ</button>
                   </div>
                 ))}
               </>
@@ -299,13 +199,13 @@ export default function LandingPage() {
               <button className="btn-chip">✨ Открыть образ</button>
             </div>
             <div className="look-card">
-              <div className="look-name">Образ для офиса</div>
-              <div className="look-tag">Минимализм и нейтральные оттенки</div>
+              <div className="look-name">Офисный лук</div>
+              <div className="look-tag">Повседневный строгий</div>
               <button className="btn-chip">✨ Открыть образ</button>
             </div>
             <div className="look-card">
-              <div className="look-name">Образ для вечеринки</div>
-              <div className="look-tag">Яркий и стильный look</div>
+              <div className="look-name">Casual party</div>
+              <div className="look-tag">Яркий и стильный</div>
               <button className="btn-chip">✨ Открыть образ</button>
             </div>
           </div>
@@ -315,38 +215,27 @@ export default function LandingPage() {
         <article className="card">
           <div className="section-header">
             <div className="section-title">МОИ ФОТО</div>
-            <div className="section-link">Управлять</div>
+            <div className="section-link">Посмотреть все</div>
           </div>
           <p className="card-subtitle">
-            Базовые фотографии, с которыми мы работаем. Рекомендуем периодически обновлять их.
+            Галерея загруженных изображений. Можете использовать их повторно в новых примерках.
           </p>
-          <div className="photo-grid">
-            <div className="photo-card">
-              <div>Фото в полный рост</div>
-              <div className="photo-label">Основное для примерок</div>
-              <div className="photo-status">Рекомендовано ✓</div>
-            </div>
-            <div className="photo-card">
-              <div>Портрет</div>
-              <div className="photo-label">Подходит для аватаров и лиц</div>
-            </div>
-            <div className="photo-card">
-              <div>Фото в деловом стиле</div>
-              <div className="photo-label">Для офисных образов</div>
-            </div>
+          <div className="photo-preview-row">
+            <div className="photo-thumb">Фото 1</div>
+            <div className="photo-thumb">Фото 2</div>
+            <div className="photo-thumb">Фото 3</div>
           </div>
         </article>
       </section>
 
-      {/* ЛАЙКНУТЫЕ ОБРАЗЫ + РЕКОМЕНДАЦИИ */}
-      <section className="lower-grid">
-        {/* Лайкнутые образы */}
+      {/* ИЗБРАННОЕ + РЕКОМЕНДАЦИИ */}
+      <section className="favorites-reco-grid">
+        {/* Избранное */}
         <article className="card">
           <div className="section-header">
-            <div className="section-title">Лайкнутые образы</div>
-            <Link href="/dashboard" className="section-link">Открыть галерею</Link>
+            <div className="section-title">Избранное ({favoritesCount})</div>
+            <div className="section-link">Посмотреть все</div>
           </div>
-          <div className="liked-count">{favoritesCount}</div>
           <p className="card-subtitle">
             Ваши любимые результаты. Можно вернуться к ним и доработать детали.
           </p>
