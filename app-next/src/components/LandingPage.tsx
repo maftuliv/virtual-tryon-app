@@ -17,10 +17,28 @@ export default function LandingPage() {
   const userInitial = userName.charAt(0).toUpperCase();
   const favoritesCount = tryons?.filter((t) => t.is_favorite).length || 0;
 
-  const handleLoginClick = () => {
-    // Редирект на backend для Google OAuth
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-    window.location.href = `${apiUrl}/api/auth/google/login`;
+  const handleLoginClick = async () => {
+    try {
+      // Получаем authorization URL от backend
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${apiUrl}/api/auth/google/login`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.success && data.authorization_url) {
+        // Редиректим на Google OAuth
+        window.location.href = data.authorization_url;
+      } else {
+        alert('Не удалось получить URL для входа через Google. Попробуйте еще раз.');
+      }
+    } catch (error) {
+      console.error('Ошибка при инициализации Google OAuth:', error);
+      alert('Ошибка при входе через Google. Попробуйте еще раз.');
+    }
   };
 
   const handleLogout = () => {
