@@ -69,6 +69,7 @@ export interface TryonResult {
   result_image: string;  // base64
   result_url: string;
   result_filename: string;
+  generation_id?: number;  // ID of generation record in DB
 }
 
 export interface TryonResponse {
@@ -88,7 +89,7 @@ export interface TryonResponse {
 }
 
 export interface UserTryon {
-  id: string;
+  id: number;
   user_id: string;
   r2_url: string;
   r2_key: string;
@@ -146,8 +147,10 @@ export const tryonApi = {
   },
 
   // Переключить избранное
-  async toggleFavorite(tryonId: string): Promise<void> {
-    await api.post(`api/user/tryons/${tryonId}/favorite`);
+  async toggleFavorite(tryonId: number, isFavorite: boolean): Promise<void> {
+    await api.post(`api/user/tryons/${tryonId}/favorite`, {
+      json: { is_favorite: isFavorite },
+    });
   },
 
   // Обновить название

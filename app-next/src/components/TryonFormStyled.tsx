@@ -118,9 +118,25 @@ export default function TryonFormStyled() {
 
   const handleRating = async (rating: 'like' | 'dislike') => {
     setUserRating(rating);
-    // TODO: Отправить рейтинг на сервер
-    if (rating === 'like') {
-      // Обновить список примерок на главной странице
+
+    // Save rating to server if user is authenticated and generation_id exists
+    if (isAuthenticated && results && results[0]?.generation_id) {
+      try {
+        const isFavorite = rating === 'like';
+        await tryonApi.toggleFavorite(results[0].generation_id, isFavorite);
+
+        if (isFavorite) {
+          // Redirect to homepage after successful like
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 1500);
+        }
+      } catch (error) {
+        console.error('Failed to save rating:', error);
+        setError('Не удалось сохранить оценку');
+      }
+    } else if (rating === 'like') {
+      // For anonymous users, just redirect
       setTimeout(() => {
         window.location.href = '/';
       }, 1500);

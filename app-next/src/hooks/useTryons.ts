@@ -16,9 +16,9 @@ export function useTryons() {
     }
   );
 
-  const toggleFavorite = async (tryonId: string) => {
+  const toggleFavorite = async (tryonId: number, isFavorite: boolean) => {
     try {
-      await tryonApi.toggleFavorite(tryonId);
+      await tryonApi.toggleFavorite(tryonId, isFavorite);
       // Оптимистичное обновление
       mutate();
     } catch (error) {

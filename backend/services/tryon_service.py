@@ -217,6 +217,9 @@ class TryonService:
                         status="completed",
                     )
 
+                    # Add generation ID to result for frontend
+                    result['generation_id'] = generation_record['id']
+
                     # Upload to R2 if configured and user is logged in
                     if user_id and r2_storage.is_configured():
                         r2_key_to_cleanup = None
