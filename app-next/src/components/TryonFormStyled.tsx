@@ -350,7 +350,15 @@ export default function TryonFormStyled() {
             <div className="result-image-container">
               {results[0]?.result_image ? (
                 <img
-                  src={`data:image/jpeg;base64,${results[0].result_image}`}
+                  src={results[0].result_image.startsWith('data:')
+                    ? results[0].result_image
+                    : `data:image/png;base64,${results[0].result_image}`}
+                  alt="Результат примерки"
+                  className="result-image-main"
+                />
+              ) : results[0]?.r2_url ? (
+                <img
+                  src={results[0].r2_url}
                   alt="Результат примерки"
                   className="result-image-main"
                 />
@@ -400,7 +408,14 @@ export default function TryonFormStyled() {
                   <div className="comparison-mini-label">Результат</div>
                   <div className="comparison-mini-image">
                     {results[0]?.result_image ? (
-                      <img src={`data:image/jpeg;base64,${results[0].result_image}`} alt="После" />
+                      <img
+                        src={results[0].result_image.startsWith('data:')
+                          ? results[0].result_image
+                          : `data:image/png;base64,${results[0].result_image}`}
+                        alt="После"
+                      />
+                    ) : results[0]?.r2_url ? (
+                      <img src={results[0].r2_url} alt="После" />
                     ) : results[0]?.result_url ? (
                       <img src={results[0].result_url} alt="После" />
                     ) : null}

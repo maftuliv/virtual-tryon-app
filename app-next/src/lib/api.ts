@@ -66,8 +66,9 @@ export interface TryonRequest {
 export interface TryonResult {
   original: string;
   result_path: string;
-  result_image: string;  // base64
-  result_url: string;
+  result_image: string;  // base64 data URL (data:image/png;base64,...)
+  result_url: string;    // temporary server URL
+  r2_url?: string;       // permanent Cloudflare R2 URL
   result_filename: string;
   generation_id?: number;  // ID of generation record in DB
 }
