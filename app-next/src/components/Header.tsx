@@ -68,7 +68,7 @@ export default function Header() {
                   : 'hover:bg-[rgba(239,228,255,0.9)] hover:text-[var(--text-main)]'
               }`}
             >
-              Дашборд
+              Главная
             </Link>
             {isHomePage ? (
               <a

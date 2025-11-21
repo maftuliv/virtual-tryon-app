@@ -76,7 +76,7 @@ export default function TryonPage() {
         </div>
         <div className="header-right">
           <nav className="nav-links">
-            <Link href="/" className="nav-link">Дашборд</Link>
+            <Link href="/" className="nav-link">Главная</Link>
             <div className="nav-link nav-link_active">Примерка</div>
             <div className="nav-link">Образы</div>
             <div className="nav-link">Моя одежда</div>

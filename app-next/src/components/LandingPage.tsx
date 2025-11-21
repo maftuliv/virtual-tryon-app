@@ -88,7 +88,7 @@ export default function LandingPage() {
         </div>
         <div className="header-right">
           <nav className="nav-links">
-            <div className="nav-link nav-link_active">Дашборд</div>
+            <div className="nav-link nav-link_active">Главная</div>
             <Link href="/tryon" className="nav-link">Примерка</Link>
             <div className="nav-link">Образы</div>
             <div className="nav-link">Моя одежда</div>
@@ -340,10 +340,10 @@ export default function LandingPage() {
 
       {/* ЛАЙКНУТЫЕ ОБРАЗЫ + РЕКОМЕНДАЦИИ */}
       <section className="lower-grid">
-        {/* Лайкнутые образы */}
+        {/* Мне понравилось ❤️ */}
         <article className="card">
           <div className="section-header">
-            <div className="section-title">Лайкнутые образы</div>
+            <div className="section-title">Мне понравилось ❤️</div>
             <Link href="/dashboard" className="section-link">Открыть галерею</Link>
           </div>
           <div className="liked-count">{favoritesCount}</div>

@@ -267,7 +267,7 @@ export default function AdminPanel() {
             className={`admin-tab ${activeTab === 'dashboard' ? 'active' : ''}`}
             onClick={() => setActiveTab('dashboard')}
           >
-            📊 Дашборд
+            📊 Главная
           </button>
           <button
             className={`admin-tab ${activeTab === 'users' ? 'active' : ''}`}

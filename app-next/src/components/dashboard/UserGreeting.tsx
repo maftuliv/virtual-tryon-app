@@ -50,7 +50,7 @@ export default function UserGreeting() {
           <span>👕 Образов создано: <strong>{tryonCount}</strong></span>
         </div>
         <div className="meta-pill">
-          <span>⭐ Лайкнутые образы: <strong>{favoritesCount}</strong></span>
+          <span>⭐ Мне понравилось: <strong>{favoritesCount}</strong></span>
         </div>
       </div>
     </article>

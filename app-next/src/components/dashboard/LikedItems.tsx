@@ -12,7 +12,7 @@ export default function LikedItems() {
   return (
     <article className="card">
       <div className="section-header">
-        <div className="section-title">Лайкнутые образы</div>
+        <div className="section-title">Мне понравилось ❤️</div>
         <div className="section-link">Открыть галерею</div>
       </div>
 

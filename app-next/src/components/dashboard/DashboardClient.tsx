@@ -50,7 +50,7 @@ export default function DashboardClient() {
         </div>
         <div className="header-right">
           <nav className="nav-links">
-            <Link href="/dashboard" className="nav-link nav-link_active">Дашборд</Link>
+            <Link href="/dashboard" className="nav-link nav-link_active">Главная</Link>
             <Link href="/#tryon" className="nav-link">Примерка</Link>
             <div className="nav-link">Образы</div>
             <div className="nav-link">Моя одежда</div>
@@ -100,7 +100,7 @@ export default function DashboardClient() {
               👕 Образов создано: <strong>{tryonCount}</strong>
             </div>
             <div className="meta-pill">
-              ⭐ Лайкнутые образы: <strong>{favoritesCount}</strong>
+              ⭐ Мне понравилось: <strong>{favoritesCount}</strong>
             </div>
           </div>
         </article>
@@ -121,7 +121,7 @@ export default function DashboardClient() {
 
           <article className="card">
             <div className="section-header">
-              <div className="section-title">Лайкнутые образы</div>
+              <div className="section-title">Мне понравилось ❤️</div>
               <div className="section-link">Открыть галерею</div>
             </div>
             <div className="liked-count">{favoritesCount}</div>
