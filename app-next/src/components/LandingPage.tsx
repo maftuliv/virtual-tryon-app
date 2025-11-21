@@ -250,7 +250,7 @@ export default function LandingPage() {
         <article className="card">
           <div className="section-header">
             <div className="section-title">МОИ ПРИМЕРКИ</div>
-            <Link href="/dashboard" className="section-link">Посмотреть все</Link>
+            <Link href="/gallery" className="section-link">Посмотреть все</Link>
           </div>
           <p className="card-subtitle">
             Последние результаты примерки. Откройте, чтобы сохранить, поделиться или создать похожий образ.
@@ -259,38 +259,36 @@ export default function LandingPage() {
             {tryons && tryons.length > 0 ? (
               <>
                 {tryons.slice(0, 3).map((tryon, idx) => (
-                  <Link key={tryon.id || idx} href="/dashboard" className="tryon-card-new" style={{ cursor: 'pointer' }}>
-                    {tryon.r2_url && (
-                      <div className="tryon-card-preview">
+                  <Link key={tryon.id || idx} href="/gallery" className="tryon-card-new tryon-card-clickable">
+                    <div className="tryon-card-preview">
+                      {tryon.r2_url ? (
                         <img src={tryon.r2_url} alt={tryon.title || `Образ ${idx + 1}`} />
-                      </div>
-                    )}
+                      ) : (
+                        <div className="tryon-card-placeholder">👗</div>
+                      )}
+                    </div>
                     <div className="tryon-card-name">{tryon.title || `Образ ${idx + 1}`}</div>
-                    <div className="tryon-card-date">{new Date(tryon.created_at).toLocaleDateString('ru-RU')}</div>
-                    <button className="btn-tryon-open">✨ Открыть образ</button>
                   </Link>
                 ))}
                 {/* Fill up to 3 cards minimum */}
                 {Array.from({ length: Math.max(0, 3 - tryons.length) }).map((_, idx) => (
-                  <div key={`placeholder-${idx}`} className="tryon-card-new">
-                    <div className="tryon-card-name">Создать новый образ</div>
-                    <div className="tryon-card-date">Пусто</div>
-                    <Link href="/tryon">
-                      <button className="btn-tryon-open">✨ Создать образ</button>
-                    </Link>
-                  </div>
+                  <Link key={`placeholder-${idx}`} href="/tryon" className="tryon-card-new tryon-card-empty">
+                    <div className="tryon-card-preview">
+                      <div className="tryon-card-placeholder">+</div>
+                    </div>
+                    <div className="tryon-card-name">Создать</div>
+                  </Link>
                 ))}
               </>
             ) : (
               <>
                 {Array.from({ length: 3 }).map((_, idx) => (
-                  <div key={`empty-${idx}`} className="tryon-card-new">
-                    <div className="tryon-card-name">Создать новый образ</div>
-                    <div className="tryon-card-date">Пусто</div>
-                    <Link href="/tryon">
-                      <button className="btn-tryon-open">✨ Создать образ</button>
-                    </Link>
-                  </div>
+                  <Link key={`empty-${idx}`} href="/tryon" className="tryon-card-new tryon-card-empty">
+                    <div className="tryon-card-preview">
+                      <div className="tryon-card-placeholder">+</div>
+                    </div>
+                    <div className="tryon-card-name">Создать</div>
+                  </Link>
                 ))}
               </>
             )}
@@ -357,17 +355,27 @@ export default function LandingPage() {
         {/* Мне понравилось ❤️ */}
         <article className="card">
           <div className="section-header">
-            <div className="section-title">Мне понравилось ❤️</div>
-            <Link href="/dashboard" className="section-link">Открыть галерею</Link>
+            <div className="section-title">Избранное ({favoritesCount})</div>
+            <Link href="/gallery?filter=favorites" className="section-link">Посмотреть все</Link>
           </div>
-          <div className="liked-count">{favoritesCount}</div>
           <p className="card-subtitle">
             Ваши любимые результаты. Можно вернуться к ним и доработать детали.
           </p>
           <div className="liked-preview-row">
-            <div className="liked-thumb">Look 1</div>
-            <div className="liked-thumb">Look 2</div>
-            <div className="liked-thumb">Look 3</div>
+            {tryons?.filter(t => t.is_favorite).slice(0, 3).map((tryon, idx) => (
+              <Link key={tryon.id} href="/gallery?filter=favorites" className="liked-thumb">
+                {tryon.r2_url ? (
+                  <img src={tryon.r2_url} alt={`Look ${idx + 1}`} />
+                ) : (
+                  `Look ${idx + 1}`
+                )}
+              </Link>
+            ))}
+            {Array.from({ length: Math.max(0, 3 - (tryons?.filter(t => t.is_favorite).length || 0)) }).map((_, idx) => (
+              <div key={`empty-${idx}`} className="liked-thumb liked-thumb-empty">
+                <span>+</span>
+              </div>
+            ))}
           </div>
         </article>
 

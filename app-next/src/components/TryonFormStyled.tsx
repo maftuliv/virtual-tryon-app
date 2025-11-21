@@ -124,23 +124,13 @@ export default function TryonFormStyled() {
       try {
         const isFavorite = rating === 'like';
         await tryonApi.toggleFavorite(results[0].generation_id, isFavorite);
-
-        if (isFavorite) {
-          // Redirect to homepage after successful like
-          setTimeout(() => {
-            window.location.href = '/';
-          }, 1500);
-        }
+        // No redirect - user stays on page
       } catch (error) {
         console.error('Failed to save rating:', error);
         setError('Не удалось сохранить оценку');
       }
-    } else if (rating === 'like') {
-      // For anonymous users, just redirect
-      setTimeout(() => {
-        window.location.href = '/';
-      }, 1500);
     }
+    // No redirect for anonymous users either
   };
 
   const canGenerate = personImage.file && garmentImage.file && !isGenerating;
