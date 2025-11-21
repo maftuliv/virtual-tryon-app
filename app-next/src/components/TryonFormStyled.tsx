@@ -16,6 +16,9 @@ const GARMENT_CATEGORIES = [
   { value: 'overall' as GarmentCategory, label: 'Комплект', icon: '👗' },
 ];
 
+// Лимиты примерок
+const MONTHLY_LIMIT = 50;
+
 export default function TryonFormStyled() {
   const { isAuthenticated } = useAuth();
   const [currentStep, setCurrentStep] = useState<1 | 2>(1);
@@ -28,6 +31,7 @@ export default function TryonFormStyled() {
   const [garmentCategory, setGarmentCategory] = useState<GarmentCategory>('auto');
   const [showRating, setShowRating] = useState(false);
   const [userRating, setUserRating] = useState<'like' | 'dislike' | null>(null);
+  const [remainingTries, setRemainingTries] = useState<number>(MONTHLY_LIMIT);
 
   const personImage = useImageUpload({
     maxSize: 10 * 1024 * 1024,
@@ -96,6 +100,11 @@ export default function TryonFormStyled() {
       setResults(tryonResponse.results);
       setShowRating(true);
 
+      // Обновляем оставшиеся примерки
+      if (tryonResponse.daily_limit) {
+        setRemainingTries(tryonResponse.daily_limit.remaining);
+      }
+
     } catch (err) {
       const error = err as Error;
       console.error('Tryon error:', error);
@@ -145,6 +154,8 @@ export default function TryonFormStyled() {
     }
   }, [results]);
 
+  const progressPercent = Math.round((remainingTries / MONTHLY_LIMIT) * 100);
+
   return (
     <>
       <LoadingOverlay
@@ -153,183 +164,201 @@ export default function TryonFormStyled() {
         tip={loadingTip}
       />
 
-      <div className="tryon-form-wrapper">
-        {/* ШАГ 1: Загрузка фото */}
-        <div className="tryon-step-block">
-          <div className="step-block-header">
-            <div className="step-icon-large">📷</div>
-            <div className="step-block-info">
-              <h3 className="step-block-title">ШАГ 1</h3>
-              <p className="step-block-subtitle">Загрузите своё фото</p>
-            </div>
-          </div>
-
-          <div className="step-content-grid">
-            {/* Зона загрузки */}
-            <div
-              className="upload-zone-compact"
-              onClick={() => !isGenerating && personInputRef.current?.click()}
-            >
-              {personImage.preview ? (
-                <div className="upload-preview-compact">
-                  <img src={personImage.preview} alt="Ваше фото" />
-                  <button
-                    className="btn-remove-image"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      personImage.reset();
-                      setCurrentStep(1);
-                    }}
-                  >
-                    ✕
-                  </button>
-                </div>
-              ) : (
-                <div className="upload-placeholder-compact">
-                  <div className="upload-icon-compact">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                      <polyline points="17 8 12 3 7 8"/>
-                      <line x1="12" y1="3" x2="12" y2="15"/>
-                    </svg>
-                  </div>
-                  <div className="upload-text-compact">Перетащите фото или выберите</div>
-                  <div className="upload-hint-compact">JPG/PNG, минимум 512px</div>
-                  <button className="upload-button-compact">Выбрать файл</button>
-                </div>
-              )}
-            </div>
-
-            {/* Требования */}
-            <div className="requirements-inline">
-              <h4 className="requirements-inline-title">Требования к фото</h4>
-              <ul className="requirements-inline-list">
-                <li>✓ Полный рост, вертикальное фото</li>
-                <li>✓ Хорошее освещение, чёткое изображение</li>
-                <li>✓ Однотонный фон желателен</li>
-                <li className="requirement-warning">✗ Не подойдут: селфи и обрезанные фото</li>
-              </ul>
-            </div>
-          </div>
-
-          <input
-            ref={personInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) personImage.handleUpload(file);
-            }}
-            disabled={isGenerating}
-            style={{ display: 'none' }}
-          />
-        </div>
-
-        {/* ШАГ 2: Загрузка одежды */}
-        <div className={`tryon-step-block ${currentStep === 1 ? 'disabled' : ''}`}>
-          <div className="step-block-header">
-            <div className="step-icon-large">👗</div>
-            <div className="step-block-info">
-              <h3 className="step-block-title">ШАГ 2</h3>
-              <p className="step-block-subtitle">Добавьте одежду</p>
-            </div>
-          </div>
-
-          <div className="step-content-grid">
-            {/* Зона загрузки */}
-            <div
-              className="upload-zone-compact"
-              onClick={() => currentStep === 2 && !isGenerating && garmentInputRef.current?.click()}
-            >
-              {garmentImage.preview ? (
-                <div className="upload-preview-compact">
-                  <img src={garmentImage.preview} alt="Одежда" />
-                  <button
-                    className="btn-remove-image"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      garmentImage.reset();
-                    }}
-                  >
-                    ✕
-                  </button>
-                </div>
-              ) : (
-                <div className="upload-placeholder-compact">
-                  <div className="upload-icon-compact">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                      <polyline points="17 8 12 3 7 8"/>
-                      <line x1="12" y1="3" x2="12" y2="15"/>
-                    </svg>
-                  </div>
-                  <div className="upload-text-compact">Перетащите фото или выберите</div>
-                  <div className="upload-hint-compact">JPG/PNG, минимум 512px</div>
-                  <button className="upload-button-compact" disabled={currentStep === 1}>
-                    Выбрать файл
-                  </button>
-                </div>
-              )}
-
-              {currentStep === 1 && (
-                <div className="step-overlay-compact">
-                  <p>Сначала загрузите ваше фото</p>
-                </div>
-              )}
-            </div>
-
-            {/* Подсказки и тип одежды */}
-            <div className="hints-inline">
-              <h4 className="hints-inline-title">Тип одежды</h4>
-              <div className="garment-type-selector">
-                {GARMENT_CATEGORIES.map((cat) => (
-                  <button
-                    key={cat.value}
-                    className={`garment-type-btn ${garmentCategory === cat.value ? 'active' : ''}`}
-                    onClick={() => setGarmentCategory(cat.value)}
-                    disabled={currentStep === 1}
-                  >
-                    <span className="garment-type-icon">{cat.icon}</span>
-                    <span className="garment-type-label">{cat.label}</span>
-                  </button>
-                ))}
-              </div>
-
-              <div className="hints-text">
-                <p>💡 <strong>Авто</strong> - система определит тип автоматически</p>
-                <p>💡 <strong>Верх</strong> - футболки, блузки, пиджаки</p>
-                <p>💡 <strong>Низ</strong> - брюки, юбки, шорты</p>
-                <p>💡 <strong>Комплект</strong> - платья, комбинезоны</p>
+      {/* Main grid: Steps + Generate block */}
+      <div className="tryon-main-layout">
+        {/* Steps row */}
+        <div className="tryon-steps-row">
+          {/* ШАГ 1: Загрузка фото */}
+          <div className="tryon-step-block-compact">
+            <div className="step-block-header-compact">
+              <div className="step-icon-medium">📷</div>
+              <div className="step-block-info-compact">
+                <h3>ШАГ 1</h3>
+                <p>Загрузите своё фото</p>
               </div>
             </div>
+
+            <div className="step-content-row">
+              {/* Зона загрузки - компактная карточка */}
+              <div
+                className="upload-zone-card"
+                onClick={() => !isGenerating && personInputRef.current?.click()}
+              >
+                {personImage.preview ? (
+                  <div className="upload-preview-card">
+                    <img src={personImage.preview} alt="Ваше фото" />
+                    <button
+                      className="btn-remove-image-card"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        personImage.reset();
+                        setCurrentStep(1);
+                      }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  <div className="upload-placeholder-card">
+                    <div className="upload-icon-card">
+                      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                      </svg>
+                    </div>
+                    <div className="upload-text-card">Перетащите фото или выберите</div>
+                    <div className="upload-hint-card">JPG/PNG, минимум 512px</div>
+                    <button className="upload-button-card">Выбрать файл</button>
+                  </div>
+                )}
+              </div>
+
+              {/* Требования */}
+              <div className="requirements-compact">
+                <h4>Требования к фото</h4>
+                <ul>
+                  <li>✓ Полный рост, вертикальное фото</li>
+                  <li>✓ Хорошее освещение, чёткое изображение</li>
+                  <li>✓ Однотонный фон желателен</li>
+                  <li className="warning">✗ Не подойдут: селфи и обрезанные фото</li>
+                </ul>
+              </div>
+            </div>
+
+            <input
+              ref={personInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) personImage.handleUpload(file);
+              }}
+              disabled={isGenerating}
+              style={{ display: 'none' }}
+            />
           </div>
 
-          <input
-            ref={garmentInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) garmentImage.handleUpload(file);
-            }}
-            disabled={isGenerating || currentStep === 1}
-            style={{ display: 'none' }}
-          />
+          {/* ШАГ 2: Загрузка одежды */}
+          <div className={`tryon-step-block-compact ${currentStep === 1 ? 'disabled' : ''}`}>
+            <div className="step-block-header-compact">
+              <div className="step-icon-medium">👗</div>
+              <div className="step-block-info-compact">
+                <h3>ШАГ 2</h3>
+                <p>Добавьте одежду</p>
+              </div>
+            </div>
+
+            <div className="step-content-row">
+              {/* Зона загрузки - компактная карточка */}
+              <div
+                className="upload-zone-card"
+                onClick={() => currentStep === 2 && !isGenerating && garmentInputRef.current?.click()}
+              >
+                {garmentImage.preview ? (
+                  <div className="upload-preview-card">
+                    <img src={garmentImage.preview} alt="Одежда" />
+                    <button
+                      className="btn-remove-image-card"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        garmentImage.reset();
+                      }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  <div className="upload-placeholder-card">
+                    <div className="upload-icon-card">
+                      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                      </svg>
+                    </div>
+                    <div className="upload-text-card">Перетащите фото или выберите</div>
+                    <div className="upload-hint-card">JPG/PNG, минимум 512px</div>
+                    <button className="upload-button-card" disabled={currentStep === 1}>
+                      Выбрать файл
+                    </button>
+                  </div>
+                )}
+
+                {currentStep === 1 && (
+                  <div className="step-overlay-card">
+                    <p>Сначала загрузите ваше фото</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Тип одежды */}
+              <div className="hints-compact">
+                <h4>Тип одежды</h4>
+                <div className="garment-type-grid">
+                  {GARMENT_CATEGORIES.map((cat) => (
+                    <button
+                      key={cat.value}
+                      className={`garment-type-btn-compact ${garmentCategory === cat.value ? 'active' : ''}`}
+                      onClick={() => setGarmentCategory(cat.value)}
+                      disabled={currentStep === 1}
+                    >
+                      <span className="garment-icon">{cat.icon}</span>
+                      <span className="garment-label">{cat.label}</span>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="hints-list">
+                  <p>💡 <strong>Авто</strong> - система определит тип</p>
+                  <p>💡 <strong>Верх</strong> - футболки, блузки</p>
+                  <p>💡 <strong>Низ</strong> - брюки, юбки</p>
+                  <p>💡 <strong>Комплект</strong> - платья</p>
+                </div>
+              </div>
+            </div>
+
+            <input
+              ref={garmentInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) garmentImage.handleUpload(file);
+              }}
+              disabled={isGenerating || currentStep === 1}
+              style={{ display: 'none' }}
+            />
+          </div>
         </div>
 
-        {/* Кнопка генерации */}
-        <div className="generate-section">
+        {/* Блок с кнопкой и лимитами */}
+        <div className="generate-block">
+          <h3 className="generate-block-title">Готовы примерить?</h3>
+          <p className="generate-block-subtitle">
+            Осталось <strong>{remainingTries}</strong> примерок в этом месяце
+          </p>
+
+          {/* Прогресс-бар */}
+          <div className="progress-bar-container">
+            <div
+              className="progress-bar-fill"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+
+          {/* Кнопка */}
           <button
-            className="btn-generate-main"
+            className="btn-generate-styled"
             onClick={handleGenerate}
             disabled={!canGenerate}
           >
-            <span className="btn-icon">✨</span>
-            <span className="btn-text">Сделать примерку</span>
+            <span className="btn-sparkle">✨</span>
+            Сделать примерку
           </button>
 
           {error && (
-            <div className="error-message-inline">
+            <div className="error-message-block">
               {error}
             </div>
           )}
