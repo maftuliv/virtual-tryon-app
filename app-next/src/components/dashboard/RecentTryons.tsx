@@ -2,6 +2,7 @@
 
 import { useTryons } from '@/hooks/useTryons';
 import Image from 'next/image';
+import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
@@ -60,9 +61,9 @@ export default function RecentTryons() {
 
                 {/* Actions */}
                 <div className="flex gap-1.5">
-                  <button className="btn-small btn-small-solid flex-1">
+                  <Link href="/dashboard" className="btn-small btn-small-solid flex-1 text-center">
                     Открыть
-                  </button>
+                  </Link>
                   <button className="btn-small btn-small-outline flex-1">
                     Похожий
                   </button>

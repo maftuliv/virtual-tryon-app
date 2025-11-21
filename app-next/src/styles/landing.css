@@ -689,6 +689,28 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  text-decoration: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tryon-card-new:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 32px rgba(58, 12, 94, 0.25);
+}
+
+.tryon-card-preview {
+  width: 100%;
+  height: 140px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #d9d4f2, #f6e6ff);
+  margin-bottom: 4px;
+}
+
+.tryon-card-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .tryon-card-name {

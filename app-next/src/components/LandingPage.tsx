@@ -250,11 +250,16 @@ export default function LandingPage() {
             {tryons && tryons.length > 0 ? (
               <>
                 {tryons.slice(0, 3).map((tryon, idx) => (
-                  <div key={tryon.id || idx} className="tryon-card-new">
+                  <Link key={tryon.id || idx} href="/dashboard" className="tryon-card-new" style={{ cursor: 'pointer' }}>
+                    {tryon.r2_url && (
+                      <div className="tryon-card-preview">
+                        <img src={tryon.r2_url} alt={tryon.title || `Образ ${idx + 1}`} />
+                      </div>
+                    )}
                     <div className="tryon-card-name">{tryon.title || `Образ ${idx + 1}`}</div>
                     <div className="tryon-card-date">{new Date(tryon.created_at).toLocaleDateString('ru-RU')}</div>
                     <button className="btn-tryon-open">✨ Открыть образ</button>
-                  </div>
+                  </Link>
                 ))}
                 {/* Fill up to 3 cards minimum */}
                 {Array.from({ length: Math.max(0, 3 - tryons.length) }).map((_, idx) => (
