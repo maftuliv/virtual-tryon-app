@@ -348,13 +348,19 @@ export default function TryonFormStyled() {
               </button>
             </div>
             <div className="result-image-container">
-              {results[0]?.result_url && (
+              {results[0]?.result_image ? (
+                <img
+                  src={`data:image/jpeg;base64,${results[0].result_image}`}
+                  alt="Результат примерки"
+                  className="result-image-main"
+                />
+              ) : results[0]?.result_url ? (
                 <img
                   src={results[0].result_url}
                   alt="Результат примерки"
                   className="result-image-main"
                 />
-              )}
+              ) : null}
             </div>
             <div className="result-actions">
               <button className="btn-result-action btn-download">
@@ -393,9 +399,11 @@ export default function TryonFormStyled() {
                 <div className="comparison-mini-item highlighted">
                   <div className="comparison-mini-label">Результат</div>
                   <div className="comparison-mini-image">
-                    {results[0]?.result_url && (
+                    {results[0]?.result_image ? (
+                      <img src={`data:image/jpeg;base64,${results[0].result_image}`} alt="После" />
+                    ) : results[0]?.result_url ? (
                       <img src={results[0].result_url} alt="После" />
-                    )}
+                    ) : null}
                   </div>
                 </div>
               </div>
