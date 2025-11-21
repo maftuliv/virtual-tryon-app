@@ -27,6 +27,15 @@ export default function LandingPage() {
   const remaining = limit === -1 ? Infinity : Math.max(0, limit - used);
   const progressPercent = limit === -1 ? 100 : Math.min(100, (used / limit) * 100);
 
+  // Calculate stats for welcome block
+  const tryonCount = tryons?.length || 0;
+  const lastTryonDate = tryons?.[0]?.created_at
+    ? new Date(tryons[0].created_at).toLocaleDateString('ru-RU', {
+        day: 'numeric',
+        month: 'long'
+      })
+    : 'никогда';
+
   const handleLoginClick = async () => {
     try {
       // Получаем authorization URL от backend
@@ -141,10 +150,10 @@ export default function LandingPage() {
           <div className="hero-meta-row" style={{ marginTop: '16px' }}>
             <div className="meta-pill">
               <span className="meta-dot"></span>
-              Последняя примерка: <strong>вчера</strong>
+              Последняя примерка: <strong>{lastTryonDate}</strong>
             </div>
             <div className="meta-pill">
-              🎨 Образов создано: <strong>12</strong>
+              🎨 Образов создано: <strong>{tryonCount}</strong>
             </div>
           </div>
         </article>
