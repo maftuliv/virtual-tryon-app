@@ -6,7 +6,6 @@ import { tryonApi, type TryonResult } from '@/lib/api';
 import { getDeviceFingerprint } from '@/lib/fingerprint';
 import { useAuth } from '@/hooks/useAuth';
 import LoadingOverlay from './LoadingOverlay';
-import ResultDisplay from './ResultDisplay';
 
 type GarmentCategory = 'auto' | 'upper' | 'lower' | 'overall';
 
@@ -129,81 +128,16 @@ export default function TryonFormStyled() {
   };
 
   const canGenerate = personImage.file && garmentImage.file && !isGenerating;
+  const resultRef = useRef<HTMLDivElement>(null);
 
-  if (results) {
-    return (
-      <>
-        <ResultDisplay results={results} onReset={handleReset} />
-
-        {/* До/После блок */}
-        <div className="before-after-section">
-          <h3 className="section-title">Сравнение: До и После</h3>
-          <div className="before-after-grid">
-            <div className="comparison-card">
-              <div className="comparison-label">Ваше фото</div>
-              {personImage.preview && (
-                <img src={personImage.preview} alt="До" className="comparison-image" />
-              )}
-            </div>
-            <div className="comparison-arrow">→</div>
-            <div className="comparison-card">
-              <div className="comparison-label">Одежда</div>
-              {garmentImage.preview && (
-                <img src={garmentImage.preview} alt="Одежда" className="comparison-image" />
-              )}
-            </div>
-            <div className="comparison-arrow">→</div>
-            <div className="comparison-card highlighted">
-              <div className="comparison-label">Результат</div>
-              {results[0]?.result_url && (
-                <img src={results[0].result_url} alt="После" className="comparison-image" />
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Форма оценки */}
-        {showRating && (
-          <div className="rating-section">
-            <div className="rating-card">
-              <h3 className="rating-title">Понравился результат?</h3>
-              <p className="rating-description">
-                Ваша оценка помогает нам улучшать качество примерки
-              </p>
-              <div className="rating-buttons">
-                <button
-                  className={`rating-btn rating-like ${userRating === 'like' ? 'active' : ''}`}
-                  onClick={() => handleRating('like')}
-                  disabled={userRating !== null}
-                >
-                  <span className="rating-icon">👍</span>
-                  <span className="rating-text">Да, отлично!</span>
-                </button>
-                <button
-                  className={`rating-btn rating-dislike ${userRating === 'dislike' ? 'active' : ''}`}
-                  onClick={() => handleRating('dislike')}
-                  disabled={userRating !== null}
-                >
-                  <span className="rating-icon">👎</span>
-                  <span className="rating-text">Не очень</span>
-                </button>
-              </div>
-              {userRating === 'like' && (
-                <div className="rating-feedback success">
-                  Спасибо! Примерка сохранена в ваш профиль ✨
-                </div>
-              )}
-              {userRating === 'dislike' && (
-                <div className="rating-feedback">
-                  Спасибо за отзыв! Мы работаем над улучшением качества.
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </>
-    );
-  }
+  // Плавная анимация скролла к результату
+  useEffect(() => {
+    if (results && resultRef.current) {
+      setTimeout(() => {
+        resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 300);
+    }
+  }, [results]);
 
   return (
     <>
@@ -395,6 +329,112 @@ export default function TryonFormStyled() {
           )}
         </div>
       </div>
+
+      {/* РЕЗУЛЬТАТ - показывается ниже формы */}
+      {results && (
+        <div ref={resultRef} className="result-section-wrapper">
+          {/* Результат генерации */}
+          <div className="result-display-compact">
+            <div className="result-header">
+              <h2 className="result-title">Результат примерки</h2>
+              <button className="btn-new-tryon" onClick={handleReset}>
+                Новая примерка
+              </button>
+            </div>
+            <div className="result-image-container">
+              {results[0]?.result_url && (
+                <img
+                  src={results[0].result_url}
+                  alt="Результат примерки"
+                  className="result-image-main"
+                />
+              )}
+            </div>
+            <div className="result-actions">
+              <button className="btn-result-action btn-download">
+                📥 Скачать
+              </button>
+              <button className="btn-result-action btn-share">
+                🔗 Поделиться
+              </button>
+            </div>
+          </div>
+
+          {/* До/После и Оценка горизонтально */}
+          <div className="result-bottom-grid">
+            {/* Блок До/После */}
+            <div className="before-after-card">
+              <h3 className="card-title-small">Сравнение: До и После</h3>
+              <div className="comparison-mini-grid">
+                <div className="comparison-mini-item">
+                  <div className="comparison-mini-label">Ваше фото</div>
+                  <div className="comparison-mini-image">
+                    {personImage.preview && (
+                      <img src={personImage.preview} alt="До" />
+                    )}
+                  </div>
+                </div>
+                <div className="comparison-arrow-mini">→</div>
+                <div className="comparison-mini-item">
+                  <div className="comparison-mini-label">Одежда</div>
+                  <div className="comparison-mini-image">
+                    {garmentImage.preview && (
+                      <img src={garmentImage.preview} alt="Одежда" />
+                    )}
+                  </div>
+                </div>
+                <div className="comparison-arrow-mini">→</div>
+                <div className="comparison-mini-item highlighted">
+                  <div className="comparison-mini-label">Результат</div>
+                  <div className="comparison-mini-image">
+                    {results[0]?.result_url && (
+                      <img src={results[0].result_url} alt="После" />
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Блок оценки */}
+            {showRating && (
+              <div className="rating-card-compact">
+                <h3 className="card-title-small">Понравился результат?</h3>
+                <p className="rating-description-compact">
+                  Ваша оценка помогает нам улучшать качество
+                </p>
+                <div className="rating-buttons-compact">
+                  <button
+                    className={`rating-btn-compact rating-like ${userRating === 'like' ? 'active' : ''}`}
+                    onClick={() => handleRating('like')}
+                    disabled={userRating !== null}
+                  >
+                    <span className="rating-icon-compact">👍</span>
+                    <span className="rating-text-compact">Да!</span>
+                  </button>
+                  <button
+                    className={`rating-btn-compact rating-dislike ${userRating === 'dislike' ? 'active' : ''}`}
+                    onClick={() => handleRating('dislike')}
+                    disabled={userRating !== null}
+                  >
+                    <span className="rating-icon-compact">👎</span>
+                    <span className="rating-text-compact">Не очень</span>
+                  </button>
+                </div>
+                {userRating === 'like' && (
+                  <div className="rating-feedback-compact success">
+                    ✨ Отлично! Примерка сохранена
+                  </div>
+                )}
+                {userRating === 'dislike' && (
+                  <div className="rating-feedback-compact">
+                    Спасибо за отзыв!
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </>
   );
 }
