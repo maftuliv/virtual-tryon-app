@@ -433,14 +433,16 @@ export default function TryonFormStyled() {
       {/* ================= РЕЖИМ RESULT (после генерации) ================= */}
       {hasResult && (
         <div ref={resultRef} className="result-section-wrapper">
-          {/* ЗАМЕТКА 1: Блок результата генерации - компактная карточка */}
-          <section className="mt-8 flex justify-center">
+          {/* Горизонтальный layout: Результат + Сравнение */}
+          <div className="grid grid-cols-1 xl:grid-cols-[1fr_auto_1fr] gap-6 xl:gap-0 w-full mt-10 items-start justify-items-center">
+
+            {/* ЛЕВАЯ КОЛОНКА: Основной результат */}
             <div className="
               flex flex-col items-center gap-4
               rounded-3xl border border-white/40 bg-white/55
-              px-6 py-6 shadow-[0_24px_70px_rgba(126,96,191,0.28)]
+              p-6 shadow-[0_24px_70px_rgba(126,96,191,0.25)]
               backdrop-blur-2xl
-              max-w-[560px] w-full
+              max-w-[520px] w-full
             ">
               {/* Заголовок + подзаголовок */}
               <div className="text-center">
@@ -453,17 +455,17 @@ export default function TryonFormStyled() {
               </div>
 
               {/* Изображение результата */}
-              <div className="w-full max-w-[460px]">
+              <div className="w-full flex justify-center">
                 {getResultImageUrl() && (
                   <img
                     src={getResultImageUrl()!}
                     alt="Результат примерки"
-                    className="w-full h-auto rounded-2xl object-contain"
+                    className="max-w-[420px] w-full h-auto rounded-2xl shadow-md object-contain"
                   />
                 )}
               </div>
 
-              {/* ЗАМЕТКА 4: Кнопки Скачать / Поделиться - glassmorphism стиль */}
+              {/* Кнопки Скачать / Поделиться */}
               <div className="flex gap-3 flex-wrap justify-center">
                 <button
                   onClick={handleDownload}
@@ -495,7 +497,7 @@ export default function TryonFormStyled() {
                 </button>
               </div>
 
-              {/* ЗАМЕТКА 4: Блок «Понравился результат?» - внутри карточки */}
+              {/* Блок «Понравился результат?» */}
               {showRating && (
                 <div className="w-full pt-4 border-t border-white/30">
                   <div className="text-center">
@@ -540,14 +542,18 @@ export default function TryonFormStyled() {
                 </div>
               )}
             </div>
-          </section>
 
-          {/* ЗАМЕТКА 3: Блок «Сравнение: До и После» - увеличенные превью */}
-          <section className="mt-8">
+            {/* ВЕРТИКАЛЬНЫЙ РАЗДЕЛИТЕЛЬ - только на xl+ */}
+            <div className="hidden xl:flex items-center justify-center px-4">
+              <div className="w-px h-[400px] bg-gradient-to-b from-transparent via-white/60 to-transparent rounded-full" />
+            </div>
+
+            {/* ПРАВАЯ КОЛОНКА: Сравнение До и После */}
             <div className="
               rounded-3xl border border-white/40 bg-white/55
-              px-6 py-6 shadow-[0_24px_70px_rgba(126,96,191,0.25)]
+              p-6 shadow-[0_24px_70px_rgba(126,96,191,0.25)]
               backdrop-blur-2xl
+              max-w-[480px] w-full
             ">
               <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">
                 Сравнение: До и После
@@ -557,9 +563,9 @@ export default function TryonFormStyled() {
                 <div className="flex flex-col items-center group">
                   <span className="text-sm text-gray-600 mb-2">Ваше фото</span>
                   <div className="
-                    w-[160px] h-[220px] rounded-2xl overflow-hidden
+                    w-[150px] h-[220px] rounded-2xl overflow-hidden
                     border-2 border-white/50
-                    shadow-[0_8px_25px_rgba(0,0,0,0.12)]
+                    shadow-md
                     transition-all duration-300
                     group-hover:scale-105 group-hover:shadow-[0_12px_35px_rgba(126,96,191,0.3)]
                   ">
@@ -580,9 +586,9 @@ export default function TryonFormStyled() {
                 <div className="flex flex-col items-center group">
                   <span className="text-sm text-gray-600 mb-2">Одежда</span>
                   <div className="
-                    w-[160px] h-[220px] rounded-2xl overflow-hidden
+                    w-[150px] h-[220px] rounded-2xl overflow-hidden
                     border-2 border-white/50
-                    shadow-[0_8px_25px_rgba(0,0,0,0.12)]
+                    shadow-md
                     transition-all duration-300
                     group-hover:scale-105 group-hover:shadow-[0_12px_35px_rgba(126,96,191,0.3)]
                   ">
@@ -603,9 +609,9 @@ export default function TryonFormStyled() {
                 <div className="flex flex-col items-center group">
                   <span className="text-sm text-gray-600 mb-2">Результат</span>
                   <div className="
-                    w-[160px] h-[220px] rounded-2xl overflow-hidden
+                    w-[150px] h-[220px] rounded-2xl overflow-hidden
                     border-2 border-purple-300
-                    shadow-[0_8px_25px_rgba(126,96,191,0.25)]
+                    shadow-md
                     transition-all duration-300
                     group-hover:scale-105 group-hover:shadow-[0_12px_35px_rgba(126,96,191,0.4)]
                     ring-2 ring-purple-200/50
@@ -621,7 +627,7 @@ export default function TryonFormStyled() {
                 </div>
               </div>
             </div>
-          </section>
+          </div>
 
           {/* ЗАМЕТКА 5: Блок «Готовы повторить?» - ПОСЛЕ генерации */}
           <section className="mt-8">
