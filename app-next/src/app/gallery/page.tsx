@@ -172,8 +172,8 @@ function GalleryContent() {
               onClick={() => setSelectedTryon(tryon.id)}
             >
               <div className="gallery-card-image">
-                {tryon.r2_url ? (
-                  <img src={tryon.r2_url} alt={tryon.title || 'Примерка'} />
+                {tryon.result_url ? (
+                  <img src={tryon.result_url} alt={tryon.title || 'Примерка'} />
                 ) : (
                   <div className="gallery-card-placeholder">Нет изображения</div>
                 )}
@@ -221,7 +221,7 @@ function GalleryContent() {
               ×
             </button>
             <div className="gallery-modal-image">
-              <img src={selectedTryonData.r2_url} alt={selectedTryonData.title || 'Примерка'} />
+              <img src={selectedTryonData.result_url} alt={selectedTryonData.title || 'Примерка'} />
             </div>
             <div className="gallery-modal-info">
               <h2>{selectedTryonData.title || 'Без названия'}</h2>
@@ -242,7 +242,7 @@ function GalleryContent() {
                   {selectedTryonData.is_favorite ? '❤️ В избранном' : '🤍 В избранное'}
                 </button>
                 <a
-                  href={selectedTryonData.r2_url}
+                  href={selectedTryonData.result_url}
                   download
                   className="btn btn-download"
                   target="_blank"

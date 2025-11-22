@@ -39,7 +39,7 @@ export default function RecentTryons() {
               {/* Thumbnail */}
               <div className="h-[120px] relative bg-gradient-to-br from-[#d9d4f2] to-[#f6e6ff]">
                 <Image
-                  src={tryon.r2_url}
+                  src={tryon.result_url}
                   alt={tryon.title || 'Примерка'}
                   fill
                   className="object-cover"

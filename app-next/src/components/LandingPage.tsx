@@ -261,8 +261,8 @@ export default function LandingPage() {
                 {tryons.slice(0, 3).map((tryon, idx) => (
                   <Link key={tryon.id || idx} href="/gallery" className="tryon-card-new tryon-card-clickable">
                     <div className="tryon-card-preview">
-                      {tryon.r2_url ? (
-                        <img src={tryon.r2_url} alt={tryon.title || `Образ ${idx + 1}`} />
+                      {tryon.result_url ? (
+                        <img src={tryon.result_url} alt={tryon.title || `Образ ${idx + 1}`} />
                       ) : (
                         <div className="tryon-card-placeholder">👗</div>
                       )}
@@ -364,8 +364,8 @@ export default function LandingPage() {
           <div className="liked-preview-row">
             {tryons?.filter(t => t.is_favorite).slice(0, 3).map((tryon, idx) => (
               <Link key={tryon.id} href="/gallery?filter=favorites" className="liked-thumb">
-                {tryon.r2_url ? (
-                  <img src={tryon.r2_url} alt={`Look ${idx + 1}`} />
+                {tryon.result_url ? (
+                  <img src={tryon.result_url} alt={`Look ${idx + 1}`} />
                 ) : (
                   `Look ${idx + 1}`
                 )}

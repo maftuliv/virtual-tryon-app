@@ -91,12 +91,16 @@ export interface TryonResponse {
 
 export interface UserTryon {
   id: number;
-  user_id: string;
-  r2_url: string;
-  r2_key: string;
+  category: string;
+  person_image: string;
+  garment_image: string;
+  result_url: string;  // Comes from result_r2_url or result_image_url
+  thumbnail_url?: string;
   title?: string;
   is_favorite: boolean;
+  status: string;
   created_at: string;
+  updated_at?: string;
 }
 
 export interface UserStats {

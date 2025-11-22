@@ -131,7 +131,7 @@ export default function DashboardClient() {
             <div className="liked-preview-row">
               {tryons && tryons.filter(t => t.is_favorite).slice(0, 3).map((tryon, idx) => (
                 <div key={tryon.id} className="liked-thumb">
-                  <img src={tryon.r2_url} alt={`Look ${idx + 1}`} style={{ width: '100%', height: '100%', borderRadius: '14px', objectFit: 'cover' }} />
+                  <img src={tryon.result_url} alt={`Look ${idx + 1}`} style={{ width: '100%', height: '100%', borderRadius: '14px', objectFit: 'cover' }} />
                 </div>
               ))}
               {(!tryons || tryons.filter(t => t.is_favorite).length === 0) && (
@@ -164,7 +164,7 @@ export default function DashboardClient() {
                 tryons.slice(0, 4).map((tryon) => (
                   <div key={tryon.id} className="tryon-card">
                     <div className="tryon-thumb">
-                      <img src={tryon.r2_url} alt={tryon.title || 'Превью образа'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <img src={tryon.result_url} alt={tryon.title || 'Превью образа'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     </div>
                     <div className="tryon-body">
                       <div className="tryon-name">{tryon.title || 'Примерка'}</div>

@@ -36,7 +36,7 @@ export default function LikedItems() {
               }}
             >
               <Image
-                src={tryon.r2_url}
+                src={tryon.result_url}
                 alt={`Look ${idx + 1}`}
                 fill
                 className="object-cover"
