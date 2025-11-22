@@ -25,6 +25,7 @@ from backend.api.tryon import create_tryon_blueprint
 from backend.api.upload import create_upload_blueprint
 from backend.auth import AuthManager
 from backend.clients.nanobanana_client import NanoBananaClient
+from backend.clients.r2_storage_client import r2_storage
 from backend.clients.telegram_client import TelegramClient
 from backend.config import Settings
 from backend.logger import get_logger
@@ -285,6 +286,12 @@ def create_app(config: Optional[Settings] = None) -> Flask:
         logger.info("[OK] TelegramClient initialized")
     else:
         logger.warning("[SKIP] Telegram not configured - notifications disabled")
+
+    # Log R2 storage status
+    if r2_storage.is_configured():
+        logger.info(f"[OK] R2 Storage configured: bucket={r2_storage.bucket_name}, public_url={r2_storage.public_url_base}")
+    else:
+        logger.warning(f"[SKIP] R2 Storage NOT configured - images will not be permanently stored")
 
     # Initialize services
     imgbb_key = os.getenv("IMGBB_API_KEY")  # Optional, not in Settings
