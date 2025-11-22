@@ -28,8 +28,9 @@ class R2StorageClient:
         self._init_error = None
         if self.access_key_id and self.secret_access_key and self.endpoint_url:
             self._init_client()
+            logger.info(f"[R2] Client initialized successfully. Bucket: {self.bucket_name}, Public URL: {self.public_url_base}")
         else:
-            logger.info("[R2] Not configured - missing credentials or endpoint")
+            logger.warning(f"[R2] Client NOT configured. Missing: access_key={bool(self.access_key_id)}, secret={bool(self.secret_access_key)}, endpoint={bool(self.endpoint_url)}")
 
     def _init_client(self):
         """Initialize boto3 S3 client for R2"""

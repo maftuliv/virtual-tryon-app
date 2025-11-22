@@ -221,6 +221,7 @@ class TryonService:
                     result['generation_id'] = generation_record['id']
 
                     # Upload to R2 if configured and user is logged in
+                    self.logger.info(f"[R2-CHECK] user_id={user_id}, r2_configured={r2_storage.is_configured()}")
                     if user_id and r2_storage.is_configured():
                         r2_key_to_cleanup = None
                         try:
