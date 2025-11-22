@@ -90,6 +90,10 @@ export default function TryonPage() {
               >
                 <div className="user-avatar">{userInitial}</div>
                 <div className="user-name">{userName}</div>
+                {/* ЗАМЕТКА 7: Бейдж тарифа */}
+                <span className="rounded-full bg-gradient-to-r from-[#ffc36b] to-[#ff9a62] px-3 py-0.5 text-xs font-semibold text-slate-900 ml-2">
+                  {user?.subscription_plan || 'Premium'}
+                </span>
               </div>
               {isMenuOpen && (
                 <div className="user-dropdown">
@@ -219,10 +223,14 @@ export default function TryonPage() {
         </article>
       </section>
 
-      {/* ИЗБРАННОЕ + РЕКОМЕНДАЦИИ */}
-      <section className="favorites-reco-grid">
+      {/* ЗАМЕТКА 6: ИЗБРАННОЕ + РЕКОМЕНДАЦИИ - горизонтальный layout */}
+      <section className="mt-10 grid gap-6 lg:grid-cols-2 grid-cols-1">
         {/* Избранное */}
-        <article className="card">
+        <article className="
+          rounded-3xl border border-white/40 bg-white/55
+          px-6 py-5 shadow-[0_24px_70px_rgba(126,96,191,0.25)]
+          backdrop-blur-2xl
+        ">
           <div className="section-header">
             <div className="section-title">Избранное ({favoritesCount})</div>
             <div className="section-link">Посмотреть все</div>
@@ -238,7 +246,11 @@ export default function TryonPage() {
         </article>
 
         {/* Рекомендации */}
-        <article className="card">
+        <article className="
+          rounded-3xl border border-white/40 bg-white/55
+          px-6 py-5 shadow-[0_24px_70px_rgba(126,96,191,0.25)]
+          backdrop-blur-2xl
+        ">
           <div className="section-header">
             <div className="section-title">Рекомендации</div>
           </div>
@@ -258,22 +270,28 @@ export default function TryonPage() {
         </article>
       </section>
 
-      {/* ОБРАТНАЯ СВЯЗЬ */}
-      <section className="card" style={{ marginBottom: '14px' }}>
-        <div className="section-header">
-          <div className="section-title">Обратная связь</div>
-          <div className="section-link">Подробнее</div>
-        </div>
-        <p className="card-subtitle">
-          Расскажите, что улучшить. Ваши идеи и замечания напрямую влияют на развитие сервиса.
-        </p>
-        <div className="chip-row">
-          <button className="btn-chip btn-chip-lg">🐞 Сообщить об ошибке</button>
-          <button className="btn-chip btn-chip-lg">💡 Предложить идею</button>
-          <button className="btn-chip btn-chip-lg">⭐ Оценить качество примерки</button>
-          <button className="btn-chip btn-chip-lg">💬 Отдел заботы</button>
-          <button className="btn-chip btn-chip-lg">💌 Отправить отзыв</button>
-        </div>
+      {/* ЗАМЕТКА 6: ОБРАТНАЯ СВЯЗЬ - ниже на всю ширину */}
+      <section className="mt-6">
+        <article className="
+          rounded-3xl border border-white/40 bg-white/55
+          px-6 py-5 shadow-[0_24px_70px_rgba(126,96,191,0.25)]
+          backdrop-blur-2xl
+        ">
+          <div className="section-header">
+            <div className="section-title">Обратная связь</div>
+            <div className="section-link">Подробнее</div>
+          </div>
+          <p className="card-subtitle">
+            Расскажите, что улучшить. Ваши идеи и замечания напрямую влияют на развитие сервиса.
+          </p>
+          <div className="chip-row">
+            <button className="btn-chip btn-chip-lg">🐞 Сообщить об ошибке</button>
+            <button className="btn-chip btn-chip-lg">💡 Предложить идею</button>
+            <button className="btn-chip btn-chip-lg">⭐ Оценить качество примерки</button>
+            <button className="btn-chip btn-chip-lg">💬 Отдел заботы</button>
+            <button className="btn-chip btn-chip-lg">💌 Отправить отзыв</button>
+          </div>
+        </article>
       </section>
 
       {/* FOOTER */}
