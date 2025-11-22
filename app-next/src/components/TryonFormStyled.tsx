@@ -127,19 +127,8 @@ export default function TryonFormStyled() {
     }
   };
 
-  const handleReset = () => {
-    setResults(null);
-    personImage.reset();
-    garmentImage.reset();
-    setError(null);
-    setCurrentStep(1);
-    setGarmentCategory('auto');
-    setShowRating(false);
-    setUserRating(null);
-  };
-
   const handleNewTryon = () => {
-    // Сбрасываем только результат, но не загруженные изображения
+    // Сбрасываем результат, возвращаемся к режиму setup
     setResults(null);
     setShowRating(false);
     setUserRating(null);
