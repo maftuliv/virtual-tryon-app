@@ -8,6 +8,10 @@ import os
 import uuid
 from datetime import datetime
 
+from backend.logger import get_logger
+
+logger = get_logger(__name__)
+
 
 class R2StorageClient:
     """Client for uploading and managing images in Cloudflare R2"""
@@ -22,6 +26,9 @@ class R2StorageClient:
         self.client = None
         if self.access_key_id and self.secret_access_key and self.endpoint_url:
             self._init_client()
+            logger.info(f"[R2] Client initialized successfully. Bucket: {self.bucket_name}, Public URL: {self.public_url_base}")
+        else:
+            logger.warning(f"[R2] Client NOT configured. Missing: access_key={bool(self.access_key_id)}, secret={bool(self.secret_access_key)}, endpoint={bool(self.endpoint_url)}")
 
     def _init_client(self):
         """Initialize boto3 S3 client for R2"""
