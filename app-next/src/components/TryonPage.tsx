@@ -92,7 +92,7 @@ export default function TryonPage() {
                 <div className="user-name">{userName}</div>
                 {/* ЗАМЕТКА 7: Бейдж тарифа */}
                 <span className="rounded-full bg-gradient-to-r from-[#ffc36b] to-[#ff9a62] px-3 py-0.5 text-xs font-semibold text-slate-900 ml-2">
-                  {user?.subscription_plan || 'Premium'}
+                  {user?.is_premium ? 'Premium' : 'Free'}
                 </span>
               </div>
               {isMenuOpen && (
